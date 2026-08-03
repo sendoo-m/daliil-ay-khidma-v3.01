@@ -1,0 +1,426 @@
+{% extends "base.html" %}
+{% load static i18n %}
+
+{% block title %}
+    {% if LANGUAGE_CODE == 'ar' %}خريطة المحلات{% else %}Business Map{% endif %} - {{ block.super }}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+<style>
+:root {
+    --primary: #667eea;
+    --secondary: #764ba2;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --dark: #1e293b;
+    --muted: #64748b;
+}
+
+.map-page-header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    padding: 1.5rem 0;
+    color: white;
+    margin-bottom: 0;
+}
+
+.map-page-header h1 { font-size: 1.6rem; font-weight: 900; margin: 0; }
+.map-page-header p  { margin: 0.25rem 0 0; opacity: 0.85; font-size: 0.9rem; }
+
+.map-controls-bar {
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+
+.map-controls-bar .form-control,
+.map-controls-bar .form-select {
+    border-radius: 10px;
+    border: 1.5px solid #e2e8f0;
+    font-size: 0.88rem;
+    padding: 0.5rem 0.9rem;
+    transition: border-color 0.2s;
+}
+
+.map-controls-bar .form-control:focus,
+.map-controls-bar .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.12);
+}
+
+.stat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    padding: 0.5rem 1.25rem;
+    border-radius: 50px;
+    font-weight: 800;
+    font-size: 0.95rem;
+}
+
+.map-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1.1rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.map-btn:hover { transform: translateY(-1px); }
+.map-btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+.map-btn-secondary { background: #f1f5f9; color: var(--dark); }
+.map-btn-outline { background: white; color: var(--primary); border: 1.5px solid var(--primary); }
+.map-btn-outline.active { background: var(--primary); color: white; }
+
+/* الخريطة نفسها */
+#mapWrapper {
+    height: calc(100vh - 200px);
+    min-height: 500px;
+    position: relative;
+}
+
+#mapFrame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+}
+
+.map-loading {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    font-size: 0.95rem;
+    color: var(--muted);
+    gap: 0.75rem;
+}
+
+.spinner {
+    width: 40px; height: 40px;
+    border: 4px solid #e2e8f0;
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Results count badge */
+.results-badge {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 0.5rem 1.25rem;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: var(--dark);
+    z-index: 50;
+    white-space: nowrap;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# PAGE HEADER #}
+<div class="map-page-header">
+    <div class="container">
+        <h1>
+            <i class="fas fa-map-marked-alt me-2"></i>
+            {% if LANGUAGE_CODE == 'ar' %}خريطة المحلات{% else %}Business Map{% endif %}
+        </h1>
+        <p>
+            {% if LANGUAGE_CODE == 'ar' %}اكتشف المحلات القريبة منك{% else %}Explore businesses near you{% endif %}
+        </p>
+    </div>
+</div>
+
+{# CONTROLS BAR #}
+<div class="map-controls-bar">
+    <div class="container">
+        <div class="row g-2 align-items-center">
+
+            <div class="col-auto">
+                <div class="stat-pill">
+                    <i class="fas fa-store"></i>
+                    <span id="displayCount">{{ total_businesses }}</span>
+                    <span>{% if LANGUAGE_CODE == 'ar' %}محل{% else %}Business{% endif %}</span>
+                </div>
+            </div>
+
+            <div class="col-md-2 col-6">
+                <select id="categoryFilter" class="form-select form-select-sm">
+                    <option value="">{% if LANGUAGE_CODE == 'ar' %}كل الفئات{% else %}All Categories{% endif %}</option>
+                    {% for category in categories %}
+                    <option value="{{ category.name_en }}">
+                        {% if LANGUAGE_CODE == 'ar' %}{{ category.name_ar }}{% else %}{{ category.name_en }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2 col-6">
+                <select id="governorateFilter" class="form-select form-select-sm">
+                    <option value="">{% if LANGUAGE_CODE == 'ar' %}كل المحافظات{% else %}All Governorates{% endif %}</option>
+                    {% for gov in governorates %}
+                    <option value="{{ gov.name_en }}">
+                        {% if LANGUAGE_CODE == 'ar' %}{{ gov.name_ar }}{% else %}{{ gov.name_en }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3 col-12">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text" style="border-radius:10px 0 0 10px;background:#f8fafc;border:1.5px solid #e2e8f0;border-right:none;">
+                        <i class="fas fa-search" style="color:var(--muted);"></i>
+                    </span>
+                    <input type="text" id="searchInput" class="form-control"
+                           placeholder="{% if LANGUAGE_CODE == 'ar' %}ابحث عن محل...{% else %}Search businesses...{% endif %}"
+                           style="border-radius:0 10px 10px 0;">
+                </div>
+            </div>
+
+            <div class="col-auto d-flex gap-2 flex-wrap">
+                <button id="btnMyLocation" class="map-btn map-btn-primary">
+                    <i class="fas fa-location-arrow"></i>
+                    {% if LANGUAGE_CODE == 'ar' %}موقعي{% else %}My Location{% endif %}
+                </button>
+                <button id="btnCluster" class="map-btn map-btn-outline active">
+                    <i class="fas fa-layer-group"></i>
+                    {% if LANGUAGE_CODE == 'ar' %}تجميع{% else %}Cluster{% endif %}
+                </button>
+                <button id="btnReset" class="map-btn map-btn-secondary">
+                    <i class="fas fa-redo"></i>
+                    {% if LANGUAGE_CODE == 'ar' %}إعادة ضبط{% else %}Reset{% endif %}
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{# MAP WRAPPER #}
+<div id="mapWrapper">
+    <div class="map-loading" id="mapLoading">
+        <div class="spinner"></div>
+        <span>{% if LANGUAGE_CODE == 'ar' %}جاري تحميل الخريطة...{% else %}Loading map...{% endif %}</span>
+    </div>
+    <iframe id="mapFrame" srcdoc="" title="map"></iframe>
+    <div class="results-badge" id="resultsBadge">
+        <i class="fas fa-store me-1" style="color:var(--primary);"></i>
+        <span id="badgeCount">{{ total_businesses }}</span>
+        {% if LANGUAGE_CODE == 'ar' %}محل على الخريطة{% else %}businesses on map{% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    // ===== Data from Django =====
+    var ALL_BUSINESSES = {{ businesses_json|safe }};
+    var LANG = "{{ LANGUAGE_CODE }}";
+    var isAr = LANG === 'ar';
+
+    // ===== Labels =====
+    var labels = {
+        viewDetails : isAr ? 'عرض التفاصيل'   : 'View Details',
+        featured    : isAr ? 'مميز'            : 'Featured',
+        youAreHere  : isAr ? 'أنت هنا'         : 'You are here',
+        noLocation  : isAr ? 'تعذّر تحديد موقعك' : 'Unable to get your location',
+        openMaps    : isAr ? 'فتح في خرائط Google' : 'Open in Google Maps',
+        phone       : isAr ? 'الهاتف'          : 'Phone'
+    };
+
+    // ===== State =====
+    var currentBusinesses = ALL_BUSINESSES.slice();
+    var clusterEnabled = true;
+    var frameReady = false;
+    var pendingUpdate = null;
+
+    // ===== Build iframe HTML =====
+    function buildMapHTML(businesses, opts) {
+        opts = opts || {};
+        var safeData = JSON.stringify({
+            businesses : businesses,
+            labels     : labels,
+            clusterEnabled: clusterEnabled,
+            userLat    : opts.userLat || null,
+            userLng    : opts.userLng || null
+        });
+
+        return '<!DOCTYPE html><html>'
+            + '<head><meta charset="utf-8">'
+            + '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>'
+            + '<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>'
+            + '<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>'
+            + '<style>'
+            + 'html,body{margin:0;padding:0;width:100%;height:100%;}'
+            + '#m{width:100%;height:100%;}'
+            + '.bpop{min-width:220px;max-width:280px;font-family:inherit;}'
+            + '.bpop-name{font-size:0.95rem;font-weight:800;color:#1e293b;margin:0 0 6px;}'
+            + '.bpop-loc{font-size:0.78rem;color:#64748b;margin:0 0 6px;}'
+            + '.bpop-phone{font-size:0.82rem;margin:0 0 8px;}'
+            + '.bpop-phone a{color:#10b981;text-decoration:none;font-weight:700;}'
+            + '.bpop-feat{display:inline-block;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:50px;font-size:0.72rem;font-weight:700;margin-bottom:6px;}'
+            + '.bpop-btn{display:block;background:linear-gradient(135deg,#667eea,#764ba2);color:white;text-align:center;padding:7px;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.82rem;margin-top:6px;}'
+            + '.bpop-btn:hover{opacity:0.9;color:white;}'
+            + '.bpop-img{width:100%;height:110px;object-fit:cover;border-radius:6px;margin-bottom:8px;}'
+            + '</style>'
+            + '</head><body><div id="m"></div>'
+            + '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>'
+            + '<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"><\/script>'
+            + '<script>'
+            + 'var D=' + safeData + ';'
+            + 'var map=L.map("m").setView([26.8206,30.8025],6);'
+            + 'L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"&copy; OpenStreetMap",maxZoom:19}).addTo(map);'
+
+            // icons
+            + 'var typeIcons={shop:"🏪",craft:"🔧",public:"🏛️"};'
+
+            // cluster group
+            + 'var cg=L.markerClusterGroup({showCoverageOnHover:false,maxClusterRadius:50,spiderfyOnMaxZoom:true,disableClusteringAtZoom:15});'
+            + 'var allM=[];'
+
+            // create markers
+            + 'D.businesses.forEach(function(b){'
+            +   'var lat=parseFloat(b.latitude),lng=parseFloat(b.longitude);'
+            +   'if(isNaN(lat)||isNaN(lng))return;'
+            +   'var ico=typeIcons[b.business_type]||"📍";'
+            +   'var cls=b.is_featured?"marker-icon featured":"marker-icon";'
+            +   'var html="<div style=\'display:flex;align-items:center;justify-content:center;"'
+            +         '+"width:38px;height:38px;border-radius:50%;background:white;"'
+            +         '+"border:3px solid "+(b.is_featured?"#f59e0b":"#667eea")+";"'
+            +         '+"box-shadow:0 2px 8px rgba(0,0,0,0.2);font-size:18px;\'>"'
+            +         '+ico+"<\/div>";'
+            +   'var icon=L.divIcon({className:"",html:html,iconSize:[38,38],iconAnchor:[19,38],popupAnchor:[0,-40]});'
+            +   'var m=L.marker([lat,lng],{icon:icon});'
+
+            // popup
+            +   'var pop="<div class=\'bpop\'>";'
+            +   'if(b.logo)pop+="<img src=\'"+b.logo+"\' class=\'bpop-img\' onerror=\'this.style.display=\\\"none\\\"\'>";'
+            +   'pop+="<p class=\'bpop-name\'>"+b.name_ar+"<\/p>";'
+            +   'pop+="<p class=\'bpop-loc\'><span>📍<\/span> "+b.district_name_ar+", "+b.city_name_ar+", "+b.governorate_name_ar+"<\/p>";'
+            +   'if(b.is_featured)pop+="<span class=\'bpop-feat\'>⭐ "+D.labels.featured+"<\/span>";'
+            +   'if(b.phone)pop+="<p class=\'bpop-phone\'>"+D.labels.phone+": <a href=\'tel:"+b.phone+"\'>"+b.phone+"<\/a><\/p>";'
+            +   'pop+="<a href=\'/directory/business/"+b.slug+"/\' class=\'bpop-btn\' target=\'_blank\'>👁 "+D.labels.viewDetails+"<\/a>";'
+            +   'pop+="<\/div>";'
+            +   'm.bindPopup(pop,{maxWidth:300});'
+            +   'm.businessData=b;'
+            +   'allM.push(m);'
+            +   'D.clusterEnabled?cg.addLayer(m):m.addTo(map);'
+            + '});'
+
+            // add cluster or markers
+            + 'if(D.clusterEnabled)map.addLayer(cg);'
+
+            // fit bounds
+            + 'if(allM.length>0){var g=new L.featureGroup(allM);map.fitBounds(g.getBounds().pad(0.1));}'
+
+            // user location marker
+            + 'if(D.userLat&&D.userLng){'
+            +   'var uIcon=L.divIcon({className:"",html:"<div style=\'width:16px;height:16px;background:#ef4444;border-radius:50%;border:3px solid white;box-shadow:0 0 0 4px rgba(239,68,68,0.3);\'><\/div>",iconSize:[16,16],iconAnchor:[8,8]});'
+            +   'L.marker([D.userLat,D.userLng],{icon:uIcon}).addTo(map).bindPopup(D.labels.youAreHere).openPopup();'
+            +   'map.setView([D.userLat,D.userLng],13);'
+            + '}'
+
+            + '<\/script><\/body><\/html>';
+    }
+
+    // ===== Load iframe =====
+    function loadMap(businesses, opts) {
+        var frame = document.getElementById('mapFrame');
+        if (!frame) return;
+        document.getElementById('mapLoading').style.display = 'flex';
+        frame.srcdoc = buildMapHTML(businesses, opts);
+        frame.onload = function() {
+            document.getElementById('mapLoading').style.display = 'none';
+            document.getElementById('badgeCount').textContent = businesses.length;
+            document.getElementById('displayCount').textContent = businesses.length;
+        };
+    }
+
+    // ===== Initial load =====
+    loadMap(ALL_BUSINESSES);
+
+    // ===== Filter =====
+    function applyFilters() {
+        var cat  = document.getElementById('categoryFilter').value;
+        var gov  = document.getElementById('governorateFilter').value;
+        var q    = document.getElementById('searchInput').value.toLowerCase().trim();
+
+        var filtered = ALL_BUSINESSES.filter(function(b) {
+            var okCat = !cat || b.category_name_en === cat;
+            var okGov = !gov || b.governorate_name_en === gov;
+            var okQ   = !q
+                || b.name_en.toLowerCase().includes(q)
+                || b.name_ar.toLowerCase().includes(q);
+            return okCat && okGov && okQ;
+        });
+
+        currentBusinesses = filtered;
+        loadMap(filtered);
+    }
+
+    document.getElementById('categoryFilter').addEventListener('change', applyFilters);
+    document.getElementById('governorateFilter').addEventListener('change', applyFilters);
+    document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+    // ===== Reset =====
+    document.getElementById('btnReset').addEventListener('click', function() {
+        document.getElementById('categoryFilter').value = '';
+        document.getElementById('governorateFilter').value = '';
+        document.getElementById('searchInput').value = '';
+        currentBusinesses = ALL_BUSINESSES.slice();
+        loadMap(ALL_BUSINESSES);
+    });
+
+    // ===== My Location =====
+    document.getElementById('btnMyLocation').addEventListener('click', function() {
+        if (!navigator.geolocation) {
+            alert(labels.noLocation); return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                loadMap(currentBusinesses, {
+                    userLat: pos.coords.latitude,
+                    userLng: pos.coords.longitude
+                });
+            },
+            function() { alert(labels.noLocation); }
+        );
+    });
+
+    // ===== Toggle Clustering =====
+    document.getElementById('btnCluster').addEventListener('click', function() {
+        clusterEnabled = !clusterEnabled;
+        this.classList.toggle('active', clusterEnabled);
+        loadMap(currentBusinesses);
+    });
+
+})();
+</script>
+{% endblock %}

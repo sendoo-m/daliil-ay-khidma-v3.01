@@ -1,0 +1,79 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{{ admin_index_url }}">{% translate "Home" %}</a>
+    &rsaquo; إدارة الداتا التجريبية
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    .demo-data-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin: 20px 0; max-width: 850px; }
+    .demo-data-stat { background: var(--darkened-bg); border: 1px solid var(--hairline-color); border-radius: 6px; padding: 16px; text-align: center; }
+    .demo-data-stat strong { display: block; font-size: 24px; margin-bottom: 5px; }
+    .demo-data-panel { border: 1px solid var(--hairline-color); border-radius: 6px; margin-top: 20px; max-width: 850px; padding: 20px; }
+    .demo-data-panel h2 { margin-top: 0; }
+    .demo-data-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .demo-data-actions form { margin: 0; }
+    .demo-data-danger { border-color: var(--delete-button-bg); }
+    .demo-data-confirm { display: block; margin: 12px 0; max-width: 360px; padding: 9px; width: 100%; }
+    .demo-data-note { color: var(--body-quiet-color); }
+    .messagelist li { white-space: pre-line; }
+</style>
+
+<p class="demo-data-note">
+    أداة مؤقتة لمراجعة التصميم على Render. لا تتعامل إلا مع السجلات التي تحمل بادئة الداتا التجريبية.
+</p>
+
+<div class="demo-data-grid">
+    <div class="demo-data-stat"><strong>{{ counts.businesses }}</strong>أنشطة</div>
+    <div class="demo-data-stat"><strong>{{ counts.categories }}</strong>تصنيفات</div>
+    <div class="demo-data-stat"><strong>{{ counts.products }}</strong>منتجات وخدمات</div>
+    <div class="demo-data-stat"><strong>{{ counts.deals }}</strong>عروض</div>
+    <div class="demo-data-stat"><strong>{{ counts.reviews }}</strong>تقييمات</div>
+</div>
+
+<section class="demo-data-panel">
+    <h2>إنشاء الداتا التجريبية</h2>
+    <p>الإنشاء العادي لا يكرر الداتا الموجودة. استخدم إعادة الإنشاء لتطبيق الحزمة الكاملة الحالية: 33 قسمًا، و22 نشاطًا، و52 منتجًا وخدمة.</p>
+    <div class="demo-data-actions">
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create">
+            <button type="submit" class="button">إنشاء الحزمة إذا لم تكن موجودة</button>
+        </form>
+        <form method="post" onsubmit="return confirm('سيتم حذف الداتا التجريبية القديمة وإعادة إنشائها بالحزمة الحالية. هل تريد المتابعة؟');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reset">
+            <button type="submit" class="button default">إعادة إنشاء الحزمة كاملة</button>
+        </form>
+    </div>
+</section>
+
+<section class="demo-data-panel">
+    <h2>إنشاء وإصلاح الصور</h2>
+    <p>كل زر يعالج نوعًا واحدًا فقط لتقليل زمن الطلب. المواقع لا تحتوي حقول صور في النظام الحالي.</p>
+    <div class="demo-data-actions">
+        {% for action, label in image_actions %}
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="{{ action }}">
+            <button type="submit" class="button">{{ label }}</button>
+        </form>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="demo-data-panel demo-data-danger">
+    <h2>حذف الداتا التجريبية فقط</h2>
+    <p>لن يحذف المستخدمين أو السجلات الحقيقية. للتأكيد اكتب <strong>DELETE_DEMO_DATA</strong>.</p>
+    <form method="post" onsubmit="return confirm('هل أنت متأكد من حذف الداتا التجريبية فقط؟');">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="clear">
+        <input class="demo-data-confirm" type="text" name="confirmation" autocomplete="off" required placeholder="DELETE_DEMO_DATA">
+        <button type="submit" class="button deletelink" {% if not has_demo_data %}disabled{% endif %}>حذف الداتا التجريبية</button>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% load translation_tags %}
+
+<div class="row g-3">
+  {% for product in items %}
+  <div class="col-md-6">
+    <div class="p-card">
+      <div class="position-relative">
+        {% if product.images.exists %}
+          <img src="{{ product.images.first.image.url }}" class="p-img" alt="{{ product.name }}">
+        {% else %}
+          <div class="p-img d-flex align-items-center justify-content-center" style="background:#eef2ff;">
+            <i class="fas fa-{% if product.product_type == 'service' %}concierge-bell{% else %}box{% endif %} fa-3x" style="color:#4f46e5;"></i>
+          </div>
+        {% endif %}
+
+        {% if product.has_discount %}
+          <span class="p-badge-discount">-{{ product.discount_percentage }}%</span>
+        {% endif %}
+      </div>
+
+      <div class="p-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="badge" style="background:rgba(37,99,235,.10);color:#1d4ed8;border-radius:999px;font-weight:900;">
+            <i class="fas fa-{% if product.product_type == 'service' %}concierge-bell{% else %}box{% endif %} me-1"></i>
+            {% if product.product_type == 'service' %}{% t "Service" %}{% else %}{% t "Product" %}{% endif %}
+          </span>
+        </div>
+
+        <div class="fw-bold mb-1">{{ product.name }}</div>
+
+        {% if product.description %}
+          <div class="text-muted small mb-2">{{ product.description|truncatewords:14 }}</div>
+        {% endif %}
+
+        <div class="d-flex align-items-baseline gap-2 mb-3">
+          <div class="p-price">{{ product.price }} <span class="text-muted" style="font-size:.9rem;">{% t "EGP" %}</span></div>
+          {% if product.old_price %}
+            <div class="p-old">{{ product.old_price }}</div>
+          {% endif %}
+        </div>
+
+        <a href="{% url 'products:product_detail' product.slug %}"
+           class="btn w-100"
+           style="background: var(--grad); color:#fff; border-radius:999px; font-weight:900;">
+          <i class="fas fa-eye me-2"></i>{% t "View Details" %}
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>

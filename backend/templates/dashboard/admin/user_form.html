@@ -1,0 +1,243 @@
+{% extends 'dashboard/admin/base.html' %}
+
+{% block title %}{{ action }} مستخدم{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_home' %}">لوحة التحكم</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_users_list' %}">المستخدمين</a></li>
+        <li class="breadcrumb-item active">{{ action }} مستخدم</li>
+    </ol>
+</nav>
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">
+            <i class="fas fa-user-plus" style="color: #3498db;"></i> {{ action }} مستخدم
+        </h2>
+        <p class="text-muted mb-0">املأ البيانات أدناه لإضافة أو تعديل مستخدم جديد</p>
+    </div>
+    <a href="{% url 'dashboard:admin_users_list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right me-1"></i> رجوع
+    </a>
+</div>
+
+<!-- Form -->
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <!-- Error Messages -->
+    {% if form.errors %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        <strong>خطأ!</strong> يرجى تصحيح الأخطاء التالية:
+        <ul class="mb-0 mt-2">
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+    
+    <div class="row g-4">
+        <!-- معلومات الحساب -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-id-card text-primary me-2"></i>
+                        معلومات الحساب
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <!-- Username -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-user text-muted me-1"></i>
+                                اسم المستخدم
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.username }}
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                اسم فريد للمستخدم (حروف وأرقام فقط)
+                            </div>
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-envelope text-muted me-1"></i>
+                                البريد الإلكتروني
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.email }}
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                سيُستخدم لتسجيل الدخول والإشعارات
+                            </div>
+                        </div>
+                        
+                        <!-- First Name -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-signature text-muted me-1"></i>
+                                الاسم الأول
+                            </label>
+                            {{ form.first_name }}
+                        </div>
+                        
+                        <!-- Last Name -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-signature text-muted me-1"></i>
+                                الاسم الأخير
+                            </label>
+                            {{ form.last_name }}
+                        </div>
+                        
+                        {% if form.password1 %}
+                        <!-- Password -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-lock text-muted me-1"></i>
+                                كلمة المرور
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.password1 }}
+                            <div class="form-text">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                8 أحرف على الأقل، مزيج من حروف وأرقام
+                            </div>
+                        </div>
+                        
+                        <!-- Password Confirm -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-lock text-muted me-1"></i>
+                                تأكيد كلمة المرور
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.password2 }}
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                أعد كتابة كلمة المرور
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- الصلاحيات والحالة -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-shield-alt text-success me-2"></i>
+                        الصلاحيات والحالة
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Is Active -->
+                    <div class="mb-3 p-3 bg-light rounded">
+                        <div class="form-check form-switch">
+                            {{ form.is_active }}
+                            <label class="form-check-label fw-bold" for="{{ form.is_active.id_for_label }}">
+                                <i class="fas fa-toggle-on text-success me-1"></i>
+                                حساب نشط
+                            </label>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            يمكن للمستخدم تسجيل الدخول
+                        </small>
+                    </div>
+                    
+                    <!-- Is Staff -->
+                    <div class="p-3 bg-light rounded">
+                        <div class="form-check form-switch">
+                            {{ form.is_staff }}
+                            <label class="form-check-label fw-bold" for="{{ form.is_staff.id_for_label }}">
+                                <i class="fas fa-user-shield text-primary me-1"></i>
+                                مشرف
+                            </label>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            الوصول إلى لوحة التحكم
+                        </small>
+                    </div>
+                    
+                    <!-- Info Box -->
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <strong>ملاحظة:</strong>
+                        <small class="d-block mt-1">
+                            المشرفون لديهم صلاحيات إدارة المحتوى
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-admin btn-lg">
+            <i class="fas fa-save me-2"></i> {{ action }}
+        </button>
+        <a href="{% url 'dashboard:admin_users_list' %}" class="btn btn-secondary btn-lg">
+            <i class="fas fa-times me-2"></i> إلغاء
+        </a>
+    </div>
+</form>
+
+<style>
+.form-control, .form-select {
+    border: 1.5px solid #e0e0e0;
+    padding: 0.65rem 1rem;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.15);
+}
+
+.form-check-input:checked {
+    background-color: #27ae60;
+    border-color: #27ae60;
+}
+
+.card {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 1rem 1.5rem;
+}
+
+.form-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.breadcrumb-item a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+</style>
+{% endblock %}

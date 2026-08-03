@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+    {% if query %}
+        {% trans "Search Results for" %}: {{ query }}
+    {% else %}
+        {% trans "Search" %}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Search Header -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mx-auto">
+            <h2 class="text-center mb-4">
+                <i class="fas fa-search me-2"></i>
+                {% if LANGUAGE_CODE == 'ar' %}ابحث عن منتج أو محل أو خدمة{% else %}Search products, businesses, or services{% endif %}
+            </h2>
+            
+            <!-- Search Form -->
+            <form method="get" class="mb-4">
+                <div class="input-group input-group-lg">
+                    <input type="text" 
+                           class="form-control" 
+                           name="q" 
+                           value="{{ query }}"
+                           placeholder="{% if LANGUAGE_CODE == 'ar' %}مثال: هاتف ذكي، غسالة، رحلة، فندق...{% else %}Example: smartphone, washing machine, trip, hotel...{% endif %}"
+                           autofocus>
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-search"></i> {% trans "Search" %}
+                    </button>
+                </div>
+            </form>
+            
+            {% if query %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                {% trans "Found" %} <strong>{{ total_results }}</strong> 
+                {% trans "results for" %} "<strong>{{ query }}</strong>"
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if products %}
+    <section class="mb-5">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h3 class="h4 mb-0">
+                <i class="fas fa-tags text-primary me-2"></i>
+                {% if LANGUAGE_CODE == 'ar' %}المنتجات والخدمات{% else %}Products & Services{% endif %}
+            </h3>
+            <span class="badge bg-primary rounded-pill">{{ product_count }}</span>
+        </div>
+        <p class="text-muted">
+            {% if LANGUAGE_CODE == 'ar' %}
+                النتائج مرتبة من السعر الأقل لتسهيل المقارنة بين المحلات.
+            {% else %}
+                Results are sorted by lowest price to make store comparison easier.
+            {% endif %}
+        </p>
+        <div class="row g-4">
+            {% for product in products %}
+            <div class="col-xl-3 col-lg-4 col-md-6">
+                <article class="card h-100 shadow-sm hover-card border-0">
+                    {% with product_image=product.images.first %}
+                        {% if product_image %}
+                        <img src="{{ product_image.image.url }}"
+                             class="card-img-top"
+                             alt="{% if LANGUAGE_CODE == 'ar' %}{{ product.name_ar }}{% else %}{{ product.name_en }}{% endif %}"
+                             style="height: 190px; object-fit: cover;">
+                        {% else %}
+                        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 190px;">
+                            <i class="fas fa-box-open fa-3x text-muted"></i>
+                        </div>
+                        {% endif %}
+                    {% endwith %}
+                    <div class="card-body d-flex flex-column">
+                        <h4 class="h6 fw-bold">
+                            {% if LANGUAGE_CODE == 'ar' %}{{ product.name_ar }}{% else %}{{ product.name_en }}{% endif %}
+                        </h4>
+                        <a href="{% url 'directory:business_detail' product.business.slug %}"
+                           class="small text-decoration-none mb-2">
+                            <i class="fas fa-store me-1"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}{{ product.business.name_ar }}{% else %}{{ product.business.name_en }}{% endif %}
+                        </a>
+                        <div class="small text-muted mb-3">
+                            <i class="fas fa-map-marker-alt me-1"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}{{ product.business.district.city.name_ar }}{% else %}{{ product.business.district.city.name_en }}{% endif %}
+                        </div>
+                        <div class="mt-auto d-flex justify-content-between align-items-end gap-2">
+                            <div>
+                                {% if product.has_discount %}
+                                <div class="small text-muted text-decoration-line-through">{{ product.old_price }} ج.م</div>
+                                {% endif %}
+                                <strong class="fs-5 text-success">{{ product.price }} ج.م</strong>
+                            </div>
+                            <a href="{{ product.get_absolute_url }}" class="btn btn-outline-primary btn-sm">
+                                {% if LANGUAGE_CODE == 'ar' %}التفاصيل{% else %}Details{% endif %}
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Results -->
+    {% if businesses %}
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h3 class="h4 mb-0">
+            <i class="fas fa-store text-primary me-2"></i>
+            {% if LANGUAGE_CODE == 'ar' %}المحلات والأنشطة{% else %}Businesses{% endif %}
+        </h3>
+        <span class="badge bg-primary rounded-pill">{{ business_count }}</span>
+    </div>
+    <div class="row">
+        {% for business in businesses %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 shadow-sm hover-card">
+                {% if business.logo %}
+                <img src="{{ business.logo.url }}" 
+                     class="card-img-top" 
+                     alt="{{ business.name }}"
+                     style="height: 200px; object-fit: cover;">
+                {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                     style="height: 200px;">
+                    <i class="fas fa-store fa-3x text-muted"></i>
+                </div>
+                {% endif %}
+                
+                <div class="card-body">
+                    <h5 class="card-title">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            {{ business.name_ar }}
+                        {% else %}
+                            {{ business.name_en }}
+                        {% endif %}
+                    </h5>
+                    
+                    <p class="text-muted small mb-2">
+                        <i class="fas fa-th-large me-1"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            {{ business.category.name_ar }}
+                        {% else %}
+                            {{ business.category.name_en }}
+                        {% endif %}
+                    </p>
+                    
+                    <p class="text-muted small mb-2">
+                        <i class="fas fa-map-marker-alt me-1"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            {{ business.district.name_ar }}، {{ business.district.city.name_ar }}
+                        {% else %}
+                            {{ business.district.name_en }}, {{ business.district.city.name_en }}
+                        {% endif %}
+                    </p>
+                    
+                    {% if business.description_en or business.description_ar %}
+                    <p class="card-text small text-muted">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            {{ business.description_ar|truncatewords:15 }}
+                        {% else %}
+                            {{ business.description_en|truncatewords:15 }}
+                        {% endif %}
+                    </p>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <a href="{% url 'directory:business_detail' business.slug %}" 
+                           class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye me-1"></i>
+                            {% trans "View Details" %}
+                        </a>
+                        
+                        <div class="text-muted small">
+                            <i class="fas fa-eye me-1"></i>
+                            {{ business.view_count }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if businesses.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if businesses.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?q={{ query }}&page={{ businesses.previous_page_number }}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in businesses.paginator.page_range %}
+            {% if businesses.number == num %}
+            <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% else %}
+            <li class="page-item">
+                <a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a>
+            </li>
+            {% endif %}
+            {% endfor %}
+            
+            {% if businesses.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?q={{ query }}&page={{ businesses.next_page_number }}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% elif not products %}
+    <!-- No Results -->
+    <div class="text-center py-5">
+        <i class="fas fa-search fa-4x text-muted mb-3"></i>
+        <h4 class="text-muted">
+            {% if query %}
+                {% trans "No results found" %}
+            {% else %}
+                {% trans "Enter a search term to get started" %}
+            {% endif %}
+        </h4>
+        {% if query %}
+        <p class="text-muted">
+            {% trans "Try different keywords or check your spelling" %}
+        </p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.hover-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+}
+</style>
+{% endblock %}

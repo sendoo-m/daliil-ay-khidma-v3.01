@@ -1,0 +1,54 @@
+# Core Django
+# Django 5.2.8 is the first 5.2 release compatible with Python 3.14.
+Django>=5.2.8,<5.3
+django-environ>=0.11.0
+python-decouple>=3.8
+
+# Database
+psycopg2-binary>=2.9.9
+
+# REST API
+djangorestframework>=3.14.0
+djangorestframework-simplejwt>=5.3.1
+drf-nested-routers>=0.93.5
+django-filter>=23.5
+django-cors-headers>=4.3.1
+
+# Images & Files
+Pillow>=10.1.0
+django-imagekit>=5.0.0
+django-cleanup>=8.1.0
+cloudinary>=1.41.0
+django-cloudinary-storage>=0.3.0
+
+# Forms & Validation
+django-crispy-forms>=2.1
+crispy-bootstrap5>=2.0.0
+
+# Authentication & Security
+django-allauth>=0.58.2
+
+# Utilities
+python-slugify>=8.0.1
+django-extensions>=3.2.3
+django-debug-toolbar>=4.2.0
+
+# Internationalization
+django-modeltranslation>=0.18.11
+
+# Production
+gunicorn>=21.2.0
+whitenoise>=6.6.0
+
+# Testing & Code Quality
+pytest>=7.4.3
+pytest-django>=4.7.0
+coverage>=7.3.2
+flake8>=6.1.0
+black>=23.12.0
+
+# Documentation
+drf-spectacular>=0.27.0
+
+# Push Notifications
+firebase-admin>=6.5.0

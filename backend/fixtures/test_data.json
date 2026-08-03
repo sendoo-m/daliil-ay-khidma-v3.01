@@ -1,0 +1,137 @@
+[
+  {
+    "model": "accounts.user",
+    "pk": 100,
+    "fields": {
+      "username": "ahmed_owner",
+      "email": "ahmed@test.com",
+      "first_name": "أحمد",
+      "last_name": "محمد",
+      "password": "pbkdf2_sha256$600000$randomsalt$hashedpassword",
+      "is_active": true,
+      "is_staff": false,
+      "date_joined": "2024-01-15T10:00:00Z"
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 101,
+    "fields": {
+      "username": "fatima_owner",
+      "email": "fatima@test.com",
+      "first_name": "فاطمة",
+      "last_name": "علي",
+      "password": "pbkdf2_sha256$600000$randomsalt$hashedpassword",
+      "is_active": true,
+      "is_staff": false,
+      "date_joined": "2024-02-20T10:00:00Z"
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 102,
+    "fields": {
+      "username": "khaled_owner",
+      "email": "khaled@test.com",
+      "first_name": "خالد",
+      "last_name": "حسن",
+      "password": "pbkdf2_sha256$600000$randomsalt$hashedpassword",
+      "is_active": true,
+      "is_staff": false,
+      "date_joined": "2024-03-10T10:00:00Z"
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 103,
+    "fields": {
+      "username": "maha_owner",
+      "email": "maha@test.com",
+      "first_name": "مها",
+      "last_name": "عبدالله",
+      "password": "pbkdf2_sha256$600000$randomsalt$hashedpassword",
+      "is_active": true,
+      "is_staff": false,
+      "date_joined": "2024-04-05T10:00:00Z"
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 104,
+    "fields": {
+      "username": "omar_owner",
+      "email": "omar@test.com",
+      "first_name": "عمر",
+      "last_name": "سعيد",
+      "password": "pbkdf2_sha256$600000$randomsalt$hashedpassword",
+      "is_active": true,
+      "is_staff": false,
+      "date_joined": "2024-05-12T10:00:00Z"
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 200,
+    "fields": {
+      "username": "customer1",
+      "email": "customer1@test.com",
+      "first_name": "محمد",
+      "last_name": "أحمد",
+      "password": "pbkdf2_sha256$600000$randomsalt$hashedpassword",
+      "is_active": true,
+      "date_joined": "2024-06-01T10:00:00Z"
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 201,
+    "fields": {
+      "username": "customer2",
+      "email": "customer2@test.com",
+      "first_name": "سارة",
+      "last_name": "خالد",
+      "password": "pbkdf2_sha256$600000$randomsalt$hashedpassword",
+      "is_active": true,
+      "date_joined": "2024-06-05T10:00:00Z"
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 202,
+    "fields": {
+      "username": "customer3",
+      "email": "customer3@test.com",
+      "first_name": "يوسف",
+      "last_name": "محمود",
+      "password": "pbkdf2_sha256$600000$randomsalt$hashedpassword",
+      "is_active": true,
+      "date_joined": "2024-06-10T10:00:00Z"
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 203,
+    "fields": {
+      "username": "customer4",
+      "email": "customer4@test.com",
+      "first_name": "نور",
+      "last_name": "عبدالرحمن",
+      "password": "pbkdf2_sha256$600000$randomsalt$hashedpassword",
+      "is_active": true,
+      "date_joined": "2024-06-15T10:00:00Z"
+    }
+  },
+  {
+    "model": "accounts.user",
+    "pk": 204,
+    "fields": {
+      "username": "customer5",
+      "email": "customer5@test.com",
+      "first_name": "ليلى",
+      "last_name": "حسين",
+      "password": "pbkdf2_sha256$600000$randomsalt$hashedpassword",
+      "is_active": true,
+      "date_joined": "2024-06-20T10:00:00Z"
+    }
+  }
+]

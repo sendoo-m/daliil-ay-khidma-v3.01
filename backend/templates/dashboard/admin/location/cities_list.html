@@ -1,0 +1,138 @@
+{% extends 'dashboard/admin/base.html' %}
+
+{% block title %}المدن{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fas fa-city text-primary me-2"></i> إدارة المدن</h4>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_home' %}">الرئيسية</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_governorates_list' %}">المحافظات</a></li>
+            <li class="breadcrumb-item active">المدن</li>
+        </ol></nav>
+    </div>
+    <a href="{% url 'dashboard:admin_city_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i> إضافة مدينة
+    </a>
+</div>
+
+<!-- Filter -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small text-muted">تصفية بالمحافظة</label>
+                <select name="governorate" class="form-select" onchange="this.form.submit()">
+                    <option value="">كل المحافظات</option>
+                    {% for gov in governorates %}
+                    <option value="{{ gov.id }}" {% if gov_filter == gov.id|stringformat:"s" %}selected{% endif %}>
+                        {{ gov.name_ar }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if gov_filter %}
+            <div class="col-md-2">
+                <a href="{% url 'dashboard:admin_cities_list' %}" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-redo me-1"></i> إعادة تعيين
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3">
+        <h6 class="mb-0 fw-bold">
+            <i class="fas fa-list me-2 text-muted"></i> قائمة المدن
+            <span class="badge bg-primary ms-2">{{ cities.count }}</span>
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>المدينة</th>
+                    <th>الاسم الإنجليزي</th>
+                    <th>المحافظة</th>
+                    <th>عدد الأحياء</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for city in cities %}
+                <tr>
+                    <td class="text-muted small">{{ city.id }}</td>
+                    <td><strong>{{ city.name_ar }}</strong></td>
+                    <td class="text-muted">{{ city.name_en|default:"-" }}</td>
+                    <td>
+                        <span class="badge bg-light text-dark">{{ city.governorate.name_ar }}</span>
+                    </td>
+                    <td>
+                        <a href="{% url 'dashboard:admin_districts_list' %}?city={{ city.id }}" class="badge bg-info text-decoration-none">
+                            {{ city.districts.count }} حي
+                        </a>
+                    </td>
+                    <td>
+                        {% if city.is_active %}
+                        <span class="badge bg-success">نشطة</span>
+                        {% else %}
+                        <span class="badge bg-secondary">معطّلة</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a href="{% url 'dashboard:admin_city_edit' city.id %}" class="btn btn-sm btn-outline-warning">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger"
+                                onclick="confirmDelete('{% url 'dashboard:admin_city_delete' city.id %}', '{{ city.name_ar }}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center py-5 text-muted">
+                    <i class="fas fa-city fa-3x mb-3 d-block opacity-25"></i>
+                    لا توجد مدن
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header border-0">
+            <h5 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i> تأكيد الحذف</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            هل أنت متأكد من حذف مدينة <strong id="deleteItemName"></strong>؟
+            <p class="text-danger small mt-2">سيتم حذف جميع الأحياء التابعة لها.</p>
+        </div>
+        <div class="modal-footer border-0">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <form id="deleteForm" method="post">{% csrf_token %}
+                <button type="submit" class="btn btn-danger">حذف</button>
+            </form>
+        </div>
+    </div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(url, name) {
+    document.getElementById('deleteForm').action = url;
+    document.getElementById('deleteItemName').textContent = name;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}

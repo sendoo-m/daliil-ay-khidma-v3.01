@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Manage Deal" %}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-tag me-2"></i>
+                        {% if deal %}
+                            {% trans "Edit Deal" %}
+                        {% else %}
+                            {% trans "Create New Deal" %}
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-center text-muted">
+                        {% trans "Form will be implemented with Django forms" %}
+                    </p>
+                    <a href="{% url 'deals:business_deals' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        {% trans "Back to My Deals" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

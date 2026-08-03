@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+
+{% block title %}
+    {% if LANGUAGE_CODE == 'ar' %}المحافظات - دليل أي خدمة
+    {% else %}Governorates - Daliil Ay Khidma{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary: #667eea; --secondary: #764ba2;
+    --dark: #1e293b; --muted: #64748b; --light-bg: #f8fafc;
+}
+.gov-header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    padding: 3.5rem 0 5rem; color: white; position: relative; overflow: hidden;
+}
+.gov-header::before {
+    content: '🗺️'; position: absolute; font-size: 16rem;
+    opacity: 0.06; top: 50%; right: 3%; transform: translateY(-50%);
+}
+.gov-header h1 { font-size: clamp(1.8rem,4vw,2.8rem); font-weight: 900; margin-bottom: 0.5rem; }
+.gov-header p  { opacity: 0.88; font-size: 1rem; margin: 0; }
+
+.stats-row {
+    margin-top: -50px; position: relative; z-index: 10;
+    margin-bottom: 2.5rem;
+}
+.scard {
+    background: white; border-radius: 18px; padding: 1.5rem;
+    text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.04);
+}
+.scard .s-num {
+    font-size: 2rem; font-weight: 900;
+    background: linear-gradient(135deg,var(--primary),var(--secondary));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.scard .s-lbl { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+
+.gov-card {
+    background: white; border-radius: 22px; overflow: hidden;
+    border: 2px solid #e2e8f0; transition: all 0.35s cubic-bezier(.175,.885,.32,1.275);
+    text-decoration: none; display: block; height: 100%;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+}
+.gov-card:hover {
+    border-color: var(--primary); transform: translateY(-10px);
+    box-shadow: 0 20px 45px rgba(102,126,234,0.2);
+}
+.gov-img {
+    height: 180px; position: relative; overflow: hidden;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+.gov-img img { width:100%; height:100%; object-fit:cover; transition: transform 0.5s; }
+.gov-card:hover .gov-img img { transform: scale(1.08); }
+.gov-img .no-img {
+    width:100%; height:100%; display:flex;
+    align-items:center; justify-content:center;
+    font-size:4rem; color:rgba(255,255,255,0.35);
+}
+.gov-img .biz-count {
+    position: absolute; bottom: 10px;
+    {% if LANGUAGE_CODE == 'ar' %}right: 12px;{% else %}left: 12px;{% endif %}
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+    color: white; padding: 4px 12px; border-radius: 50px;
+    font-size: 0.78rem; font-weight: 700;
+}
+.gov-body { padding: 1.25rem; }
+.gov-name { font-size: 1.1rem; font-weight: 900; color: var(--dark); margin-bottom: 0.35rem; }
+.gov-meta {
+    display: flex; flex-wrap: wrap; gap: 0.5rem;
+    font-size: 0.8rem; color: var(--muted); margin-bottom: 0.875rem;
+}
+.gov-meta span { display:flex; align-items:center; gap:0.3rem; }
+.gov-meta i { color: var(--primary); }
+.gov-stats {
+    display: flex; gap: 0.5rem;
+    padding-top: 0.875rem; border-top: 1px solid #f1f5f9;
+}
+.gstat {
+    flex: 1; background: var(--light-bg); border-radius: 10px;
+    padding: 0.6rem; text-align: center;
+}
+.gstat .gs-num { font-size: 1.1rem; font-weight: 900; color: var(--dark); }
+.gstat .gs-lbl { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="gov-header">
+    <div class="container">
+        <h1><i class="fas fa-map-marked-alt me-2"></i>
+            {% if LANGUAGE_CODE == 'ar' %}تصفح حسب المحافظة{% else %}Browse by Governorate{% endif %}
+        </h1>
+        <p>{% if LANGUAGE_CODE == 'ar' %}اكتشف المحلات في محافظتك{% else %}Discover businesses in your governorate{% endif %}</p>
+    </div>
+</div>
+
+<div style="background:var(--light-bg);padding:0 0 4rem;">
+    <div class="container">
+
+        <div class="stats-row">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="scard">
+                        <div class="s-num">{{ total_count }}</div>
+                        <div class="s-lbl">{% if LANGUAGE_CODE == 'ar' %}محافظة{% else %}Governorates{% endif %}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="scard">
+                        <div class="s-num">{{ total_cities|default:0 }}</div>
+                        <div class="s-lbl">{% if LANGUAGE_CODE == 'ar' %}مدينة{% else %}Cities{% endif %}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="scard">
+                        <div class="s-num">{{ total_businesses|default:0 }}</div>
+                        <div class="s-lbl">{% if LANGUAGE_CODE == 'ar' %}محل{% else %}Businesses{% endif %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            {% for gov in governorates %}
+            <div class="col-xl-3 col-md-4 col-sm-6">
+                <a href="{% url 'directory:governorate_detail' gov.slug %}" class="gov-card">
+                    <div class="gov-img">
+                        {% if gov.image %}
+                            <img src="{{ gov.image.url }}" alt="">
+                        {% else %}
+                            <div class="no-img">
+                                <i class="{{ gov.icon|default:'fas fa-city' }}"></i>
+                            </div>
+                        {% endif %}
+                        <div class="biz-count">
+                            <i class="fas fa-store me-1"></i>{{ gov.businesses_count }}
+                            {% if LANGUAGE_CODE == 'ar' %}محل{% else %}biz{% endif %}
+                        </div>
+                    </div>
+                    <div class="gov-body">
+                        <div class="gov-name">
+                            {% if LANGUAGE_CODE == 'ar' %}{{ gov.name_ar }}{% else %}{{ gov.name_en }}{% endif %}
+                        </div>
+                        <div class="gov-stats">
+                            <div class="gstat">
+                                <div class="gs-num">{{ gov.cities_count }}</div>
+                                <div class="gs-lbl">{% if LANGUAGE_CODE == 'ar' %}مدينة{% else %}Cities{% endif %}</div>
+                            </div>
+                            <div class="gstat">
+                                <div class="gs-num">{{ gov.businesses_count }}</div>
+                                <div class="gs-lbl">{% if LANGUAGE_CODE == 'ar' %}محل{% else %}Businesses{% endif %}</div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-map" style="font-size:4rem;color:#e2e8f0;"></i>
+                <p class="text-muted mt-3">{% if LANGUAGE_CODE == 'ar' %}لا توجد محافظات{% else %}No governorates found{% endif %}</p>
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}

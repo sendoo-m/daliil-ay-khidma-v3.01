@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% load static i18n %}
+
+{% block title %}{{ category.name }} - {% trans "Categories" %} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Category Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'core:home' %}">{% trans "Home" %}</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'categories:category_list' %}">
+                            {% if LANGUAGE_CODE == 'ar' %}الفئات{% else %}Categories{% endif %}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        {{ category.name }}
+                    </li>
+                </ol>
+            </nav>
+
+            <div class="d-flex align-items-center mb-3">
+                {% if category.icon %}
+                    <i class="{{ category.icon }} fa-3x text-primary me-3"></i>
+                {% endif %}
+                <div>
+                    <h1 class="display-6 fw-bold mb-0">{{ category.name }}</h1>
+                    <p class="text-muted mb-0">
+                        {{ total_businesses }}
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            محل
+                        {% else %}
+                            {% if total_businesses == 1 %}business{% else %}businesses{% endif %}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            {% if category.description %}
+                <p class="lead text-muted">{{ category.description }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Subcategories -->
+    {% if subcategories %}
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="h5 mb-3">
+                {% if LANGUAGE_CODE == 'ar' %}الفئات الفرعية{% else %}Subcategories{% endif %}
+            </h3>
+            <div class="row g-3">
+                {% for subcat in subcategories %}
+                <div class="col-6 col-md-4 col-lg-3">
+                    <a href="{% url 'categories:category_detail' subcat.slug %}" class="btn btn-outline-primary w-100">
+                        {% if subcat.icon %}
+                            <i class="{{ subcat.icon }} me-2"></i>
+                        {% endif %}
+                        {{ subcat.name }}
+                        <span class="badge bg-primary ms-2">
+                            {{ subcat.businesses_count }}
+                        </span>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Businesses -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="h5 mb-3">
+                {% if LANGUAGE_CODE == 'ar' %}
+                    المحلات في هذه الفئة
+                {% else %}
+                    Businesses in this category
+                {% endif %}
+            </h3>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {% for business in businesses %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                {% if business.logo %}
+                <img src="{{ business.logo.url }}" class="card-img-top" alt="{{ business.name }}" style="height: 200px; object-fit: cover;">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ business.name }}</h5>
+                    <p class="card-text text-muted small">
+                        <i class="fas fa-map-marker-alt me-1"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            {{ business.district.name_ar }}, {{ business.district.city.name_ar }}
+                        {% else %}
+                            {{ business.district.name_en }}, {{ business.district.city.name_en }}
+                        {% endif %}
+                    </p>
+                    {% if business.is_verified %}
+                    <span class="badge bg-success mb-2">
+                        <i class="fas fa-check-circle me-1"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}موثّق{% else %}Verified{% endif %}
+                    </span>
+                    {% endif %}
+                    <a href="{% url 'directory:business_detail' business.slug %}" class="btn btn-primary btn-sm w-100">
+                        {% if LANGUAGE_CODE == 'ar' %}عرض التفاصيل{% else %}View details{% endif %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle me-2"></i>
+                {% if LANGUAGE_CODE == 'ar' %}
+                    لا توجد محلات في هذه الفئة
+                {% else %}
+                    No businesses found in this category
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if businesses.has_other_pages %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if businesses.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ businesses.previous_page_number }}">
+                            {% if LANGUAGE_CODE == 'ar' %}السابق{% else %}Previous{% endif %}
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in businesses.paginator.page_range %}
+                    <li class="page-item {% if businesses.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endfor %}
+
+                    {% if businesses.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ businesses.next_page_number }}">
+                            {% if LANGUAGE_CODE == 'ar' %}التالي{% else %}Next{% endif %}
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

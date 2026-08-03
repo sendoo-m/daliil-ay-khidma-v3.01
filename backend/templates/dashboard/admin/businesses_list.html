@@ -1,0 +1,492 @@
+{% extends 'dashboard/admin/base.html' %}
+{% load humanize %}
+
+{% block title %}إدارة المحلات{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fas fa-store text-primary me-2"></i> إدارة المحلات</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_home' %}">الرئيسية</a></li>
+                <li class="breadcrumb-item active">المحلات</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="{% url 'dashboard:admin_business_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i> إضافة محل
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label small text-muted">بحث</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" name="search" value="{{ search }}" class="form-control" placeholder="اسم المحل...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">الحالة</label>
+                <select name="status" class="form-select">
+                    <option value="">جميع الحالات</option>
+                    <option value="verified" {% if status == 'verified' %}selected{% endif %}>موثّق</option>
+                    <option value="pending" {% if status == 'pending' %}selected{% endif %}>بانتظار التوثيق</option>
+                    <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>غير نشط</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-1"></i> تصفية
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'dashboard:admin_businesses_list' %}" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-redo me-1"></i> إعادة تعيين
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+        <h6 class="mb-0 fw-bold">
+            <i class="fas fa-list me-2 text-muted"></i>
+            قائمة المحلات
+            <span class="badge bg-primary ms-2">{{ businesses.paginator.count }}</span>
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>المحل</th>
+                        <th>التصنيف</th>
+                        <th>المالك</th>
+                        <th>الموقع</th>
+                        <th>المشاهدات</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for business in businesses %}
+                    <tr>
+                        <td class="text-muted small">{{ business.id }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                {% if business.logo %}
+                                <img src="{{ business.logo.url }}" class="rounded" width="40" height="40" style="object-fit:cover;">
+                                {% else %}
+                                <div class="rounded d-flex align-items-center justify-content-center bg-light" style="width:40px;height:40px;">
+                                    <i class="fas fa-store text-muted"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ business.name_ar }}</strong>
+                                    {% if business.is_featured %}
+                                    <span class="badge bg-warning text-dark ms-1"><i class="fas fa-star"></i></span>
+                                    {% endif %}
+                                    <br>
+                                    <small class="text-muted">{{ business.name_en|default:"-" }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark">
+                                {{ business.category.name_ar|default:"-" }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'dashboard:admin_user_detail' business.owner.id %}" class="text-decoration-none">
+                                {{ business.owner.username }}
+                            </a>
+                        </td>
+                        <td class="small text-muted">
+                            {% if business.district %}
+                                {{ business.district.name_ar }}،
+                            {% endif %}
+                            {{ business.city.name_ar|default:"-" }}
+                        </td>
+                        <td>
+                            <span class="text-muted small">
+                                <i class="fas fa-eye me-1"></i>{{ business.view_count|intcomma }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if business.is_verified %}
+                                <span class="badge bg-success">موثّق</span>
+                            {% elif business.is_active %}
+                                <span class="badge bg-warning text-dark">بانتظار</span>
+                            {% else %}
+                                <span class="badge bg-secondary">معطّل</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{% url 'dashboard:admin_business_detail' business.id %}" class="btn btn-sm btn-outline-primary" title="تفاصيل">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'dashboard:admin_business_edit' business.id %}" class="btn btn-sm btn-outline-warning" title="تعديل">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="post" action="{% url 'dashboard:admin_business_verify' business.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm {% if business.is_verified %}btn-outline-secondary{% else %}btn-outline-success{% endif %}" title="{% if business.is_verified %}إلغاء التوثيق{% else %}توثيق{% endif %}">
+                                        <i class="fas fa-{% if business.is_verified %}times{% else %}check{% endif %}"></i>
+                                    </button>
+                                </form>
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="حذف"
+                                    onclick="confirmDelete('{% url 'dashboard:admin_business_delete' business.id %}', '{{ business.name_ar }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="fas fa-store fa-3x mb-3 d-block opacity-25"></i>
+                            لا توجد محلات
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if businesses.has_other_pages %}
+    <div class="card-footer bg-white border-top">
+        <nav>
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+                {% if businesses.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ businesses.previous_page_number }}&search={{ search }}&status={{ status }}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+                {% for num in businesses.paginator.page_range %}
+                    {% if businesses.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > businesses.number|add:'-3' and num < businesses.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}&search={{ search }}&status={{ status }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                {% if businesses.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ businesses.next_page_number }}&search={{ search }}&status={{ status }}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i> تأكيد الحذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                هل أنت متأكد من حذف المحل <strong id="deleteItemName"></strong>؟
+                <p class="text-danger small mt-2"><i class="fas fa-info-circle me-1"></i> سيتم حذف جميع المنتجات والعروض المرتبطة به.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <form id="deleteForm" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">حذف نهائياً</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(url, name) {
+    document.getElementById('deleteForm').action = url;
+    document.getElementById('deleteItemName').textContent = name;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}
+
+{% comment %} {% extends 'dashboard/admin/base.html' %}
+{% load humanize %}
+
+{% block title %}إدارة المحلات{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">
+            <i class="fas fa-store" style="color: #27ae60;"></i> إدارة المحلات والخدمات
+        </h2>
+        <p class="text-muted mb-0"><i class="fas fa-info-circle me-1"></i> عرض وإدارة جميع المحلات والخدمات</p>
+    </div>
+    <a href="{% url 'dashboard:admin_business_create' %}" class="btn btn-admin btn-lg">
+        <i class="fas fa-plus-circle me-2"></i> إضافة محل
+    </a>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm" style="border-right: 4px solid #27ae60 !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-muted mb-1 small">إجمالي المحلات</p>
+                        <h3 class="mb-0 fw-bold">{{ total_businesses|intcomma }}</h3>
+                    </div>
+                    <div class="stat-icon bg-success">
+                        <i class="fas fa-store"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm" style="border-right: 4px solid #3498db !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-muted mb-1 small">محلات موثّقة</p>
+                        <h3 class="mb-0 fw-bold text-primary">{{ verified_count|intcomma }}</h3>
+                    </div>
+                    <div class="stat-icon bg-primary">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm" style="border-right: 4px solid #f39c12 !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-muted mb-1 small">بانتظار التوثيق</p>
+                        <h3 class="mb-0 fw-bold text-warning">{{ pending_count|intcomma }}</h3>
+                    </div>
+                    <div class="stat-icon bg-warning">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm" style="border-right: 4px solid #e74c3c !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-muted mb-1 small">محلات مميّزة</p>
+                        <h3 class="mb-0 fw-bold text-danger">{{ featured_count|intcomma }}</h3>
+                    </div>
+                    <div class="stat-icon bg-danger">
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <form method="get">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold"><i class="fas fa-search text-primary me-1"></i> بحث</label>
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="ابحث عن محل..."
+                           value="{{ search }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold"><i class="fas fa-filter text-success me-1"></i> الحالة</label>
+                    <select name="status" class="form-select">
+                        <option value="">كل الحالات</option>
+                        <option value="verified" {% if status == 'verified' %}selected{% endif %}>✅ موثّق</option>
+                        <option value="pending" {% if status == 'pending' %}selected{% endif %}>⏳ بانتظار</option>
+                        <option value="featured" {% if status == 'featured' %}selected{% endif %}>⭐ مميّز</option>
+                        <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>❌ معطّل</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold"><i class="fas fa-layer-group text-info me-1"></i> التصنيف</label>
+                    <select name="category" class="form-select">
+                        <option value="">كل التصنيفات</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if category == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name_ar }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold"><i class="fas fa-sort text-warning me-1"></i> ترتيب</label>
+                    <select name="sort" class="form-select">
+                        <option value="-created_at">الأحدث</option>
+                        <option value="name_ar">الاسم</option>
+                        <option value="-view_count">الأكثر مشاهدة</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label text-white">.</label>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-admin flex-fill"><i class="fas fa-search"></i></button>
+                        <a href="{% url 'dashboard:admin_businesses_list' %}" class="btn btn-secondary flex-fill"><i class="fas fa-redo"></i></a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom d-flex justify-content-between">
+        <h5 class="mb-0"><i class="fas fa-table text-success me-2"></i> قائمة المحلات ({{ businesses.paginator.count|intcomma }})</h5>
+        <button class="btn btn-sm btn-outline-success"><i class="fas fa-file-excel me-1"></i> تصدير</button>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="px-4" style="width: 60px;"><input type="checkbox" class="form-check-input"></th>
+                        <th style="width: 80px;">ID</th>
+                        <th>المحل</th>
+                        <th>التصنيف</th>
+                        <th>النوع</th>
+                        <th>المالك</th>
+                        <th>الحالة</th>
+                        <th class="text-center" style="width: 200px;">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for business in businesses %}
+                    <tr>
+                        <td class="px-4"><input type="checkbox" class="form-check-input"></td>
+                        <td><span class="badge bg-light text-dark">#{{ business.id }}</span></td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if business.logo %}
+                                <img src="{{ business.logo.url }}" class="rounded me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-success text-white rounded me-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-store"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <strong class="d-block">{{ business.name_ar }}</strong>
+                                    <small class="text-muted">{{ business.name_en }}</small>
+                                    {% if business.is_featured %}<span class="badge badge-sm bg-warning">⭐ مميّز</span>{% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-info-soft text-info">{{ business.category.name_ar }}</span></td>
+                        <td><small>{{ business.get_business_type_display }}</small></td>
+                        <td><small><i class="fas fa-user text-muted me-1"></i>{{ business.owner.username }}</small></td>
+                        <td>
+                            {% if business.is_verified %}
+                            <span class="badge bg-success-soft text-success"><i class="fas fa-check-circle me-1"></i>موثّق</span>
+                            {% else %}
+                            <span class="badge bg-warning-soft text-warning"><i class="fas fa-clock me-1"></i>غير موثق</span>
+                            {% endif %}
+                            {% if not business.is_active %}
+                            <span class="badge bg-secondary-soft text-secondary"><i class="fas fa-times me-1"></i>معطّل</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group">
+                                <a href="{% url 'dashboard:admin_business_detail' business.id %}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="عرض">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'dashboard:admin_business_edit' business.id %}" class="btn btn-sm btn-outline-warning" data-bs-toggle="tooltip" title="تعديل">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'dashboard:admin_business_verify' business.id %}" class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip" title="توثيق">
+                                    <i class="fas fa-check"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">لا توجد بيانات</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Pagination -->
+    {% if businesses.has_other_pages %}
+    <div class="card-footer bg-white border-top">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="text-muted">عرض {{ businesses.start_index }} - {{ businesses.end_index }} من {{ businesses.paginator.count|intcomma }}</div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    {% if businesses.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ businesses.previous_page_number }}&search={{ search }}&status={{ status }}"><i class="fas fa-angle-right"></i></a></li>
+                    {% endif %}
+                    {% for num in businesses.paginator.page_range %}
+                        {% if businesses.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > businesses.number|add:'-3' and num < businesses.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}&search={{ search }}&status={{ status }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if businesses.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ businesses.next_page_number }}&search={{ search }}&status={{ status }}"><i class="fas fa-angle-left"></i></a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.stat-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white; }
+.bg-info-soft { background-color: #d1ecf1 !important; }
+.bg-success-soft { background-color: #d4edda !important; }
+.bg-warning-soft { background-color: #fff3cd !important; }
+.bg-secondary-soft { background-color: #e2e3e5 !important; }
+</style>
+
+<script>
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl); });
+</script>
+{% endblock %} {% endcomment %}

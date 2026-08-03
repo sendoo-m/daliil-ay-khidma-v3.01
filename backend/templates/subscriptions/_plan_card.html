@@ -1,0 +1,22 @@
+{% load i18n %}{% get_current_language as LANGUAGE_CODE %}
+<article class="plan-card {% if plan.is_popular %}plan-card--popular{% endif %}" style="--plan-color: {{ plan.color|default:'#667eea' }};">
+    {% if plan.is_popular %}<div class="plan-popular"><i class="fas fa-star"></i> {% if LANGUAGE_CODE|slice:':2' == 'ar' %}الأكثر شيوعًا{% else %}Most popular{% endif %}</div>{% endif %}
+    <div class="plan-icon"><i class="{{ plan.icon|default:'fas fa-tag' }}"></i></div>
+    <h3>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ plan.display_name_ar }}{% else %}{{ plan.display_name_en }}{% endif %}</h3>
+    <p class="plan-description">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ plan.description_ar }}{% else %}{{ plan.description_en }}{% endif %}</p>
+    <div class="plan-price"><strong>{{ plan.price_monthly|floatformat:0 }}</strong><span>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}ج.م / شهر{% else %}EGP / month{% endif %}</span></div>
+    <ul class="plan-features">
+        <li><i class="fas fa-check"></i>{% if plan.max_products == 0 %}{% if LANGUAGE_CODE|slice:':2' == 'ar' %}منتجات غير محدودة{% else %}Unlimited products{% endif %}{% else %}{{ plan.max_products }} {% if LANGUAGE_CODE|slice:':2' == 'ar' %}منتج{% else %}products{% endif %}{% endif %}</li>
+        <li><i class="fas fa-check"></i>{{ plan.max_images_per_product }} {% if LANGUAGE_CODE|slice:':2' == 'ar' %}صورة لكل منتج{% else %}images per product{% endif %}</li>
+        <li><i class="fas fa-check"></i>{{ plan.max_business_images }} {% if LANGUAGE_CODE|slice:':2' == 'ar' %}صور لمعرض النشاط{% else %}business gallery images{% endif %}</li>
+        <li class="{% if not plan.can_show_prices %}is-muted{% endif %}"><i class="fas {% if plan.can_show_prices %}fa-check{% else %}fa-minus{% endif %}"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}عرض الأسعار{% else %}Display prices{% endif %}</li>
+        <li class="{% if not plan.can_create_deals %}is-muted{% endif %}"><i class="fas {% if plan.can_create_deals %}fa-check{% else %}fa-minus{% endif %}"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}إنشاء العروض{% else %}Create offers{% endif %}</li>
+        <li class="{% if not plan.has_analytics %}is-muted{% endif %}"><i class="fas {% if plan.has_analytics %}fa-check{% else %}fa-minus{% endif %}"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}لوحة التحليلات{% else %}Analytics dashboard{% endif %}</li>
+        <li class="{% if not plan.featured_in_search %}is-muted{% endif %}"><i class="fas {% if plan.featured_in_search %}fa-check{% else %}fa-minus{% endif %}"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}أولوية في البحث{% else %}Priority in search{% endif %}</li>
+        <li class="{% if not plan.has_verified_badge %}is-muted{% endif %}"><i class="fas {% if plan.has_verified_badge %}fa-check{% else %}fa-minus{% endif %}"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}شارة موثّق{% else %}Verified badge{% endif %}</li>
+    </ul>
+    <div class="plan-actions">
+        <a class="btn btn-primary w-100" href="{% url 'subscriptions:subscribe' plan.name %}">{% if plan.price_monthly == 0 %}{% if LANGUAGE_CODE|slice:':2' == 'ar' %}ابدأ مجانًا{% else %}Start free{% endif %}{% else %}{% if LANGUAGE_CODE|slice:':2' == 'ar' %}اختر الخطة{% else %}Choose plan{% endif %}{% endif %}</a>
+        <a class="btn btn-link w-100" href="{% url 'subscriptions:plan_detail' plan.name %}">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}عرض التفاصيل{% else %}View details{% endif %}</a>
+    </div>
+</article>

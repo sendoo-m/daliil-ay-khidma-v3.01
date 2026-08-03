@@ -1,0 +1,165 @@
+{% extends 'dashboard/admin/base.html' %}
+
+{% block title %}{{ action }} تصنيف{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">
+            <i class="fas fa-list text-primary me-2"></i> {{ action }} تصنيف
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_home' %}">الرئيسية</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_categories_list' %}">التصنيفات</a></li>
+                <li class="breadcrumb-item active">{{ action }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold">
+                    <i class="fas fa-info-circle text-primary me-2"></i> بيانات التصنيف
+                </h6>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="row g-3">
+
+                        <!-- الاسم بالعربية -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                الاسم بالعربية <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name_ar }}
+                            {% if form.name_ar.errors %}
+                            <div class="text-danger small mt-1">{{ form.name_ar.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- الاسم بالإنجليزية -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">الاسم بالإنجليزية</label>
+                            {{ form.name_en }}
+                            {% if form.name_en.errors %}
+                            <div class="text-danger small mt-1">{{ form.name_en.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- التصنيف الأب -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">التصنيف الأب</label>
+                            {{ form.parent }}
+                            <small class="text-muted d-block mt-1">اتركه فارغاً إذا كان تصنيفاً رئيسياً</small>
+                            {% if form.parent.errors %}
+                            <div class="text-danger small mt-1">{{ form.parent.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- الترتيب -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">الترتيب</label>
+                            {{ form.order }}
+                            {% if form.order.errors %}
+                            <div class="text-danger small mt-1">{{ form.order.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- نشط -->
+                        <div class="col-md-3 d-flex align-items-end pb-2">
+                            <div class="form-check form-switch">
+                                {{ form.is_active }}
+                                <label class="form-check-label fw-bold" for="{{ form.is_active.id_for_label }}">
+                                    نشط
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- أيقونة Font Awesome -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">أيقونة Font Awesome</label>
+                            {{ form.icon }}
+                            <small class="text-muted d-block mt-1">
+                                مثال: <code>fas fa-store</code> &nbsp;
+                                <a href="https://fontawesome.com/icons" target="_blank">تصفح الأيقونات</a>
+                            </small>
+                            {% if form.icon.errors %}
+                            <div class="text-danger small mt-1">{{ form.icon.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- صورة التصنيف -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">صورة التصنيف</label>
+                            {% if category and category.image %}
+                            <div class="mb-2">
+                                <img src="{{ category.image.url }}" width="60" class="rounded border">
+                                <small class="text-muted ms-2">الصورة الحالية</small>
+                            </div>
+                            {% endif %}
+                            {{ form.image }}
+                            {% if form.image.errors %}
+                            <div class="text-danger small mt-1">{{ form.image.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- الوصف بالعربية -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">الوصف بالعربية</label>
+                            {{ form.description_ar }}
+                            {% if form.description_ar.errors %}
+                            <div class="text-danger small mt-1">{{ form.description_ar.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- الوصف بالإنجليزية -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">الوصف بالإنجليزية</label>
+                            {{ form.description_en }}
+                            {% if form.description_en.errors %}
+                            <div class="text-danger small mt-1">{{ form.description_en.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- الكلمات المفتاحية -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">كلمات مفتاحية (عربي)</label>
+                            {{ form.meta_keywords_ar }}
+                            {% if form.meta_keywords_ar.errors %}
+                            <div class="text-danger small mt-1">{{ form.meta_keywords_ar.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">كلمات مفتاحية (إنجليزي)</label>
+                            {{ form.meta_keywords_en }}
+                            {% if form.meta_keywords_en.errors %}
+                            <div class="text-danger small mt-1">{{ form.meta_keywords_en.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fas fa-save me-2"></i> {{ action }} التصنيف
+                        </button>
+                        <a href="{% url 'dashboard:admin_categories_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i> إلغاء
+                        </a>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

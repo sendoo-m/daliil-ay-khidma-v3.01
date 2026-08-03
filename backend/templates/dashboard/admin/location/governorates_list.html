@@ -1,0 +1,116 @@
+{% extends 'dashboard/admin/base.html' %}
+
+{% block title %}المحافظات{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fas fa-map-marked-alt text-primary me-2"></i> إدارة المحافظات</h4>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_home' %}">الرئيسية</a></li>
+            <li class="breadcrumb-item active">المحافظات</li>
+        </ol></nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'dashboard:admin_cities_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-city me-1"></i> المدن
+        </a>
+        <a href="{% url 'dashboard:admin_districts_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-map-marker-alt me-1"></i> الأحياء
+        </a>
+        <a href="{% url 'dashboard:admin_governorate_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i> إضافة محافظة
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3">
+        <h6 class="mb-0 fw-bold">
+            <i class="fas fa-list me-2 text-muted"></i> قائمة المحافظات
+            <span class="badge bg-primary ms-2">{{ governorates.count }}</span>
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>الاسم بالعربية</th>
+                    <th>الاسم بالإنجليزية</th>
+                    <th>عدد المدن</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for gov in governorates %}
+                <tr>
+                    <td class="text-muted small">{{ gov.id }}</td>
+                    <td><strong>{{ gov.name_ar }}</strong></td>
+                    <td class="text-muted">{{ gov.name_en|default:"-" }}</td>
+                    <td>
+                        <a href="{% url 'dashboard:admin_cities_list' %}?governorate={{ gov.id }}" class="badge bg-info text-decoration-none">
+                            {{ gov.cities.count }} مدينة
+                        </a>
+                    </td>
+                    <td>
+                        {% if gov.is_active %}
+                        <span class="badge bg-success">نشطة</span>
+                        {% else %}
+                        <span class="badge bg-secondary">معطّلة</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a href="{% url 'dashboard:admin_governorate_edit' gov.id %}" class="btn btn-sm btn-outline-warning">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger"
+                                onclick="confirmDelete('{% url 'dashboard:admin_governorate_delete' gov.id %}', '{{ gov.name_ar }}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center py-5 text-muted">
+                    <i class="fas fa-map-marked-alt fa-3x mb-3 d-block opacity-25"></i>
+                    لا توجد محافظات
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header border-0">
+            <h5 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i> تأكيد الحذف</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            هل أنت متأكد من حذف محافظة <strong id="deleteItemName"></strong>؟
+            <p class="text-danger small mt-2"><i class="fas fa-info-circle me-1"></i> سيتم حذف جميع المدن والأحياء التابعة لها.</p>
+        </div>
+        <div class="modal-footer border-0">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <form id="deleteForm" method="post">{% csrf_token %}
+                <button type="submit" class="btn btn-danger">حذف</button>
+            </form>
+        </div>
+    </div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(url, name) {
+    document.getElementById('deleteForm').action = url;
+    document.getElementById('deleteItemName').textContent = name;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}

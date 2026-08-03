@@ -1,0 +1,348 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block title %}
+    {% if LANGUAGE_CODE == 'ar' %}من نحن - دليل أي خدمة{% else %}About Us - Directory{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+:root { --p1:#6366f1; --p2:#8b5cf6; --accent:#10b981; --dark:#0f172a; --mid:#475569; --muted:#94a3b8; --bg:#f8fafc; --border:#e2e8f0; }
+
+.about-hero {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    padding: 5rem 0 6rem; color: white;
+    position: relative; overflow: hidden;
+}
+.about-hero::before {
+    content:''; position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+.about-hero::after {
+    content:''; position:absolute; inset:0;
+    background:
+        radial-gradient(ellipse at 15% 50%, rgba(99,102,241,0.22), transparent 50%),
+        radial-gradient(ellipse at 85% 50%, rgba(16,185,129,0.12), transparent 50%);
+}
+.hero-badge {
+    display:inline-flex; align-items:center; gap:0.5rem;
+    background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.35);
+    color:#a5b4fc; padding:0.4rem 1rem; border-radius:50px;
+    font-size:0.82rem; font-weight:700; margin-bottom:1.25rem;
+}
+.hero-title { font-size:clamp(2rem,5vw,3.2rem); font-weight:900; margin-bottom:1rem; }
+.hero-title .grad {
+    background:linear-gradient(135deg,#818cf8,#c084fc,#34d399);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.hero-sub { color:#64748b; font-size:1rem; line-height:1.85; max-width:580px; }
+
+/* Stats Strip */
+.stats-strip {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 2.5rem 0;
+    margin-top: -2rem; position: relative; z-index: 5;
+}
+.sstat {
+    text-align:center; padding: 0 1rem;
+    border-left: 1px solid var(--border);
+}
+.sstat:last-child { border-left: none; }
+[dir="ltr"] .sstat { border-left: none; border-right: 1px solid var(--border); }
+[dir="ltr"] .sstat:last-child { border-right: none; }
+.sstat-num {
+    font-size: 2.2rem; font-weight: 900;
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    line-height: 1;
+}
+.sstat-lbl { color: var(--muted); font-size: 0.85rem; font-weight: 600; margin-top: 0.35rem; }
+
+/* Mission Card */
+.mission-card {
+    background: white; border-radius: 22px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    padding: 2.5rem; height: 100%;
+    transition: all 0.35s;
+}
+.mission-card:hover { transform: translateY(-6px); box-shadow: 0 18px 45px rgba(0,0,0,0.1); border-color: var(--p1); }
+.mission-ico {
+    width: 60px; height: 60px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; margin-bottom: 1.25rem;
+}
+.mission-ico.v1 { background: linear-gradient(135deg, var(--p1), var(--p2)); color: white; }
+.mission-ico.v2 { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+.mission-ico.v3 { background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; }
+.mission-title { font-weight: 800; font-size: 1.05rem; color: var(--dark); margin-bottom: 0.75rem; }
+.mission-text  { color: var(--mid); font-size: 0.88rem; line-height: 1.85; margin: 0; }
+
+/* Team Card */
+.team-card {
+    background: white; border-radius: 18px;
+    border: 1.5px solid var(--border);
+    padding: 2rem 1.5rem; text-align: center;
+    transition: all 0.3s; height: 100%;
+}
+.team-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(99,102,241,0.12); border-color: var(--p1); }
+.team-avatar {
+    width: 80px; height: 80px; border-radius: 50%;
+    margin: 0 auto 1rem;
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; color: white;
+}
+.team-name { font-weight: 800; font-size: 0.95rem; color: var(--dark); margin-bottom: 0.25rem; }
+.team-role { font-size: 0.8rem; color: var(--p1); font-weight: 700; margin-bottom: 0.75rem; }
+.team-bio  { font-size: 0.82rem; color: var(--muted); line-height: 1.7; }
+
+/* Value Pill */
+.val-pill {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: white; border: 1.5px solid var(--border);
+    border-radius: 50px; padding: 0.6rem 1.25rem;
+    font-size: 0.85rem; font-weight: 700; color: var(--dark);
+    transition: all 0.25s;
+}
+.val-pill:hover { border-color: var(--p1); color: var(--p1); transform: translateY(-2px); }
+.val-pill i { color: var(--p1); }
+
+.sh-pill {
+    display:inline-flex; align-items:center; gap:0.4rem;
+    background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.22);
+    color:var(--p1); padding:0.3rem 1rem; border-radius:50px;
+    font-size:0.72rem; font-weight:800; letter-spacing:0.06em;
+    text-transform:uppercase; margin-bottom:0.6rem;
+}
+.sh h2 { font-size:clamp(1.5rem,3vw,2rem); font-weight:900; color:var(--dark); margin:0; }
+.sh p   { color:var(--muted); font-size:0.92rem; margin:0.35rem 0 0; }
+
+/* Timeline */
+.timeline { position: relative; padding-right: 2rem; }
+.timeline::before {
+    content: '';
+    position: absolute; top: 0; bottom: 0; right: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--p1), var(--p2));
+    border-radius: 2px;
+}
+[dir="ltr"] .timeline { padding-right: 0; padding-left: 2rem; }
+[dir="ltr"] .timeline::before { right: auto; left: 0; }
+.tl-item { position: relative; padding-bottom: 2rem; }
+.tl-dot {
+    position: absolute; top: 4px; right: -2.35rem;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    border: 3px solid white;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.25);
+}
+[dir="ltr"] .tl-dot { right: auto; left: -2.35rem; }
+.tl-year { font-size: 0.75rem; font-weight: 800; color: var(--p1); margin-bottom: 0.3rem; }
+.tl-title { font-weight: 800; font-size: 0.92rem; color: var(--dark); margin-bottom: 0.3rem; }
+.tl-text  { font-size: 0.83rem; color: var(--mid); line-height: 1.7; margin: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="about-hero">
+    <div class="container position-relative" style="z-index:2;">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-7">
+                <div class="hero-badge">
+                    <i class="fas fa-info-circle"></i>
+                    {% if LANGUAGE_CODE == 'ar' %}من نحن{% else %}About Us{% endif %}
+                </div>
+                <h1 class="hero-title">
+                    {% if LANGUAGE_CODE == 'ar' %}
+                        نربط الناس<br>بأفضل <span class="grad">المحلات والخدمات</span>
+                    {% else %}
+                        Connecting People<br>with the Best <span class="grad">Businesses</span>
+                    {% endif %}
+                </h1>
+                <p class="hero-sub">
+                    {% if LANGUAGE_CODE == 'ar' %}
+                        دليل أي خدمة منصة رقمية متكاملة تهدف لتسهيل العثور على المحلات والخدمات المحلية، مع تقديم أفضل العروض والخصومات في مكان واحد.
+                    {% else %}
+                        Daliil Ay Khidma is a comprehensive digital platform designed to make finding local businesses and services easy, with the best deals all in one place.
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-lg-5 d-none d-lg-flex justify-content-center">
+                <div style="font-size:12rem;opacity:0.08;animation:float 7s ease-in-out infinite;">🏪</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats -->
+<section class="stats-strip">
+    <div class="container">
+        <div class="row g-3 text-center">
+            <div class="col-6 col-md-3">
+                <div class="sstat">
+                    <div class="sstat-num">500+</div>
+                    <div class="sstat-lbl">{% if LANGUAGE_CODE == 'ar' %}محل مسجل{% else %}Businesses{% endif %}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="sstat">
+                    <div class="sstat-num">25+</div>
+                    <div class="sstat-lbl">{% if LANGUAGE_CODE == 'ar' %}فئة{% else %}Categories{% endif %}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="sstat">
+                    <div class="sstat-num">150+</div>
+                    <div class="sstat-lbl">{% if LANGUAGE_CODE == 'ar' %}عرض فعال{% else %}Active Deals{% endif %}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="sstat">
+                    <div class="sstat-num">10K+</div>
+                    <div class="sstat-lbl">{% if LANGUAGE_CODE == 'ar' %}مستخدم شهرياً{% else %}Monthly Users{% endif %}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Mission / Vision / Values -->
+<section class="py-5" style="background:var(--bg);">
+    <div class="container">
+        <div class="text-center mb-5">
+            <div class="d-flex justify-content-center">
+                <div class="sh-pill"><i class="fas fa-bullseye me-1"></i>{% if LANGUAGE_CODE == 'ar' %}هدفنا{% else %}OUR MISSION{% endif %}</div>
+            </div>
+            <h2 style="font-size:clamp(1.6rem,3vw,2.2rem);font-weight:900;color:var(--dark);margin:0;">
+                {% if LANGUAGE_CODE == 'ar' %}لماذا دليل أي خدمة؟{% else %}Why Daliil Ay Khidma?{% endif %}
+            </h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="mission-card">
+                    <div class="mission-ico v1"><i class="fas fa-rocket"></i></div>
+                    <div class="mission-title">{% if LANGUAGE_CODE == 'ar' %}رسالتنا{% else %}Our Mission{% endif %}</div>
+                    <p class="mission-text">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            تسهيل الوصول إلى المحلات والخدمات المحلية عبر منصة رقمية سهلة وموثوقة تخدم الجميع.
+                        {% else %}
+                            Making local businesses and services accessible through an easy-to-use and reliable digital platform that serves everyone.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mission-card">
+                    <div class="mission-ico v2"><i class="fas fa-eye"></i></div>
+                    <div class="mission-title">{% if LANGUAGE_CODE == 'ar' %}رؤيتنا{% else %}Our Vision{% endif %}</div>
+                    <p class="mission-text">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            أن نكون الدليل الرقمي الأول والأشمل للمحلات والخدمات على مستوى المنطقة العربية.
+                        {% else %}
+                            To become the leading and most comprehensive digital directory for businesses and services across the Arab region.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mission-card">
+                    <div class="mission-ico v3"><i class="fas fa-heart"></i></div>
+                    <div class="mission-title">{% if LANGUAGE_CODE == 'ar' %}قيمنا{% else %}Our Values{% endif %}</div>
+                    <p class="mission-text">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            الشفافية، الجودة، والموثوقية في كل ما نقدمه لمستخدمينا وأصحاب المحلات على حدٍّ سواء.
+                        {% else %}
+                            Transparency, quality, and reliability in everything we offer to both our users and business owners alike.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Story / Timeline -->
+<section class="py-5" style="background:white;">
+    <div class="container">
+        <div class="row g-5 align-items-start">
+            <div class="col-lg-5">
+                <div class="sh mb-4">
+                    <div class="sh-pill"><i class="fas fa-history me-1"></i>{% if LANGUAGE_CODE == 'ar' %}قصتنا{% else %}OUR STORY{% endif %}</div>
+                    <h2>{% if LANGUAGE_CODE == 'ar' %}كيف بدأنا؟{% else %}How It All Started{% endif %}</h2>
+                    <p>{% if LANGUAGE_CODE == 'ar' %}رحلة بدأت بفكرة بسيطة{% else %}A journey that started with a simple idea{% endif %}</p>
+                </div>
+                <div class="timeline">
+                    <div class="tl-item">
+                        <div class="tl-dot"></div>
+                        <div class="tl-year">2024</div>
+                        <div class="tl-title">{% if LANGUAGE_CODE == 'ar' %}الفكرة والتأسيس{% else %}The Idea & Foundation{% endif %}</div>
+                        <p class="tl-text">{% if LANGUAGE_CODE == 'ar' %}بدأت الفكرة من الحاجة الحقيقية لدليل محلي موثوق يجمع كل المحلات في مكان واحد.{% else %}The idea started from a real need for a reliable local directory that brings all businesses together in one place.{% endif %}</p>
+                    </div>
+                    <div class="tl-item">
+                        <div class="tl-dot"></div>
+                        <div class="tl-year">2025</div>
+                        <div class="tl-title">{% if LANGUAGE_CODE == 'ar' %}الإطلاق التجريبي{% else %}Beta Launch{% endif %}</div>
+                        <p class="tl-text">{% if LANGUAGE_CODE == 'ar' %}أطلقنا النسخة التجريبية وانضم أول 100 محل خلال الأسبوع الأول.{% else %}We launched the beta version and the first 100 businesses joined within the first week.{% endif %}</p>
+                    </div>
+                    <div class="tl-item">
+                        <div class="tl-dot"></div>
+                        <div class="tl-year">2026</div>
+                        <div class="tl-title">{% if LANGUAGE_CODE == 'ar' %}الانطلاق الرسمي{% else %}Official Launch{% endif %}</div>
+                        <p class="tl-text">{% if LANGUAGE_CODE == 'ar' %}الإطلاق الرسمي مع أكثر من 500 محل وخطط للتوسع في جميع المحافظات.{% else %}Official launch with 500+ businesses and expansion plans across all governorates.{% endif %}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="sh mb-4">
+                    <div class="sh-pill"><i class="fas fa-star me-1"></i>{% if LANGUAGE_CODE == 'ar' %}مميزاتنا{% else %}WHAT MAKES US DIFFERENT{% endif %}</div>
+                    <h2>{% if LANGUAGE_CODE == 'ar' %}ماذا يميّزنا؟{% else %}Our Key Features{% endif %}</h2>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    <span class="val-pill"><i class="fas fa-check-circle"></i>{% if LANGUAGE_CODE == 'ar' %}إضافة مجانية{% else %}Free Listing{% endif %}</span>
+                    <span class="val-pill"><i class="fas fa-shield-alt"></i>{% if LANGUAGE_CODE == 'ar' %}محلات موثّقة{% else %}Verified Listings{% endif %}</span>
+                    <span class="val-pill"><i class="fas fa-tags"></i>{% if LANGUAGE_CODE == 'ar' %}عروض حصرية{% else %}Exclusive Deals{% endif %}</span>
+                    <span class="val-pill"><i class="fas fa-search"></i>{% if LANGUAGE_CODE == 'ar' %}بحث متقدم{% else %}Advanced Search{% endif %}</span>
+                    <span class="val-pill"><i class="fas fa-language"></i>{% if LANGUAGE_CODE == 'ar' %}عربي وإنجليزي{% else %}Arabic & English{% endif %}</span>
+                    <span class="val-pill"><i class="fas fa-mobile-alt"></i>{% if LANGUAGE_CODE == 'ar' %}متوافق مع الجوال{% else %}Mobile Friendly{% endif %}</span>
+                    <span class="val-pill"><i class="fas fa-map-marked-alt"></i>{% if LANGUAGE_CODE == 'ar' %}تصفح بالمنطقة{% else %}Browse by Region{% endif %}</span>
+                    <span class="val-pill"><i class="fas fa-chart-line"></i>{% if LANGUAGE_CODE == 'ar' %}إحصائيات تفصيلية{% else %}Detailed Analytics{% endif %}</span>
+                </div>
+                <!-- CTA -->
+                <div style="background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:18px;padding:2rem;border:1px solid #1e293b;">
+                    <h4 style="color:white;font-weight:800;margin-bottom:0.5rem;">
+                        {% if LANGUAGE_CODE == 'ar' %}أضف محلك اليوم مجاناً 🚀{% else %}List Your Business for Free Today 🚀{% endif %}
+                    </h4>
+                    <p style="color:#475569;font-size:0.87rem;margin-bottom:1.25rem;">
+                        {% if LANGUAGE_CODE == 'ar' %}انضم لمئات المحلات التي تثق بنا{% else %}Join hundreds of businesses that trust us{% endif %}
+                    </p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{% url 'directory:business_create' %}"
+                           style="display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;padding:0.7rem 1.5rem;border-radius:10px;font-weight:700;font-size:0.88rem;text-decoration:none;">
+                            <i class="fas fa-plus-circle"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}أضف محلك{% else %}Add Business{% endif %}
+                        </a>
+                        <a href="{% url 'core:contact' %}"
+                           style="display:inline-flex;align-items:center;gap:0.5rem;background:rgba(255,255,255,0.06);border:1px solid #334155;color:#94a3b8;padding:0.7rem 1.5rem;border-radius:10px;font-weight:700;font-size:0.88rem;text-decoration:none;">
+                            <i class="fas fa-envelope"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}تواصل معنا{% else %}Contact Us{% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<style>
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-18px)} }
+</style>
+{% endblock %}

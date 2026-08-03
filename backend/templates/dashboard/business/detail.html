@@ -1,0 +1,220 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{{ business.name_ar }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .business-cover {
+        min-height: 230px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        object-fit: cover;
+    }
+    .business-logo {
+        width: 104px;
+        height: 104px;
+        object-fit: cover;
+        border: 5px solid #fff;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, .12);
+    }
+    .detail-label {
+        min-width: 115px;
+        color: #6c757d;
+    }
+    .gallery-image {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-2">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:business_list' %}">محلاتي</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ business.name_ar }}</li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0">تفاصيل المحل</h1>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'dashboard:business_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right me-1"></i> رجوع
+        </a>
+        <a href="{% url 'dashboard:business_update' business.slug %}" class="btn btn-primary">
+            <i class="fas fa-edit me-1"></i> تعديل البيانات
+        </a>
+    </div>
+</div>
+
+<div class="card overflow-hidden mb-4">
+    {% if business.cover_image %}
+        <img src="{{ business.cover_image.url }}" class="business-cover w-100" alt="غلاف {{ business.name_ar }}">
+    {% else %}
+        <div class="business-cover d-flex align-items-center justify-content-center text-white">
+            <i class="fas fa-store fa-5x opacity-50"></i>
+        </div>
+    {% endif %}
+    <div class="card-body p-4">
+        <div class="d-flex flex-column flex-md-row align-items-md-center gap-3">
+            {% if business.logo %}
+                <img src="{{ business.logo.url }}" class="business-logo rounded-circle" alt="شعار {{ business.name_ar }}">
+            {% else %}
+                <div class="business-logo rounded-circle bg-light d-flex align-items-center justify-content-center">
+                    <i class="fas fa-store fa-2x text-muted"></i>
+                </div>
+            {% endif %}
+            <div class="flex-grow-1">
+                <h2 class="h4 fw-bold mb-1">{{ business.name_ar }}</h2>
+                <div class="text-muted mb-2">{{ business.name_en }}</div>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge bg-light text-dark">{{ business.business_type_icon }} {{ business.get_business_type_display }}</span>
+                    {% if business.is_verified %}
+                        <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> موثّق</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i> بانتظار التوثيق</span>
+                    {% endif %}
+                    {% if business.is_active %}
+                        <span class="badge bg-primary">نشط</span>
+                    {% else %}
+                        <span class="badge bg-secondary">غير نشط</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header bg-white py-3">
+                <h2 class="h6 fw-bold mb-0"><i class="fas fa-align-right text-primary me-2"></i>وصف المحل</h2>
+            </div>
+            <div class="card-body">
+                <p class="mb-3" style="white-space: pre-line;">{{ business.description_ar }}</p>
+                {% if business.description_en %}
+                    <hr>
+                    <p class="text-muted mb-0" dir="ltr" style="white-space: pre-line;">{{ business.description_en }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if business.images.all %}
+        <div class="card mb-4">
+            <div class="card-header bg-white py-3">
+                <h2 class="h6 fw-bold mb-0"><i class="fas fa-images text-primary me-2"></i>صور المحل</h2>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    {% for item in business.images.all %}
+                    <div class="col-md-6">
+                        <figure class="border rounded overflow-hidden mb-0 h-100">
+                            <img src="{{ item.image.url }}" class="gallery-image" alt="{{ item.caption_ar|default:business.name_ar }}">
+                            {% if item.caption_ar or item.caption_en %}
+                            <figcaption class="p-3 small">
+                                <div>{{ item.caption_ar }}</div>
+                                {% if item.caption_en %}<div class="text-muted mt-1" dir="ltr">{{ item.caption_en }}</div>{% endif %}
+                            </figcaption>
+                            {% endif %}
+                        </figure>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h2 class="h6 fw-bold mb-0"><i class="fas fa-box text-success me-2"></i>أحدث المنتجات والخدمات</h2>
+                <a href="{% url 'dashboard:product_list' %}" class="small text-decoration-none">عرض الكل</a>
+            </div>
+            <div class="card-body p-0">
+                {% for product in products %}
+                <div class="d-flex justify-content-between align-items-center gap-3 p-3 {% if not forloop.last %}border-bottom{% endif %}">
+                    <div>
+                        <strong>{{ product.name_ar }}</strong>
+                        <div class="small text-muted">{{ product.get_product_type_display }}</div>
+                    </div>
+                    <div class="text-nowrap fw-bold text-primary">{{ product.price }} ج.م</div>
+                </div>
+                {% empty %}
+                <div class="text-center text-muted py-4">لا توجد منتجات أو خدمات مضافة بعد.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h2 class="h6 fw-bold mb-0"><i class="fas fa-tags text-danger me-2"></i>أحدث العروض</h2>
+                <a href="{% url 'dashboard:deal_list' %}" class="small text-decoration-none">عرض الكل</a>
+            </div>
+            <div class="card-body p-0">
+                {% for deal in deals %}
+                <div class="d-flex justify-content-between align-items-center gap-3 p-3 {% if not forloop.last %}border-bottom{% endif %}">
+                    <div>
+                        <strong>{{ deal.title_ar }}</strong>
+                        <div class="small text-muted">حتى {{ deal.end_date|date:'Y/m/d' }}</div>
+                    </div>
+                    {% if deal.is_active %}<span class="badge bg-success">نشط</span>{% else %}<span class="badge bg-secondary">غير نشط</span>{% endif %}
+                </div>
+                {% empty %}
+                <div class="text-center text-muted py-4">لا توجد عروض مضافة بعد.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header bg-white py-3">
+                <h2 class="h6 fw-bold mb-0"><i class="fas fa-info-circle text-primary me-2"></i>البيانات الأساسية</h2>
+            </div>
+            <div class="card-body">
+                <div class="d-flex mb-3"><span class="detail-label">التصنيف</span><strong>{{ business.category.name_ar }}</strong></div>
+                <div class="d-flex mb-3"><span class="detail-label">المحافظة</span><span>{{ business.governorate.name_ar }}</span></div>
+                <div class="d-flex mb-3"><span class="detail-label">المدينة</span><span>{{ business.city.name_ar }}</span></div>
+                <div class="d-flex"><span class="detail-label">الحي</span><span>{{ business.district.name_ar }}</span></div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-white py-3">
+                <h2 class="h6 fw-bold mb-0"><i class="fas fa-map-marker-alt text-danger me-2"></i>العنوان</h2>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">{{ business.address_ar }}</p>
+                {% if business.location_url %}
+                    <a href="{{ business.location_url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-map me-1"></i> فتح الموقع على الخريطة
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-white py-3">
+                <h2 class="h6 fw-bold mb-0"><i class="fas fa-address-book text-primary me-2"></i>التواصل</h2>
+            </div>
+            <div class="card-body">
+                <div class="d-flex mb-3"><span class="detail-label">الهاتف</span><a href="tel:{{ business.phone }}">{{ business.phone }}</a></div>
+                {% if business.whatsapp %}<div class="d-flex mb-3"><span class="detail-label">واتساب</span><span>{{ business.whatsapp }}</span></div>{% endif %}
+                {% if business.email %}<div class="d-flex mb-3"><span class="detail-label">البريد</span><a href="mailto:{{ business.email }}" class="text-break">{{ business.email }}</a></div>{% endif %}
+                {% if business.website %}<div class="d-flex"><span class="detail-label">الموقع</span><a href="{{ business.website }}" target="_blank" rel="noopener">زيارة الموقع</a></div>{% endif %}
+            </div>
+        </div>
+
+        {% if business.working_hours_ar %}
+        <div class="card">
+            <div class="card-header bg-white py-3">
+                <h2 class="h6 fw-bold mb-0"><i class="fas fa-clock text-primary me-2"></i>مواعيد العمل</h2>
+            </div>
+            <div class="card-body" style="white-space: pre-line;">{{ business.working_hours_ar }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

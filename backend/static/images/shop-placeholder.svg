@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="title description">
+  <title id="title">Shop placeholder</title>
+  <desc id="description">A storefront illustration for shops without an uploaded cover image.</desc>
+  <defs>
+    <linearGradient id="background" x1="120" y1="70" x2="1080" y2="730" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F2F4FF"/>
+      <stop offset="1" stop-color="#F8F1FF"/>
+    </linearGradient>
+    <linearGradient id="awning" x1="360" y1="250" x2="840" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C8FF1"/>
+      <stop offset="1" stop-color="#6852AE"/>
+    </linearGradient>
+    <filter id="shadow" x="270" y="190" width="660" height="450" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="22" stdDeviation="24" flood-color="#4C3C86" flood-opacity=".18"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="800" rx="40" fill="url(#background)"/>
+  <circle cx="180" cy="160" r="85" fill="#FFFFFF" fill-opacity=".55"/>
+  <circle cx="1010" cy="650" r="125" fill="#FFFFFF" fill-opacity=".42"/>
+  <g filter="url(#shadow)">
+    <path d="M350 345h500v260H350z" fill="#FFFFFF"/>
+    <path d="M320 345 380 225h440l60 120H320Z" fill="url(#awning)"/>
+    <path d="M320 345h560c0 50-40 90-90 90-40 0-75-26-86-62-12 36-46 62-87 62-40 0-74-26-86-62-12 36-46 62-86 62-50 0-90-40-90-90Z" fill="#8798F0"/>
+    <path d="M408 435h384v170H408z" fill="#EEF0FF"/>
+    <path d="M540 435h120v170H540z" fill="#FFFFFF"/>
+    <circle cx="635" cy="525" r="8" fill="#6852AE"/>
+    <path d="M456 478h52v76h-52zM692 478h52v76h-52z" fill="#BFC8FA"/>
+  </g>
+  <text x="600" y="700" text-anchor="middle" fill="#51486F" font-family="Arial, sans-serif" font-size="36" font-weight="700">صورة المحل</text>
+</svg>

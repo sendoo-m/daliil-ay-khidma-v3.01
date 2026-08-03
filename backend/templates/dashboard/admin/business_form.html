@@ -1,0 +1,1663 @@
+{% extends "dashboard/admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title.icon }} {{ title.ar }}{% endblock %}
+
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+    /* ===== Wizard Steps ===== */
+    .form-wizard-steps {
+        display: flex;
+        justify-content: center;
+        gap: 0;
+        margin-bottom: 2rem;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+    }
+    .wizard-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        min-width: 100px;
+    }
+    .wizard-step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: -50%;
+        width: 100%;
+        height: 2px;
+        background: #dee2e6;
+        z-index: 0;
+    }
+    .wizard-step.completed::after { background: #667eea; }
+    .wizard-step-circle {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: #dee2e6;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1rem;
+        z-index: 1;
+        position: relative;
+        transition: all 0.3s;
+    }
+    .wizard-step.active   .wizard-step-circle { background: linear-gradient(135deg,#667eea,#764ba2); color:white; box-shadow:0 4px 12px rgba(102,126,234,0.4); }
+    .wizard-step.completed .wizard-step-circle { background: #28a745; color:white; }
+    .wizard-step-label { font-size:0.72rem; margin-top:6px; color:#6c757d; font-weight:600; text-align:center; }
+    .wizard-step.active .wizard-step-label { color:#667eea; }
+
+    /* ===== Section Cards ===== */
+    .form-section {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+    .form-section.active { display: block; }
+    @keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+    .section-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.07);
+        margin-bottom: 1.5rem;
+    }
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .section-title i { color: #667eea; }
+
+    /* ===== Map ===== */
+    #map {
+        height: 380px;
+        border-radius: 12px;
+        border: 2px solid #dee2e6;
+        z-index: 1;
+    }
+    .map-hint {
+        background: #f8f9ff;
+        border: 1px solid #e0e5ff;
+        border-radius: 8px;
+        padding: 0.6rem 1rem;
+        font-size: 0.82rem;
+        color: #5a6470;
+        margin-bottom: 0.75rem;
+    }
+    .coords-display {
+        background: #f8f9ff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 0.6rem 1rem;
+        font-size: 0.82rem;
+        margin-top: 0.75rem;
+        display: none;
+    }
+    .coords-display.show { display: block; }
+
+    /* ===== Gallery Upload ===== */
+    .gallery-drop-zone {
+        border: 2px dashed #c5d0f5;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        background: #f8f9ff;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 1rem;
+    }
+    .gallery-drop-zone:hover,
+    .gallery-drop-zone.dragover {
+        border-color: #667eea;
+        background: #eff1ff;
+    }
+    .gallery-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 1rem;
+    }
+    .preview-item {
+        position: relative;
+        width: 110px;
+        height: 110px;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+    }
+    .preview-item img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+    }
+    .preview-item .remove-btn {
+        position: absolute;
+        top: 4px; right: 4px;
+        width: 24px; height: 24px;
+        background: rgba(220,53,69,0.9);
+        border: none; border-radius: 50%;
+        color: white; font-size: 0.7rem;
+        cursor: pointer; display: flex;
+        align-items: center; justify-content: center;
+    }
+    .formset-row { border: 1px solid #e9ecef; border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; background: #fafafa; }
+    .formset-row.marked-delete { opacity: 0.4; }
+
+    /* ===== Navigation Buttons ===== */
+    .wizard-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1.5rem;
+    }
+    .btn-wizard {
+        padding: 0.6rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">{{ title.icon }} {{ title.ar }}</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_home' %}">الرئيسية</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_businesses_list' %}">المحلات</a></li>
+                <li class="breadcrumb-item active">{{ action|yesno:"تعديل,إضافة" }}</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="{% url 'dashboard:admin_businesses_list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right me-1"></i> رجوع
+    </a>
+</div>
+
+
+<!-- ===== Wizard Steps ===== -->
+<div class="form-wizard-steps">
+    {% for step in steps %}
+    <div class="wizard-step {% if forloop.first %}active{% endif %}" data-step="{{ forloop.counter }}">
+        <div class="wizard-step-circle">
+            {% if forloop.first %}<i class="fas fa-info"></i>
+            {% elif forloop.counter == 2 %}<i class="fas fa-map-marker-alt"></i>
+            {% elif forloop.counter == 3 %}<i class="fas fa-phone"></i>
+            {% elif forloop.counter == 4 %}<i class="fas fa-share-alt"></i>
+            {% elif forloop.counter == 5 %}<i class="fas fa-images"></i>
+            {% else %}<i class="fas fa-clock"></i>{% endif %}
+        </div>
+        <span class="wizard-step-label">{{ step }}</span>
+    </div>
+    {% endfor %}
+</div>
+
+
+<form method="post" enctype="multipart/form-data" id="businessForm" novalidate>
+    {% csrf_token %}
+    {{ form.business_type }}
+    {{ formset.management_form }}
+
+    <!-- =========================================
+         SECTION 1 - المعلومات الأساسية
+    ========================================= -->
+    <div class="form-section active" id="section-1">
+        <div class="section-card">
+            <div class="section-title"><i class="fas fa-info-circle"></i> المعلومات الأساسية</div>
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">اسم المحل بالعربية <span class="text-danger">*</span></label>
+                    {{ form.name_ar }}
+                    {% if form.name_ar.errors %}<div class="text-danger small mt-1">{{ form.name_ar.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Business Name (English) <span class="text-danger">*</span></label>
+                    {{ form.name_en }}
+                    {% if form.name_en.errors %}<div class="text-danger small mt-1">{{ form.name_en.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">التصنيف <span class="text-danger">*</span></label>
+                    {{ form.category }}
+                    {% if form.category.errors %}<div class="text-danger small mt-1">{{ form.category.errors.0 }}</div>{% endif %}
+                </div>
+
+                {% if form.business_type.field.widget.input_type != 'hidden' %}
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">نوع المحل <span class="text-danger">*</span></label>
+                    {{ form.business_type }}
+                </div>
+                {% endif %}
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">الوصف بالعربية</label>
+                    {{ form.description_ar }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Description (English)</label>
+                    {{ form.description_en }}
+                </div>
+
+                <!-- شعار وصورة الغلاف -->
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">الشعار (Logo)</label>
+                    {% if form.instance.logo %}
+                        <div class="mb-2">
+                            <img src="{{ form.instance.logo.url }}" height="60" class="rounded border">
+                        </div>
+                    {% endif %}
+                    {{ form.logo }}
+                    <small class="text-muted">مربع 500×500 بكسل</small>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">صورة الغلاف (Cover)</label>
+                    {% if form.instance.cover_image %}
+                        <div class="mb-2">
+                            <img src="{{ form.instance.cover_image.url }}" height="60" class="rounded border">
+                        </div>
+                    {% endif %}
+                    {{ form.cover_image }}
+                    <small class="text-muted">1200×400 بكسل</small>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="wizard-nav">
+            <div></div>
+            <button type="button" class="btn btn-primary btn-wizard" onclick="nextSection(1)">
+                التالي <i class="fas fa-arrow-left ms-1"></i>
+            </button>
+        </div>
+    </div>
+
+
+    <!-- =========================================
+         SECTION 2 - الموقع
+    ========================================= -->
+    <div class="form-section" id="section-2">
+        <div class="section-card">
+            <div class="section-title"><i class="fas fa-map-marker-alt"></i> الموقع الجغرافي</div>
+            <div class="row g-3">
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">المحافظة <span class="text-danger">*</span></label>
+                    {{ form.governorate }}
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">المدينة <span class="text-danger">*</span></label>
+                    {{ form.city }}
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">الحي <span class="text-danger">*</span></label>
+                    {{ form.district }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">العنوان بالعربية <span class="text-danger">*</span></label>
+                    {{ form.address_ar }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Address (English)</label>
+                    {{ form.address_en }}
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold">رابط Google Maps</label>
+                    {{ form.location_url }}
+                </div>
+
+                <!-- الخريطة -->
+                <div class="col-12">
+                    <label class="form-label fw-semibold">
+                        <i class="fas fa-map text-primary me-1"></i>
+                        تحديد الموقع على الخريطة
+                    </label>
+                    <div class="map-hint">
+                        <i class="fas fa-info-circle me-1 text-primary"></i>
+                        اضغط على الخريطة لتحديد موقع المحل بدقة - سيتم تسجيل الإحداثيات تلقائياً
+                    </div>
+                    <div id="map"></div>
+                    <div class="coords-display" id="coordsDisplay">
+                        <i class="fas fa-crosshairs text-success me-1"></i>
+                        <strong>الإحداثيات:</strong>
+                        خط العرض: <span id="latDisplay">-</span> &nbsp;|&nbsp;
+                        خط الطول: <span id="lngDisplay">-</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger ms-3" onclick="clearMarker()">
+                            <i class="fas fa-times"></i> مسح
+                        </button>
+                    </div>
+                    {{ form.latitude }}
+                    {{ form.longitude }}
+                </div>
+
+            </div>
+        </div>
+
+        <div class="wizard-nav">
+            <button type="button" class="btn btn-outline-secondary btn-wizard" onclick="prevSection(2)">
+                <i class="fas fa-arrow-right me-1"></i> السابق
+            </button>
+            <button type="button" class="btn btn-primary btn-wizard" onclick="nextSection(2)">
+                التالي <i class="fas fa-arrow-left ms-1"></i>
+            </button>
+        </div>
+    </div>
+
+
+    <!-- =========================================
+         SECTION 3 - معلومات التواصل
+    ========================================= -->
+    <div class="form-section" id="section-3">
+        <div class="section-card">
+            <div class="section-title"><i class="fas fa-phone-alt"></i> معلومات التواصل</div>
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">رقم الهاتف <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                        {{ form.phone }}
+                    </div>
+                    {% if form.phone.errors %}<div class="text-danger small mt-1">{{ form.phone.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">واتساب</label>
+                    <div class="input-group">
+                        <span class="input-group-text text-success"><i class="fab fa-whatsapp"></i></span>
+                        {{ form.whatsapp }}
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">البريد الإلكتروني</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                        {{ form.email }}
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">الموقع الإلكتروني</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-globe"></i></span>
+                        {{ form.website }}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-title"><i class="fas fa-clock"></i> ساعات العمل</div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">ساعات العمل بالعربية</label>
+                    {{ form.working_hours_ar }}
+                    <small class="text-muted">مثال: السبت-الخميس: 9ص-10م</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Working Hours (English)</label>
+                    {{ form.working_hours_en }}
+                    <small class="text-muted">Example: Sat-Thu: 9AM-10PM</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="wizard-nav">
+            <button type="button" class="btn btn-outline-secondary btn-wizard" onclick="prevSection(3)">
+                <i class="fas fa-arrow-right me-1"></i> السابق
+            </button>
+            <button type="button" class="btn btn-primary btn-wizard" onclick="nextSection(3)">
+                التالي <i class="fas fa-arrow-left ms-1"></i>
+            </button>
+        </div>
+    </div>
+
+
+    <!-- =========================================
+         SECTION 4 - السوشيال ميديا
+    ========================================= -->
+    <div class="form-section" id="section-4">
+        <div class="section-card">
+            <div class="section-title"><i class="fas fa-share-alt"></i> حسابات التواصل الاجتماعي</div>
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold"><i class="fab fa-facebook text-primary me-1"></i> فيسبوك</label>
+                    {{ form.facebook }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold"><i class="fab fa-instagram text-danger me-1"></i> إنستجرام</label>
+                    {{ form.instagram }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold"><i class="fab fa-twitter text-info me-1"></i> تويتر / X</label>
+                    {{ form.twitter }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold"><i class="fab fa-tiktok me-1"></i> تيك توك</label>
+                    {{ form.tiktok }}
+                </div>
+
+            </div>
+        </div>
+
+        <div class="wizard-nav">
+            <button type="button" class="btn btn-outline-secondary btn-wizard" onclick="prevSection(4)">
+                <i class="fas fa-arrow-right me-1"></i> السابق
+            </button>
+            <button type="button" class="btn btn-primary btn-wizard" onclick="nextSection(4)">
+                التالي <i class="fas fa-arrow-left ms-1"></i>
+            </button>
+        </div>
+    </div>
+
+
+    <!-- =========================================
+         SECTION 5 - معرض الصور
+    ========================================= -->
+    <div class="form-section" id="section-5">
+        <div class="section-card">
+            <div class="section-title"><i class="fas fa-images"></i> معرض صور المحل</div>
+
+            <!-- Drop Zone -->
+            <div class="gallery-drop-zone" id="dropZone" onclick="document.getElementById('bulkImageInput').click()">
+                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                <p class="mb-1 fw-semibold">اسحب الصور هنا أو اضغط للاختيار</p>
+                <small class="text-muted">JPG, PNG, WEBP - حد أقصى 10 صور</small>
+                <input type="file" id="bulkImageInput" multiple accept="image/*" style="display:none">
+            </div>
+
+            <!-- Preview -->
+            <div class="gallery-preview" id="galleryPreview"></div>
+
+            <!-- Formset للصور الموجودة (تعديل) -->
+            {% if formset.forms %}
+            <div class="mt-4">
+                <h6 class="fw-bold text-muted mb-3">الصور الحالية</h6>
+                {% for img_form in formset.forms %}
+                <div class="formset-row" id="formset-row-{{ forloop.counter0 }}">
+                    {% if img_form.instance.pk %}
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <img src="{{ img_form.instance.image.url }}" height="70" class="rounded">
+                            <div class="flex-grow-1">
+                                {{ img_form.caption_ar }}
+                            </div>
+                            <div>
+                                {{ img_form.DELETE }}
+                                <label class="text-danger small ms-1">حذف</label>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label small">الصورة</label>
+                                {{ img_form.image }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small">وصف بالعربية</label>
+                                {{ img_form.caption_ar }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Caption EN</label>
+                                {{ img_form.caption_en }}
+                            </div>
+                            {{ img_form.id }}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+        </div>
+
+        <div class="wizard-nav">
+            <button type="button" class="btn btn-outline-secondary btn-wizard" onclick="prevSection(5)">
+                <i class="fas fa-arrow-right me-1"></i> السابق
+            </button>
+            <button type="submit" class="btn btn-success btn-wizard px-4">
+                <i class="fas fa-save me-1"></i>
+                {% if action == 'update' %}حفظ التعديلات{% else %}إنشاء المحل{% endif %}
+            </button>
+        </div>
+    </div>
+
+</form>
+{% endblock %}
+
+
+{% block extra_js %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// =========================================
+// WIZARD
+// =========================================
+const TOTAL_SECTIONS = 5;
+const stepLabels = ['المعلومات الأساسية','الموقع','التواصل','السوشيال','الصور'];
+
+function showSection(n) {
+    document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('section-' + n).classList.add('active');
+
+    document.querySelectorAll('.wizard-step').forEach((el, i) => {
+        el.classList.remove('active','completed');
+        if (i + 1 === n)        el.classList.add('active');
+        else if (i + 1 < n)     el.classList.add('completed');
+    });
+
+    window.scrollTo({top: 0, behavior: 'smooth'});
+
+    // تهيئة الخريطة عند الوصول لـ section 2
+    if (n === 2 && !mapInitialized) initMap();
+}
+
+function nextSection(current) { if (current < TOTAL_SECTIONS) showSection(current + 1); }
+function prevSection(current) { if (current > 1) showSection(current - 1); }
+
+// Render wizard steps
+(function renderSteps() {
+    const container = document.querySelector('.form-wizard-steps');
+    container.innerHTML = '';
+    stepLabels.forEach((label, i) => {
+        const div = document.createElement('div');
+        div.className = 'wizard-step' + (i === 0 ? ' active' : '');
+        div.dataset.step = i + 1;
+        const icons = ['fa-info','fa-map-marker-alt','fa-phone','fa-share-alt','fa-images'];
+        div.innerHTML = `
+            <div class="wizard-step-circle"><i class="fas ${icons[i]}"></i></div>
+            <span class="wizard-step-label">${label}</span>`;
+        container.appendChild(div);
+    });
+})();
+
+
+// =========================================
+// LEAFLET MAP
+// =========================================
+let map, marker, mapInitialized = false;
+
+// القيم الموجودة مسبقاً (تعديل)
+const existingLat = "{{ form.instance.latitude|default:'' }}";
+const existingLng = "{{ form.instance.longitude|default:'' }}";
+
+function initMap() {
+    mapInitialized = true;
+
+    const defaultLat = existingLat ? parseFloat(existingLat) : 26.8206;
+    const defaultLng = existingLng ? parseFloat(existingLng) : 30.8025;
+    const defaultZoom = existingLat ? 15 : 6;
+
+    map = L.map('map').setView([defaultLat, defaultLng], defaultZoom);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    // لو في إحداثيات موجودة حط marker
+    if (existingLat && existingLng) {
+        placeMarker(parseFloat(existingLat), parseFloat(existingLng));
+    }
+
+    // عند الضغط على الخريطة
+    map.on('click', function(e) {
+        placeMarker(e.latlng.lat, e.latlng.lng);
+    });
+}
+
+function placeMarker(lat, lng) {
+    if (marker) map.removeLayer(marker);
+
+    marker = L.marker([lat, lng], {
+        draggable: true,
+        icon: L.divIcon({
+            className: '',
+            html: '<div style="background:#667eea;width:22px;height:22px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35)"></div>',
+            iconSize: [22, 22],
+            iconAnchor: [11, 11]
+        })
+    }).addTo(map);
+
+    updateCoords(lat, lng);
+
+    // السحب
+    marker.on('dragend', function(e) {
+        const pos = e.target.getLatLng();
+        updateCoords(pos.lat, pos.lng);
+    });
+}
+
+function updateCoords(lat, lng) {
+    const latRounded = parseFloat(lat.toFixed(6));
+    const lngRounded = parseFloat(lng.toFixed(6));
+
+    document.getElementById('id_latitude').value  = latRounded;
+    document.getElementById('id_longitude').value = lngRounded;
+    document.getElementById('latDisplay').textContent = latRounded;
+    document.getElementById('lngDisplay').textContent = lngRounded;
+    document.getElementById('coordsDisplay').classList.add('show');
+}
+
+function clearMarker() {
+    if (marker) { map.removeLayer(marker); marker = null; }
+    document.getElementById('id_latitude').value  = '';
+    document.getElementById('id_longitude').value = '';
+    document.getElementById('coordsDisplay').classList.remove('show');
+}
+
+
+// =========================================
+// CASCADING DROPDOWNS (محافظة → مدينة → حي)
+// =========================================
+document.getElementById('id_governorate')?.addEventListener('change', function() {
+    const govId = this.value;
+    const citySelect = document.getElementById('id_city');
+    const districtSelect = document.getElementById('id_district');
+
+    citySelect.innerHTML = '<option value="">-- اختر المدينة --</option>';
+    districtSelect.innerHTML = '<option value="">-- اختر الحي --</option>';
+
+    if (!govId) return;
+
+    fetch(`{% url 'dashboard:ajax_cities' %}?governorate_id=${encodeURIComponent(govId)}`)
+        .then(r => r.json())
+        .then(data => {
+            data.cities.forEach(c => {
+                citySelect.innerHTML += `<option value="${c.id}">${c.name_ar}</option>`;
+            });
+        });
+});
+
+document.getElementById('id_city')?.addEventListener('change', function() {
+    const cityId = this.value;
+    const districtSelect = document.getElementById('id_district');
+
+    districtSelect.innerHTML = '<option value="">-- اختر الحي --</option>';
+    if (!cityId) return;
+
+    fetch(`{% url 'dashboard:ajax_districts' %}?city_id=${encodeURIComponent(cityId)}`)
+        .then(r => r.json())
+        .then(data => {
+            data.districts.forEach(d => {
+                districtSelect.innerHTML += `<option value="${d.id}">${d.name_ar}</option>`;
+            });
+        });
+});
+
+
+// =========================================
+// GALLERY UPLOAD (Drag & Drop)
+// =========================================
+const dropZone      = document.getElementById('dropZone');
+const bulkInput     = document.getElementById('bulkImageInput');
+const previewArea   = document.getElementById('galleryPreview');
+const formsetPrefix = '{{ formset.prefix }}';
+let totalForms      = parseInt(document.getElementById(`id_${formsetPrefix}-TOTAL_FORMS`).value);
+let fileQueue       = [];
+
+function addFilesToQueue(files) {
+    Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        if (fileQueue.length >= 10) return;
+        fileQueue.push(file);
+        renderPreview(file, fileQueue.length - 1);
+        injectFileIntoFormset(file, totalForms);
+        totalForms++;
+        document.getElementById(`id_${formsetPrefix}-TOTAL_FORMS`).value = totalForms;
+    });
+}
+
+function renderPreview(file, index) {
+    const reader = new FileReader();
+    reader.onload = e => {
+        const item = document.createElement('div');
+        item.className = 'preview-item';
+        item.id = `preview-${index}`;
+        item.innerHTML = `
+            <img src="${e.target.result}" alt="">
+            <button type="button" class="remove-btn" onclick="removeFromQueue(${index})">
+                <i class="fas fa-times"></i>
+            </button>`;
+        previewArea.appendChild(item);
+    };
+    reader.readAsDataURL(file);
+}
+
+function injectFileIntoFormset(file, formIndex) {
+    // نستخدم hidden DataTransfer trick
+    const dt   = new DataTransfer();
+    dt.items.add(file);
+
+    const input = document.createElement('input');
+    input.type  = 'file';
+    input.name  = `${formsetPrefix}-${formIndex}-image`;
+    input.style.display = 'none';
+
+    // Chrome/Firefox يدعمان files setter
+    try { input.files = dt.files; } catch(e) {}
+    document.getElementById('businessForm').appendChild(input);
+}
+
+function removeFromQueue(index) {
+    const el = document.getElementById(`preview-${index}`);
+    if (el) el.remove();
+    fileQueue[index] = null;
+}
+
+bulkInput.addEventListener('change', e => addFilesToQueue(e.target.files));
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    addFilesToQueue(e.dataTransfer.files);
+});
+
+</script>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% comment %} {% extends 'dashboard/admin/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+    .form-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #374151;
+        padding-bottom: 0.75rem;
+        margin-bottom: 1.25rem;
+        border-bottom: 2px solid #f3f4f6;
+    }
+    .form-label { font-weight: 600; font-size: 0.9rem; color: #374151; }
+    .form-control:focus, .form-select:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.15); }
+    .required-star { color: #e74c3c; margin-right: 3px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fas fa-store text-primary me-2"></i> {{ title }}</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_home' %}">الرئيسية</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_businesses_list' %}">المحلات</a></li>
+                <li class="breadcrumb-item active">{{ action }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" id="businessForm">
+    {% csrf_token %}
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+
+            <!-- Basic Info -->
+            <div class="form-section">
+                <h6 class="form-section-title"><i class="fas fa-info-circle text-primary me-2"></i> المعلومات الأساسية</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">الاسم بالعربية <span class="required-star">*</span></label>
+                        {{ form.name_ar }}
+                        {% if form.name_ar.errors %}<div class="text-danger small mt-1">{{ form.name_ar.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">الاسم بالإنجليزية</label>
+                        {{ form.name_en }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">التصنيف <span class="required-star">*</span></label>
+                        {{ form.category }}
+                        {% if form.category.errors %}<div class="text-danger small mt-1">{{ form.category.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">نوع النشاط</label>
+                        {{ form.business_type }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">الوصف بالعربية</label>
+                        {{ form.description_ar }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">الوصف بالإنجليزية</label>
+                        {{ form.description_en }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location -->
+            <div class="form-section">
+                <h6 class="form-section-title"><i class="fas fa-map-marker-alt text-danger me-2"></i> الموقع</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">المحافظة</label>
+                        <select class="form-select" id="id_governorate" name="governorate">
+                            <option value="">-- اختر المحافظة --</option>
+                            {% for gov in governorates %}
+                            <option value="{{ gov.id }}"
+                                {% if form.instance.city and form.instance.city.governorate_id == gov.id %}selected{% endif %}>
+                                {{ gov.name_ar }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">الحي / المنطقة <span class="required-star">*</span></label>
+                        <select class="form-select" id="id_district" name="district">
+                            <option value="">-- اختر الحي --</option>
+                            {% if form.instance.district %}
+                            <option value="{{ form.instance.district.id }}" selected>
+                                {{ form.instance.district.name_ar }} - {{ form.instance.district.city.name_ar }}
+                            </option>
+                            {% endif %}
+                        </select>
+                        {% if form.district.errors %}<div class="text-danger small mt-1">{{ form.district.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">العنوان التفصيلي</label>
+                        {{ form.address }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">خط العرض (Latitude)</label>
+                        {{ form.latitude }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">خط الطول (Longitude)</label>
+                        {{ form.longitude }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact -->
+            <div class="form-section">
+                <h6 class="form-section-title"><i class="fas fa-phone text-success me-2"></i> معلومات التواصل</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">رقم الهاتف</label>
+                        {{ form.phone }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">واتساب</label>
+                        {{ form.whatsapp }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">البريد الإلكتروني</label>
+                        {{ form.email }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">الموقع الإلكتروني</label>
+                        {{ form.website }}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sidebar Options -->
+        <div class="col-lg-4">
+
+            <!-- Status -->
+            <div class="form-section">
+                <h6 class="form-section-title"><i class="fas fa-toggle-on text-primary me-2"></i> الحالة والخيارات</h6>
+                <div class="d-flex flex-column gap-3">
+                    <div class="form-check form-switch">
+                        {{ form.is_active }}
+                        <label class="form-check-label fw-bold" for="{{ form.is_active.id_for_label }}">نشط</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        {{ form.is_verified }}
+                        <label class="form-check-label fw-bold" for="{{ form.is_verified.id_for_label }}">موثّق</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        {{ form.is_featured }}
+                        <label class="form-check-label fw-bold" for="{{ form.is_featured.id_for_label }}">مُبرز</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logo -->
+            <div class="form-section">
+                <h6 class="form-section-title"><i class="fas fa-image text-warning me-2"></i> الصورة والشعار</h6>
+                {% if business and business.logo %}
+                <div class="text-center mb-3">
+                    <img src="{{ business.logo.url }}" class="rounded" width="100" style="object-fit:cover;">
+                    <p class="small text-muted mt-1">الشعار الحالي</p>
+                </div>
+                {% endif %}
+                <label class="form-label">شعار المحل</label>
+                {{ form.logo }}
+                {% if business and business.cover_image %}
+                <div class="text-center my-3">
+                    <img src="{{ business.cover_image.url }}" class="rounded w-100" style="max-height:100px;object-fit:cover;">
+                    <p class="small text-muted mt-1">الغلاف الحالي</p>
+                </div>
+                {% endif %}
+                <label class="form-label mt-2">صورة الغلاف</label>
+                {{ form.cover_image }}
+            </div>
+
+            <!-- Submit -->
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-save me-2"></i> {{ action }} المحل
+                </button>
+                <a href="{% url 'dashboard:admin_businesses_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i> إلغاء
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Cascading: Governorate → Districts
+document.getElementById('id_governorate').addEventListener('change', function() {
+    const govId = this.value;
+    const districtSelect = document.getElementById('id_district');
+    
+    districtSelect.innerHTML = '<option value="">-- جاري التحميل... --</option>';
+    districtSelect.disabled = true;
+
+    if (!govId) {
+        districtSelect.innerHTML = '<option value="">-- اختر الحي --</option>';
+        districtSelect.disabled = false;
+        return;
+    }
+
+    fetch(`/dashboard/ajax/districts/?governorate_id=${govId}`)
+        .then(r => r.json())
+        .then(data => {
+            districtSelect.innerHTML = '<option value="">-- اختر الحي --</option>';
+            data.results.forEach(d => {
+                districtSelect.innerHTML += `<option value="${d.id}">${d.text}</option>`;
+            });
+            districtSelect.disabled = false;
+        })
+        .catch(() => {
+            districtSelect.innerHTML = '<option value="">-- حدث خطأ --</option>';
+            districtSelect.disabled = false;
+        });
+});
+
+// Trigger on load if editing
+window.addEventListener('load', function() {
+    const govSelect = document.getElementById('id_governorate');
+    if (govSelect.value) {
+        const currentDistrict = "{{ business.district.id|default:'' }}";
+        const govId = govSelect.value;
+        
+        fetch(`/dashboard/ajax/districts/?governorate_id=${govId}`)
+            .then(r => r.json())
+            .then(data => {
+                const districtSelect = document.getElementById('id_district');
+                districtSelect.innerHTML = '<option value="">-- اختر الحي --</option>';
+                data.results.forEach(d => {
+                    const selected = d.id == currentDistrict ? 'selected' : '';
+                    districtSelect.innerHTML += `<option value="${d.id}" ${selected}>${d.text}</option>`;
+                });
+            });
+    }
+});
+</script>
+{% endblock %} {% endcomment %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% comment %} {% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<style>
+    #map {
+        height: 400px;
+        width: 100%;
+        border-radius: 8px;
+        border: 2px solid #ddd;
+        margin-bottom: 15px;
+    }
+    .map-instructions {
+        background: #e3f2fd;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+    .leaflet-container {
+        font-family: inherit;
+        z-index: 1;
+    }
+    .input-group-text {
+        min-width: 45px;
+        justify-content: center;
+    }
+    .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: #fff !important;
+    }
+    .card-header h5 {
+        color: #fff !important;
+    }
+    .select2-container {
+        width: 100% !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="mb-4">
+    <h1 class="page-title">
+        <i class="fas {% if business %}fa-edit{% else %}fa-plus{% endif %}"></i> {{ title }}
+    </h1>
+</div>
+
+<!-- Form -->
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <div class="row">
+        <div class="col-lg-8">
+            
+            <!-- Basic Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> المعلومات الأساسية</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        {{ form.business_type.label_tag }}
+                        {{ form.business_type }}
+                        {% if form.business_type.errors %}
+                        <div class="text-danger small">{{ form.business_type.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.name_ar.label_tag }}
+                            {{ form.name_ar }}
+                            {% if form.name_ar.errors %}
+                            <div class="text-danger small">{{ form.name_ar.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.name_en.label_tag }}
+                            {{ form.name_en }}
+                            {% if form.name_en.errors %}
+                            <div class="text-danger small">{{ form.name_en.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-layer-group text-success me-1"></i>
+                            التصنيف
+                            <span class="text-danger">*</span>
+                        </label>
+                        {{ form.category }}
+                        {% if form.category.errors %}
+                        <div class="text-danger small">{{ form.category.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">ابحث عن التصنيف المناسب</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Description -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-align-left"></i> الوصف</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        {{ form.description_ar.label_tag }}
+                        {{ form.description_ar }}
+                        {% if form.description_ar.errors %}
+                        <div class="text-danger small">{{ form.description_ar.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.description_en.label_tag }}
+                        {{ form.description_en }}
+                        {% if form.description_en.errors %}
+                        <div class="text-danger small">{{ form.description_en.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-phone"></i> معلومات الاتصال</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.phone.label_tag }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                {{ form.phone }}
+                            </div>
+                            {% if form.phone.errors %}
+                            <div class="text-danger small">{{ form.phone.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">مثال: 01234567890</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.whatsapp.label_tag }}
+                            <div class="input-group">
+                                <span class="input-group-text bg-success text-white"><i class="fab fa-whatsapp"></i></span>
+                                {{ form.whatsapp }}
+                            </div>
+                            {% if form.whatsapp.errors %}
+                            <div class="text-danger small">{{ form.whatsapp.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">رقم واتساب</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.email.label_tag }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                {{ form.email }}
+                            </div>
+                            {% if form.email.errors %}
+                            <div class="text-danger small">{{ form.email.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">example@domain.com</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.website.label_tag }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-globe"></i></span>
+                                {{ form.website }}
+                            </div>
+                            {% if form.website.errors %}
+                            <div class="text-danger small">{{ form.website.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">https://example.com</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Location -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-map-marker-alt"></i> العنوان والموقع</h5>
+                </div>
+                <div class="card-body">
+                    <!-- المحافظة والحي -->
+                    <div class="row">
+                        <div class="4 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-city text-primary me-1"></i>
+                                المحافظة
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.governorate }}
+                            {% if form.governorate.errors %}
+                            <div class="text-danger small">{{ form.governorate.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">اختر المحافظة أولاً</small>
+                        </div>
+
+                                            <div class="col-md-4 mb-3">
+                                                                        <label class="form-label">
+                                                                                                        <i class="fas fa-map text-info me-1"></i>
+                                                                                                        المدينة
+                                                                                                        <span class="text-danger">*</span>
+                                                                                                    </label>
+                                                                        {{ form.city }}
+                                                                        {% if form.city.errors %}
+                                                                            <div class="text-danger small">{{ form.city.errors }}</div>
+                                                                        {% endif %}
+                                                                        <small class="form-text text-muted">سيتم تحديثها حسب المحافظة</small>
+                                                                    </div>
+                        
+                        <div class="4 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-map-pin text-success me-1"></i>
+                                الحي
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.district }}
+                            {% if form.district.errors %}
+                            <div class="text-danger small">{{ form.district.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">سيتم تحديثها حسب المحافظة</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.address_ar.label_tag }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                                {{ form.address_ar }}
+                            </div>
+                            {% if form.address_ar.errors %}
+                            <div class="text-danger small">{{ form.address_ar.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.address_en.label_tag }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                                {{ form.address_en }}
+                            </div>
+                            {% if form.address_en.errors %}
+                            <div class="text-danger small">{{ form.address_en.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Map Section -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-map"></i> حدد الموقع على الخريطة
+                        </label>
+                        <div class="map-instructions">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>تعليمات:</strong> انقر على الخريطة أو اسحب العلامة لتحديد موقع المحل. سيتم حفظ الإحداثيات تلقائياً.
+                        </div>
+                        <div id="map"></div>
+                    </div>
+                    
+                    <!-- Coordinates -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.latitude.label_tag }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-location-arrow"></i></span>
+                                {{ form.latitude }}
+                            </div>
+                            <small class="form-text text-muted">سيتم تعبئته تلقائياً من الخريطة</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.longitude.label_tag }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-location-arrow"></i></span>
+                                {{ form.longitude }}
+                            </div>
+                            <small class="form-text text-muted">سيتم تعبئته تلقائياً من الخريطة</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.location_url.label_tag }}
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-link"></i></span>
+                            {{ form.location_url }}
+                        </div>
+                        <small class="form-text text-muted">رابط Google Maps (اختياري)</small>
+                        {% if form.location_url.errors %}
+                        <div class="text-danger small">{{ form.location_url.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Working Hours -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-clock"></i> ساعات العمل</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.working_hours_ar.label_tag }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-clock"></i></span>
+                                {{ form.working_hours_ar }}
+                            </div>
+                            {% if form.working_hours_ar.errors %}
+                            <div class="text-danger small">{{ form.working_hours_ar.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.working_hours_en.label_tag }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-clock"></i></span>
+                                {{ form.working_hours_en }}
+                            </div>
+                            {% if form.working_hours_en.errors %}
+                            <div class="text-danger small">{{ form.working_hours_en.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <div class="col-lg-4">
+            
+            <!-- Images -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-image"></i> الصور</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        {{ form.logo.label_tag }}
+                        {{ form.logo }}
+                        {% if business.logo %}
+                        <img src="{{ business.logo.url }}" class="img-thumbnail mt-2" style="max-height: 150px;">
+                        {% endif %}
+                        {% if form.logo.errors %}
+                        <div class="text-danger small">{{ form.logo.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.cover_image.label_tag }}
+                        {{ form.cover_image }}
+                        {% if business.cover_image %}
+                        <img src="{{ business.cover_image.url }}" class="img-thumbnail mt-2" style="max-height: 150px;">
+                        {% endif %}
+                        {% if form.cover_image.errors %}
+                        <div class="text-danger small">{{ form.cover_image.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin Controls -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-cog"></i> إعدادات المشرف</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check mb-2">
+                        {{ form.is_active }}
+                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                            فعّال
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        {{ form.is_verified }}
+                        <label class="form-check-label" for="{{ form.is_verified.id_for_label }}">
+                            موثّق
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        {{ form.is_featured }}
+                        <label class="form-check-label" for="{{ form.is_featured.id_for_label }}">
+                            مميّز
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Social Media (Optional) -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fab fa-facebook"></i> السوشيال ميديا (اختياري)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label><i class="fab fa-facebook text-primary"></i> Facebook</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fab fa-facebook"></i></span>
+                            {{ form.facebook }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label><i class="fab fa-instagram text-danger"></i> Instagram</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fab fa-instagram"></i></span>
+                            {{ form.instagram }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label><i class="fab fa-twitter text-info"></i> Twitter</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fab fa-twitter"></i></span>
+                            {{ form.twitter }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label><i class="fab fa-tiktok text-dark"></i> TikTok</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fab fa-tiktok"></i></span>
+                            {{ form.tiktok }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="card">
+                <div class="card-body">
+                    <button type="submit" class="btn btn-primary w-100 mb-2">
+                        <i class="fas fa-save"></i> حفظ
+                    </button>
+                    <a href="{% url 'dashboard:business_list' %}" class="btn btn-secondary w-100">
+                        <i class="fas fa-times"></i> إلغاء
+                    </a>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- jQuery (required for Select2) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ar.js"></script>
+<script>
+// Initialize Select2 for all dropdowns
+$(document).ready(function() {
+    // Initialize all select2 dropdowns
+    $('.select2-dropdown').select2({
+        theme: 'bootstrap-5',
+        language: 'ar',
+        dir: 'rtl',
+        placeholder: '-- اختر --',
+        allowClear: true,
+        width: '100%'
+    });
+    
+    // Cascading dropdown: Governorate -> District
+    $('#id_governorate').on('change', function() {
+        const governorateId = $(this).val();
+        const $districtSelect = $('#id_district');
+        
+        // Clear and disable district dropdown
+        $districtSelect.empty().prop('disabled', true);
+        
+        if (governorateId) {
+            // Fetch districts for selected governorate
+            $.ajax({
+                url: '{% url "dashboard:admin_ajax_get_districts" %}',
+                data: { governorate_id: governorateId },
+                success: function(data) {
+                    // Add placeholder
+                    $districtSelect.append('<option value="">-- اختر الحي --</option>');
+                    
+                    // Add districts
+                    $.each(data.results, function(index, district) {
+                        $districtSelect.append(
+                            $('<option></option>').val(district.id).text(district.text)
+                        );
+                    });
+                    
+                    // Enable and refresh Select2
+                    $districtSelect.prop('disabled', false);
+                    $districtSelect.trigger('change');
+                },
+                error: function() {
+                    alert('حدث خطأ في تحميل الأحياء');
+                }
+            });
+        }
+    });
+    
+    // Initialize map after page loads
+    setTimeout(initMap, 100);
+});
+
+let map;
+let marker;
+
+const defaultLat = {{ business.latitude|default:"30.0444" }};
+const defaultLng = {{ business.longitude|default:"31.2357" }};
+
+function initMap() {
+    try {
+        map = L.map('map').setView([defaultLat, defaultLng], 13);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            maxZoom: 19
+        }).addTo(map);
+        
+        const customIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+        
+        marker = L.marker([defaultLat, defaultLng], {
+            draggable: true,
+            icon: customIcon
+        }).addTo(map);
+        
+        marker.bindPopup('<b>موقع المحل</b><br>اسحب العلامة لتغيير الموقع').openPopup();
+        
+        marker.on('dragend', function(event) {
+            const position = marker.getLatLng();
+            updateCoordinates(position.lat, position.lng);
+        });
+        
+        map.on('click', function(event) {
+            marker.setLatLng(event.latlng);
+            updateCoordinates(event.latlng.lat, event.latlng.lng);
+            marker.bindPopup('<b>موقع المحل</b><br>الإحداثيات: ' + 
+                             event.latlng.lat.toFixed(6) + ', ' + 
+                             event.latlng.lng.toFixed(6)).openPopup();
+        });
+        
+        // Get user location for new businesses
+        {% if not business %}
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const userLocation = [position.coords.latitude, position.coords.longitude];
+                map.setView(userLocation, 15);
+                marker.setLatLng(userLocation);
+                updateCoordinates(position.coords.latitude, position.coords.longitude);
+                marker.bindPopup('<b>موقعك الحالي</b>').openPopup();
+            });
+        }
+        {% endif %}
+    } catch(e) {
+        console.error('Error initializing map:', e);
+    }
+}
+
+function updateCoordinates(lat, lng) {
+    document.getElementById('id_latitude').value = lat.toFixed(6);
+    document.getElementById('id_longitude').value = lng.toFixed(6);
+}
+</script>
+{% endblock %} {% endcomment %}

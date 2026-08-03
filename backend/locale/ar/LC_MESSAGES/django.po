@@ -1,0 +1,156 @@
+# Arabic translations for Daliil Ay Khidma.
+# Copyright (C) 2026
+# This file is distributed under the same license as the Daliil Ay Khidma package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-13 00:00+0000\n"
+"PO-Revision-Date: 2026-02-13 00:00+0000\n"
+"Last-Translator: Sendoo <sendoo@example.com>\n"
+"Language-Team: Arabic\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
+
+# ==================== HOME PAGE ====================
+msgid "Home"
+msgstr "الرئيسية"
+
+msgid "Discover the Best Businesses with Ease"
+msgstr "اكتشف أفضل المحلات والخدمات بسهولة"
+
+msgid "Your smart comprehensive directory for thousands of businesses and exclusive offers in your city"
+msgstr "دليلك الذكي الشامل لآلاف المحلات التجارية والعروض المميزة في مدينتك"
+
+msgid "Search for businesses, products, services..."
+msgstr "ابحث عن محلات، منتجات، خدمات..."
+
+msgid "Search"
+msgstr "بحث"
+
+msgid "Popular:"
+msgstr "الأكثر شيوعاً:"
+
+msgid "Restaurants"
+msgstr "مطاعم"
+
+msgid "Medical"
+msgstr "طبي"
+
+msgid "Shopping"
+msgstr "تسوق"
+
+msgid "Beauty"
+msgstr "تجميل"
+
+# ==================== STATS ====================
+msgid "Total Businesses"
+msgstr "إجمالي المحلات"
+
+msgid "Verified Businesses"
+msgstr "محلات موثقة"
+
+msgid "Active Deals"
+msgstr "عروض نشطة"
+
+msgid "Categories"
+msgstr "التصنيفات"
+
+# ==================== CATEGORIES ====================
+msgid "Browse by Category"
+msgstr "تصفح حسب التصنيف"
+
+msgid "Explore businesses in different categories"
+msgstr "استكشف المحلات في تصنيفات مختلفة"
+
+msgid "businesses"
+msgstr "محلات"
+
+msgid "View All Categories"
+msgstr "عرض جميع التصنيفات"
+
+# ==================== FEATURED BUSINESSES ====================
+msgid "Featured Businesses"
+msgstr "محلات مميزة"
+
+msgid "Handpicked top-rated and verified businesses"
+msgstr "محلات مختارة بعناية موثقة وعالية التقييم"
+
+msgid "Verified"
+msgstr "موثق"
+
+msgid "View Details"
+msgstr "عرض التفاصيل"
+
+msgid "Explore All Businesses"
+msgstr "استكشف جميع المحلات"
+
+# ==================== LATEST BUSINESSES ====================
+msgid "Latest Businesses"
+msgstr "أحدث المحلات"
+
+msgid "Recently added businesses to our directory"
+msgstr "محلات مضافة حديثاً إلى دليلنا"
+
+msgid "New"
+msgstr "جديد"
+
+# ==================== MOST VIEWED ====================
+msgid "Most Viewed Businesses"
+msgstr "الأكثر مشاهدة"
+
+msgid "Popular businesses loved by our community"
+msgstr "محلات شائعة يحبها مجتمعنا"
+
+msgid "Trending"
+msgstr "رائج"
+
+# ==================== GOVERNORATES ====================
+msgid "Browse by Location"
+msgstr "تصفح حسب الموقع"
+
+msgid "Find businesses in your governorate"
+msgstr "ابحث عن محلات في محافظتك"
+
+msgid "cities"
+msgstr "مدن"
+
+# ==================== DEALS ====================
+msgid "Hot Deals"
+msgstr "عروض ساخنة"
+
+msgid "Limited time offers you don't want to miss"
+msgstr "عروض لفترة محدودة لا تفوتها"
+
+msgid "Limited Offer"
+msgstr "عرض محدود"
+
+msgid "Get This Deal"
+msgstr "احصل على العرض"
+
+msgid "View All Deals"
+msgstr "عرض جميع العروض"
+
+# ==================== CTA ====================
+msgid "Do You Own a Business?"
+msgstr "هل تملك محل تجاري؟"
+
+msgid "Join thousands of businesses and boost your visibility. Reach millions of potential customers today!"
+msgstr "انضم إلى آلاف المحلات وعزز ظهورك. اوصل لملايين العملاء المحتملين اليوم!"
+
+msgid "Add Your Business Now"
+msgstr "أضف محلك الآن"
+
+# ==================== COMMON ====================
+msgid "Business Directory"
+msgstr "دليل المحلات التجارية"
+
+msgid "Business Directory Platform"
+msgstr "منصة دليل المحلات التجارية"
+
+msgid "business, directory, services"
+msgstr "دليل، محلات، خدمات"

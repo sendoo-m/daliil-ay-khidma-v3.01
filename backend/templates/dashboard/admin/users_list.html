@@ -1,0 +1,414 @@
+{% extends 'dashboard/admin/base.html' %}
+{% load humanize %}
+
+{% block title %}إدارة المستخدمين{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">
+            <i class="fas fa-users" style="color: #3498db;"></i> إدارة المستخدمين
+        </h2>
+        <p class="text-muted mb-0"><i class="fas fa-info-circle me-1"></i> عرض وإدارة جميع مستخدمي النظام</p>
+    </div>
+    <a href="{% url 'dashboard:admin_user_create' %}" class="btn btn-admin btn-lg">
+        <i class="fas fa-plus-circle me-2"></i> إضافة مستخدم
+    </a>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm stat-card" style="border-right: 4px solid #3498db !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">إجمالي المستخدمين</p>
+                        <h3 class="mb-0 fw-bold">{{ total_users|intcomma }}</h3>
+                    </div>
+                    <div class="stat-icon bg-primary">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm stat-card" style="border-right: 4px solid #27ae60 !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">مستخدمين نشطين</p>
+                        <h3 class="mb-0 fw-bold text-success">{{ active_users|intcomma }}</h3>
+                    </div>
+                    <div class="stat-icon bg-success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm stat-card" style="border-right: 4px solid #e74c3c !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">مشرفين</p>
+                        <h3 class="mb-0 fw-bold text-danger">{{ staff_users|intcomma }}</h3>
+                    </div>
+                    <div class="stat-icon bg-danger">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm stat-card" style="border-right: 4px solid #95a5a6 !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">مستخدمين جدد</p>
+                        <h3 class="mb-0 fw-bold text-secondary">{{ new_users|intcomma }}</h3>
+                    </div>
+                    <div class="stat-icon bg-secondary">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                </div>
+                <small class="text-muted">آخر 30 يوم</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filters -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <form method="get" id="filterForm">
+            <div class="row g-3">
+                <!-- Search -->
+                <div class="col-md-5">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-search text-primary me-1"></i> بحث
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" name="search" class="form-control" 
+                               placeholder="ابحث بالاسم أو البريد الإلكتروني..."
+                               value="{{ search }}">
+                    </div>
+                </div>
+                
+                <!-- Status Filter -->
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-filter text-success me-1"></i> الحالة
+                    </label>
+                    <select name="status" class="form-select">
+                        <option value="">كل الحالات</option>
+                        <option value="active" {% if status == 'active' %}selected{% endif %}>✅ فعّال</option>
+                        <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>❌ معطّل</option>
+                        <option value="staff" {% if status == 'staff' %}selected{% endif %}>🛡️ مشرفين</option>
+                    </select>
+                </div>
+                
+                <!-- Sort By -->
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-sort text-info me-1"></i> ترتيب
+                    </label>
+                    <select name="sort" class="form-select">
+                        <option value="-date_joined" {% if sort == '-date_joined' %}selected{% endif %}>الأحدث</option>
+                        <option value="date_joined" {% if sort == 'date_joined' %}selected{% endif %}>الأقدم</option>
+                        <option value="username" {% if sort == 'username' %}selected{% endif %}>الاسم (A-Z)</option>
+                        <option value="-username" {% if sort == '-username' %}selected{% endif %}>الاسم (Z-A)</option>
+                    </select>
+                </div>
+                
+                <!-- Buttons -->
+                <div class="col-md-2">
+                    <label class="form-label fw-bold text-white">.</label>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-admin flex-fill">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <a href="{% url 'dashboard:admin_users_list' %}" class="btn btn-secondary flex-fill">
+                            <i class="fas fa-redo"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Active Filters Tags -->
+            {% if search or status or sort %}
+            <div class="mt-3">
+                <span class="text-muted me-2"><i class="fas fa-filter"></i> الفلاتر النشطة:</span>
+                {% if search %}
+                <span class="badge bg-primary">بحث: {{ search }} <a href="?status={{ status }}&sort={{ sort }}" class="text-white ms-1">×</a></span>
+                {% endif %}
+                {% if status %}
+                <span class="badge bg-success">الحالة: {{ status }} <a href="?search={{ search }}&sort={{ sort }}" class="text-white ms-1">×</a></span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-table text-primary me-2"></i>
+            قائمة المستخدمين ({{ users.paginator.count|intcomma }})
+        </h5>
+        <div class="btn-group">
+            <button class="btn btn-sm btn-outline-success" onclick="exportTable('excel')">
+                <i class="fas fa-file-excel me-1"></i> Excel
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="exportTable('pdf')">
+                <i class="fas fa-file-pdf me-1"></i> PDF
+            </button>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="usersTable">
+                <thead class="table-light">
+                    <tr>
+                        <th class="px-4" style="width: 60px;">
+                            <input type="checkbox" class="form-check-input" id="selectAll">
+                        </th>
+                        <th style="width: 80px;">ID</th>
+                        <th>المستخدم</th>
+                        <th>البريد الإلكتروني</th>
+                        <th>الاسم الكامل</th>
+                        <th>تاريخ التسجيل</th>
+                        <th style="width: 120px;">الحالة</th>
+                        <th class="text-center" style="width: 180px;">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user_obj in users %}
+                    <tr class="user-row">
+                        <td class="px-4">
+                            <input type="checkbox" class="form-check-input user-checkbox" value="{{ user_obj.id }}">
+                        </td>
+                        <td><span class="badge bg-light text-dark">#{{ user_obj.id }}</span></td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle me-2">
+                                    {{ user_obj.username|slice:":1"|upper }}
+                                </div>
+                                <div>
+                                    <strong class="d-block">{{ user_obj.username }}</strong>
+                                    {% if user_obj.is_staff %}
+                                    <span class="badge badge-sm bg-danger">🛡️ مشرف</span>
+                                    {% endif %}
+                                    {% if user_obj.is_superuser %}
+                                    <span class="badge badge-sm bg-warning">⭐ مدير</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <i class="fas fa-envelope text-muted me-1"></i>
+                            {{ user_obj.email }}
+                        </td>
+                        <td>{{ user_obj.get_full_name|default:"-" }}</td>
+                        <td>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                {{ user_obj.date_joined|date:"Y-m-d" }}
+                            </small>
+                        </td>
+                        <td>
+                            {% if user_obj.is_active %}
+                            <span class="badge bg-success-soft text-success">
+                                <i class="fas fa-check-circle me-1"></i>فعّال
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary-soft text-secondary">
+                                <i class="fas fa-times-circle me-1"></i>معطّل
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'dashboard:admin_user_detail' user_obj.id %}" 
+                                   class="btn btn-sm btn-outline-primary"
+                                   data-bs-toggle="tooltip" title="عرض">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'dashboard:admin_user_edit' user_obj.id %}" 
+                                   class="btn btn-sm btn-outline-warning"
+                                   data-bs-toggle="tooltip" title="تعديل">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'dashboard:admin_user_toggle' user_obj.id %}" 
+                                   class="btn btn-sm btn-outline-secondary"
+                                   data-bs-toggle="tooltip" title="تغيير الحالة"
+                                   onclick="return confirm('هل أنت متأكد؟')">
+                                    <i class="fas fa-power-off"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p class="mb-0">لا توجد بيانات</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Pagination -->
+    {% if users.has_other_pages %}
+    <div class="card-footer bg-white border-top">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="text-muted">
+                عرض {{ users.start_index }} - {{ users.end_index }} من {{ users.paginator.count|intcomma }}
+            </div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    {% if users.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1&search={{ search }}&status={{ status }}&sort={{ sort }}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ users.previous_page_number }}&search={{ search }}&status={{ status }}&sort={{ sort }}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in users.paginator.page_range %}
+                        {% if users.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > users.number|add:'-3' and num < users.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}&search={{ search }}&status={{ status }}&sort={{ sort }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if users.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ users.next_page_number }}&search={{ search }}&status={{ status }}&sort={{ sort }}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ users.paginator.num_pages }}&search={{ search }}&status={{ status }}&sort={{ sort }}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.stat-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-radius: 12px;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.user-row {
+    transition: background-color 0.2s;
+}
+
+.user-row:hover {
+    background-color: #f8f9fa;
+}
+
+.bg-success-soft {
+    background-color: #d4edda !important;
+}
+
+.bg-secondary-soft {
+    background-color: #e2e3e5 !important;
+}
+
+.badge-sm {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+}
+
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.btn-group .btn {
+    padding: 0.25rem 0.5rem;
+}
+</style>
+
+<script>
+// Select All Checkbox
+document.getElementById('selectAll')?.addEventListener('change', function() {
+    document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = this.checked);
+});
+
+// Export Functions
+function exportTable(format) {
+    alert('جاري التصدير إلى ' + format.toUpperCase() + '...');
+    // Implement export logic here
+}
+
+// Initialize tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+});
+</script>
+{% endblock %}

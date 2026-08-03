@@ -1,0 +1,427 @@
+{% extends 'dashboard/admin/base.html' %}
+{% load humanize %}
+
+{% block title %}الرئيسية{% endblock %}
+
+{% block content %}
+<!-- Welcome Header -->
+<div class="welcome-header mb-4 p-4 rounded" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-bold text-white mb-2">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                مرحباً بك، {{ user.get_full_name|default:user.username }}! 👋
+            </h2>
+            <p class="text-white-50 mb-0">
+                <i class="fas fa-calendar-alt me-1"></i>
+                {% now "l, j F Y" %} | 
+                <i class="fas fa-clock me-1"></i>
+                {% now "g:i A" %}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="text-white">
+                <div class="fs-1 fw-bold">{{ stats.total_businesses|intcomma }}</div>
+                <div>إجمالي المحلات في النظام</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Statistics -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="stats-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stats-content">
+                <h3 class="stats-number">{{ stats.total_users|intcomma }}</h3>
+                <p class="stats-label">إجمالي المستخدمين</p>
+                <div class="stats-footer">
+                    <i class="fas fa-arrow-up me-1"></i>
+                    <span>+{{ stats.new_users_week }} هذا الأسبوع</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="stats-icon">
+                <i class="fas fa-store"></i>
+            </div>
+            <div class="stats-content">
+                <h3 class="stats-number">{{ stats.total_businesses|intcomma }}</h3>
+                <p class="stats-label">إجمالي المحلات</p>
+                <div class="stats-footer">
+                    <i class="fas fa-check-circle me-1"></i>
+                    <span>{{ stats.verified_businesses }} موثّق</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="stats-icon">
+                <i class="fas fa-box"></i>
+            </div>
+            <div class="stats-content">
+                <h3 class="stats-number">{{ stats.total_products|intcomma }}</h3>
+                <p class="stats-label">إجمالي المنتجات</p>
+                <div class="stats-footer">
+                    <i class="fas fa-eye me-1"></i>
+                    <span>{{ stats.active_products }} متاح</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+            <div class="stats-icon">
+                <i class="fas fa-percent"></i>
+            </div>
+            <div class="stats-content">
+                <h3 class="stats-number">{{ stats.total_deals|intcomma }}</h3>
+                <p class="stats-label">إجمالي العروض</p>
+                <div class="stats-footer">
+                    <i class="fas fa-fire me-1"></i>
+                    <span>{{ stats.active_deals }} نشط</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0"><i class="fas fa-chart-line text-primary me-2"></i> إحصائيات النمو الشهري</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0"><i class="fas fa-chart-pie text-success me-2"></i> توزيع التصنيفات</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm" style="border-right: 4px solid #9b59b6 !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1">إجمالي التقييمات</p>
+                        <h2 class="mb-0 fw-bold" style="color: #9b59b6;">{{ stats.total_reviews|intcomma }}</h2>
+                        <small class="text-warning">
+                            <i class="fas fa-clock me-1"></i>
+                            {{ stats.pending_reviews }} بانتظار المراجعة
+                        </small>
+                    </div>
+                    <div class="stat-icon" style="background: #9b59b6;">
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm" style="border-right: 4px solid #1abc9c !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1">إجمالي المشاهدات</p>
+                        <h2 class="mb-0 fw-bold" style="color: #1abc9c;">{{ stats.total_views|intcomma }}</h2>
+                        <small class="text-info">
+                            <i class="fas fa-mouse-pointer me-1"></i>
+                            {{ stats.total_clicks|intcomma }} نقرة
+                        </small>
+                    </div>
+                    <div class="stat-icon" style="background: #1abc9c;">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm" style="border-right: 4px solid #e74c3c !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1">بانتظار التوثيق</p>
+                        <h2 class="mb-0 fw-bold" style="color: #e74c3c;">{{ stats.pending_verification }}</h2>
+                        <a href="{% url 'dashboard:admin_businesses_list' %}?status=pending" class="text-danger small">
+                            <i class="fas fa-arrow-left me-1"></i>مراجعة الآن
+                        </a>
+                    </div>
+                    <div class="stat-icon" style="background: #e74c3c;">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Row -->
+<div class="row g-3">
+    <!-- Quick Actions -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i> إجراءات سريعة</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'dashboard:admin_users_list' %}" class="quick-action-btn">
+                        <i class="fas fa-users"></i>
+                        <span>إدارة المستخدمين</span>
+                        <i class="fas fa-chevron-left ms-auto"></i>
+                    </a>
+                    <a href="{% url 'dashboard:admin_businesses_list' %}?status=pending" class="quick-action-btn">
+                        <i class="fas fa-clock"></i>
+                        <span>مراجعة المحلات</span>
+                        <span class="badge bg-warning ms-auto">{{ stats.pending_verification }}</span>
+                    </a>
+                    <a href="{% url 'dashboard:admin_categories_list' %}" class="quick-action-btn">
+                        <i class="fas fa-list"></i>
+                        <span>إدارة التصنيفات</span>
+                        <i class="fas fa-chevron-left ms-auto"></i>
+                    </a>
+                    <a href="{% url 'dashboard:admin_deals_list' %}" class="quick-action-btn">
+                        <i class="fas fa-percent"></i>
+                        <span>إدارة العروض</span>
+                        <i class="fas fa-chevron-left ms-auto"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Users -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0"><i class="fas fa-user-plus text-primary me-2"></i> مستخدمين جدد</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_users %}
+                <div class="list-group list-group-flush">
+                    {% for user_obj in recent_users %}
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-circle me-2">{{ user_obj.username|slice:":1"|upper }}</div>
+                            <div class="flex-grow-1">
+                                <strong class="d-block">{{ user_obj.username }}</strong>
+                                <small class="text-muted">{{ user_obj.email }}</small>
+                            </div>
+                            <small class="text-muted">{{ user_obj.date_joined|timesince }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted">لا توجد بيانات</div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-white border-top text-center">
+                <a href="{% url 'dashboard:admin_users_list' %}" class="btn btn-sm btn-outline-primary">
+                    عرض الكل <i class="fas fa-arrow-left ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Businesses -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0"><i class="fas fa-trophy text-warning me-2"></i> أفضل المحلات</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if top_businesses %}
+                <div class="list-group list-group-flush">
+                    {% for business in top_businesses %}
+                    <a href="{% url 'dashboard:admin_business_detail' business.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex align-items-center">
+                            <div class="trophy-badge">{{ forloop.counter }}</div>
+                            <div class="flex-grow-1">
+                                <strong class="d-block">{{ business.name_ar }}</strong>
+                                <small class="text-muted">
+                                    <i class="fas fa-eye me-1"></i>{{ business.view_count|intcomma }}
+                                </small>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stats-card {
+    border-radius: 16px;
+    padding: 1.5rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+}
+
+.stats-icon {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 3rem;
+    opacity: 0.3;
+}
+
+.stats-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.stats-label {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+}
+
+.stats-footer {
+    font-size: 0.875rem;
+    opacity: 0.8;
+}
+
+.quick-action-btn {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.3s;
+    gap: 0.75rem;
+}
+
+.quick-action-btn:hover {
+    background: #667eea;
+    color: white;
+    transform: translateX(-5px);
+}
+
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.trophy-badge {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: white;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Monthly Growth Chart
+const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+new Chart(monthlyCtx, {
+    type: 'line',
+    data: {
+        labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو'],
+        datasets: [{
+            label: 'محلات',
+            data: [12, 19, 15, 25, 22, 30],
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            tension: 0.4,
+            fill: true
+        }, {
+            label: 'مستخدمين',
+            data: [5, 10, 8, 15, 12, 18],
+            borderColor: '#f5576c',
+            backgroundColor: 'rgba(245, 87, 108, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: { legend: { position: 'bottom' } }
+    }
+});
+
+// Category Distribution Chart
+const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+new Chart(categoryCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['مطاعم', 'تسوق', 'خدمات', 'أخرى'],
+        datasets: [{
+            data: [30, 25, 20, 25],
+            backgroundColor: ['#667eea', '#f5576c', '#4facfe', '#fa709a']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: { legend: { position: 'bottom' } }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="text-center mb-5">اختبار الأيقونات</h1>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Font Awesome Icons</h3>
+            <div class="d-flex flex-wrap">
+                <i class="fas fa-home test-icon text-primary"></i>
+                <i class="fas fa-building test-icon text-success"></i>
+                <i class="fas fa-map-marker-alt test-icon text-danger"></i>
+                <i class="fas fa-phone test-icon text-warning"></i>
+                <i class="fas fa-envelope test-icon text-info"></i>
+                <i class="fas fa-user test-icon text-secondary"></i>
+                <i class="fas fa-star test-icon text-warning"></i>
+                <i class="fas fa-heart test-icon text-danger"></i>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <h3>Bootstrap Icons</h3>
+            <div class="d-flex flex-wrap">
+                <i class="bi bi-house test-icon text-primary"></i>
+                <i class="bi bi-building test-icon text-success"></i>
+                <i class="bi bi-geo-alt test-icon text-danger"></i>
+                <i class="bi bi-telephone test-icon text-warning"></i>
+                <i class="bi bi-envelope test-icon text-info"></i>
+                <i class="bi bi-person test-icon text-secondary"></i>
+                <i class="bi bi-star test-icon text-warning"></i>
+                <i class="bi bi-heart test-icon text-danger"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="alert alert-info mt-5">
+        <h5>لو الأيقونات مش ظاهرة:</h5>
+        <ul>
+            <li>افتح Developer Tools (F12)</li>
+            <li>شوف Console لو فيه أخطاء</li>
+            <li>تأكد إن النت شغال</li>
+            <li>جرب Ctrl + F5 لتحديث الصفحة</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

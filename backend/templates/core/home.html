@@ -1,0 +1,1477 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+
+{% block title %}
+    {% if LANGUAGE_CODE == 'ar' %}الرئيسية - دليل أي خدمة{% else %}Home - Directory{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --p1: #6366f1;
+    --p2: #8b5cf6;
+    --accent: #10b981;
+    --hot: #f43f5e;
+    --dark: #0f172a;
+    --mid: #475569;
+    --muted: #94a3b8;
+    --bg: #f8fafc;
+    --border: #e2e8f0;
+}
+
+/* ===== HERO ===== */
+.new-hero {
+    background: var(--dark);
+    min-height: 100vh;
+    display: flex; align-items: center;
+    position: relative; overflow: hidden;
+    padding: 5rem 0 6rem;
+}
+.new-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(ellipse at 20% 30%, rgba(99,102,241,0.25) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 70%, rgba(139,92,246,0.2) 0%, transparent 55%),
+        radial-gradient(ellipse at 50% 100%, rgba(16,185,129,0.1) 0%, transparent 50%);
+}
+.hero-dots {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px);
+    background-size: 36px 36px;
+}
+.hero-live-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(99,102,241,0.15);
+    border: 1px solid rgba(99,102,241,0.4);
+    color: #a5b4fc;
+    padding: 0.45rem 1.1rem; border-radius: 50px;
+    font-size: 0.82rem; font-weight: 700;
+    margin-bottom: 1.5rem; width: fit-content;
+}
+.hero-live-badge .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 3px rgba(16,185,129,0.3);
+    animation: blink 2s infinite;
+    display: inline-block;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.hero-headline {
+    font-size: clamp(2.4rem, 5vw, 3.8rem);
+    font-weight: 900; color: white;
+    line-height: 1.15; margin-bottom: 1.25rem;
+}
+.hero-headline .grad {
+    background: linear-gradient(135deg, #818cf8, #c084fc, #34d399);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.hero-sub {
+    color: #64748b; font-size: 1.05rem;
+    line-height: 1.85; margin-bottom: 2rem; max-width: 480px;
+}
+
+/* Glassmorphism search */
+.glass-search {
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 0.75rem 0.75rem 0.75rem 1.4rem;
+    display: flex; align-items: center; gap: 0.75rem;
+    backdrop-filter: blur(12px); max-width: 540px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+.glass-search:focus-within {
+    border-color: rgba(99,102,241,0.6);
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
+}
+.glass-search input {
+    border: none; background: transparent;
+    color: white; font-size: 0.95rem; flex: 1;
+    font-family: 'Cairo', sans-serif;
+}
+.glass-search input::placeholder { color: #475569; }
+.glass-search input:focus { outline: none; }
+.glass-search-btn {
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    color: white; border: none; padding: 0.7rem 1.5rem;
+    border-radius: 10px; font-weight: 700; font-size: 0.9rem;
+    font-family: 'Cairo', sans-serif;
+    display: flex; align-items: center; gap: 0.5rem;
+    white-space: nowrap; transition: all 0.3s;
+}
+.glass-search-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(99,102,241,0.4); }
+
+/* Quick tags */
+.qtag {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #94a3b8; padding: 0.35rem 0.9rem;
+    border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+    text-decoration: none; transition: all 0.2s;
+}
+.qtag:hover {
+    background: rgba(99,102,241,0.18);
+    border-color: rgba(99,102,241,0.45);
+    color: #a5b4fc; transform: translateY(-2px);
+}
+.qtag.hot { color: #fda4af; border-color: rgba(244,63,94,0.3); }
+.qtag.hot:hover { background: rgba(244,63,94,0.15); color: #fda4af; }
+
+/* Hero right — mini stat cards */
+.mini-stats {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+}
+.mstat {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px; padding: 1.5rem;
+    backdrop-filter: blur(8px); transition: all 0.3s;
+}
+.mstat:hover { background: rgba(255,255,255,0.07); transform: translateY(-4px); }
+.mstat.hi { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.3); }
+.mstat .ico { font-size: 1.75rem; margin-bottom: 0.75rem; display: block; }
+.mstat .num { font-size: 1.9rem; font-weight: 900; color: white; line-height: 1; }
+.mstat .lbl { color: #475569; font-size: 0.78rem; font-weight: 600; margin-top: 0.3rem; }
+
+/* ===== TICKER ===== */
+.ticker-bar {
+    background: linear-gradient(90deg, #f43f5e, #f97316);
+    padding: 0.6rem 0; overflow: hidden;
+}
+.ticker-inner {
+    display: inline-flex; gap: 2.5rem;
+    animation: tick 28s linear infinite; white-space: nowrap;
+}
+@keyframes tick { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+.tick-item {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    color: white; font-weight: 700; font-size: 0.83rem;
+    flex-shrink: 0; text-decoration: none;
+}
+.tick-sep { width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,0.45); }
+
+/* ===== SECTION HEADER ===== */
+.sh { margin-bottom: 0; }
+.sh-pill {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: rgba(99,102,241,0.08);
+    border: 1px solid rgba(99,102,241,0.22);
+    color: var(--p1); padding: 0.3rem 1rem;
+    border-radius: 50px; font-size: 0.72rem; font-weight: 800;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 0.6rem;
+}
+.sh-pill.hot { background: rgba(244,63,94,0.08); border-color: rgba(244,63,94,0.25); color: var(--hot); }
+.sh-pill.green { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.25); color: var(--accent); }
+.sh h2 { font-size: clamp(1.5rem,3vw,2rem); font-weight: 900; color: var(--dark); margin: 0; }
+.sh p { color: var(--muted); font-size: 0.92rem; margin: 0.35rem 0 0; }
+.btn-sec {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    border: 2px solid; border-radius: 50px;
+    padding: 0.5rem 1.25rem; font-weight: 700; font-size: 0.85rem;
+    text-decoration: none; transition: all 0.25s; white-space: nowrap;
+}
+.btn-sec.ind { border-color: var(--p1); color: var(--p1); }
+.btn-sec.ind:hover { background: var(--p1); color: white; }
+.btn-sec.red { border-color: var(--hot); color: var(--hot); }
+.btn-sec.red:hover { background: var(--hot); color: white; }
+
+/* ===== BENTO CATEGORIES ===== */
+.bento {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.875rem;
+}
+.bento-item {
+    background: white; border-radius: 16px;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1.1rem 1.25rem; text-decoration: none;
+    transition: all 0.3s cubic-bezier(.175,.885,.32,1.275);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    position: relative; overflow: hidden;
+}
+.bento-item::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    opacity: 0; transition: opacity 0.3s;
+}
+.bento-item:hover { transform: translateY(-5px) scale(1.02); border-color: var(--p1); box-shadow: 0 12px 30px rgba(99,102,241,0.18); }
+.bento-item:hover::after { opacity: 1; }
+.bento-ico {
+    font-size: 1.75rem;
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    position: relative; z-index: 1; flex-shrink: 0; transition: all 0.3s;
+}
+.bento-item:hover .bento-ico { -webkit-text-fill-color: white; }
+.bento-txt { position: relative; z-index: 1; }
+.bento-name { font-weight: 800; font-size: 0.88rem; color: var(--dark); margin: 0; transition: color 0.3s; }
+.bento-cnt  { font-size: 0.72rem; color: var(--muted); font-weight: 600; transition: color 0.3s; }
+.bento-item:hover .bento-name,
+.bento-item:hover .bento-cnt { color: rgba(255,255,255,0.9); }
+
+/* ===== DEALS SCROLL ===== */
+.hscroll { overflow-x: auto; padding-bottom: 0.75rem; scrollbar-width: none; }
+.hscroll::-webkit-scrollbar { display: none; }
+.deals-row { display: flex; gap: 1.1rem; width: max-content; }
+.dcard {
+    width: 285px; flex-shrink: 0;
+    background: white; border-radius: 18px;
+    border: 1.5px solid var(--border); overflow: hidden;
+    transition: all 0.3s; box-shadow: 0 3px 12px rgba(0,0,0,0.05);
+}
+.dcard:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(244,63,94,0.16); border-color: var(--hot); }
+.dcard-img {
+    height: 155px; position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #fda4af, #f43f5e);
+}
+.dcard-img img { width:100%; height:100%; object-fit:cover; transition: transform 0.4s; }
+.dcard:hover .dcard-img img { transform: scale(1.08); }
+.dcard-disc {
+    position: absolute; top: 10px; right: 10px;
+    background: #f43f5e; color: white;
+    padding: 3px 10px; border-radius: 50px;
+    font-weight: 900; font-size: 0.82rem;
+}
+.dcard-body { padding: 0.875rem; }
+.dcard-title { font-weight: 800; font-size: 0.88rem; color: var(--dark); margin-bottom: 0.3rem; line-height: 1.3; }
+.dcard-biz  { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.75rem; }
+.dcard-cta {
+    display: block; text-align: center;
+    background: linear-gradient(135deg, #fda4af, #f43f5e);
+    color: white; padding: 0.5rem; border-radius: 10px;
+    font-weight: 700; font-size: 0.8rem; text-decoration: none; transition: opacity 0.2s;
+}
+.dcard-cta:hover { color: white; opacity: 0.9; }
+
+/* ===== BUSINESS CARD ===== */
+.biz-card2 {
+    background: white; border-radius: 18px;
+    border: 1.5px solid var(--border);
+    overflow: hidden; transition: all 0.35s; height: 100%;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+}
+.biz-card2:hover { border-color: var(--p1); transform: translateY(-7px); box-shadow: 0 18px 45px rgba(99,102,241,0.14); }
+.biz2-hdr {
+    height: 130px; position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+}
+.biz2-hdr img { width:100%; height:100%; object-fit:cover; transition: transform 0.4s; }
+.biz-card2:hover .biz2-hdr img { transform: scale(1.07); }
+.biz2-logo {
+    position: absolute; bottom: -20px; right: 1rem;
+    width: 46px; height: 46px; border-radius: 11px;
+    border: 3px solid white; object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.biz2-logo-ph {
+    position: absolute; bottom: -20px; right: 1rem;
+    width: 46px; height: 46px; border-radius: 11px;
+    border: 3px solid white;
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1.1rem;
+}
+.biz2-body { padding: 1.4rem 1rem 0.75rem; }
+.biz2-tag {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    background: rgba(99,102,241,0.09); color: var(--p1);
+    padding: 2px 9px; border-radius: 6px;
+    font-size: 0.7rem; font-weight: 800; margin-bottom: 0.45rem;
+}
+.biz2-title { font-weight: 800; font-size: 0.93rem; color: var(--dark); margin-bottom: 0.45rem; }
+.biz2-loc   { font-size: 0.77rem; color: var(--muted); display: flex; align-items: center; gap: 0.35rem; }
+.biz2-loc i { color: #ef4444; }
+.biz2-foot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.7rem 1rem; border-top: 1px solid var(--border);
+}
+.btn-biz {
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    color: white; border: none; padding: 6px 15px;
+    border-radius: 8px; font-weight: 700; font-size: 0.77rem;
+    text-decoration: none; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 0.35rem;
+}
+.btn-biz:hover { color: white; opacity: 0.9; transform: translateY(-1px); }
+.badge-new { background: var(--accent); color: white; padding: 2px 9px; border-radius: 50px; font-size: 0.68rem; font-weight: 700; }
+.badge-verified { color: var(--accent); font-size: 0.73rem; font-weight: 700; }
+
+/* ===== GOVERNORATES — PILL ===== */
+.gov-pill {
+    display: flex; align-items: center; gap: 0.875rem;
+    background: white; border: 1.5px solid var(--border);
+    border-radius: 14px; padding: 0.875rem 1.1rem;
+    text-decoration: none; transition: all 0.25s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.gov-pill:hover { border-color: var(--p1); background: rgba(99,102,241,0.03); transform: translateX(-4px); box-shadow: 0 8px 24px rgba(99,102,241,0.13); }
+.gov-ico {
+    width: 42px; height: 42px; border-radius: 11px;
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1rem; flex-shrink: 0;
+}
+.gov-name  { font-weight: 800; font-size: 0.88rem; color: var(--dark); }
+.gov-count { font-size: 0.73rem; color: var(--muted); font-weight: 600; }
+.gov-arr   { margin-right: auto; color: #cbd5e1; font-size: 0.75rem; }
+
+/* ===== CTA ===== */
+.dark-cta {
+    background: var(--dark);
+    padding: 5rem 0; position: relative; overflow: hidden;
+}
+.dark-cta::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(ellipse at 0% 50%, rgba(99,102,241,0.18), transparent 50%),
+        radial-gradient(ellipse at 100% 50%, rgba(16,185,129,0.12), transparent 50%);
+}
+.dark-cta h2 { font-size: clamp(1.7rem,4vw,2.4rem); font-weight: 900; color: white; margin-bottom: 0.7rem; }
+.dark-cta p  { color: #64748b; font-size: 0.98rem; margin-bottom: 2rem; }
+.cta-btn2 {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    color: white; padding: 0.95rem 2.25rem; border-radius: 12px;
+    font-weight: 800; font-size: 0.98rem; text-decoration: none;
+    transition: all 0.3s; box-shadow: 0 8px 25px rgba(99,102,241,0.4);
+}
+.cta-btn2:hover { color: white; transform: translateY(-3px); box-shadow: 0 14px 35px rgba(99,102,241,0.5); }
+.cta-feat { display: flex; align-items: center; gap: 0.5rem; color: #475569; font-size: 0.83rem; font-weight: 600; }
+.cta-feat i { color: var(--accent); }
+
+/* Responsive */
+@media (max-width: 991px) {
+    .bento { grid-template-columns: repeat(2, 1fr); }
+    .mini-stats { display: none; }
+    .new-hero { min-height: auto; padding: 4rem 0 5rem; }
+}
+@media (max-width: 576px) {
+    .bento { grid-template-columns: 1fr 1fr; }
+    .bento-item { padding: 0.875rem; gap: 0.65rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ===== HERO ===== #}
+<section class="new-hero">
+    <div class="hero-dots"></div>
+    <div class="container" style="position:relative;z-index:2;">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+                <div class="hero-live-badge">
+                    <span class="dot"></span>
+                    {% if LANGUAGE_CODE == 'ar' %}🚀 دليلك الذكي للمحلات والخدمات{% else %}🚀 Smart Business Directory{% endif %}
+                </div>
+                <h1 class="hero-headline">
+                    {% if LANGUAGE_CODE == 'ar' %}
+                        اكتشف كل ما تحتاجه<br>في <span class="grad">مدينتك</span> 🎯
+                    {% else %}
+                        Find Everything<br>You Need in <span class="grad">Your City</span> 🎯
+                    {% endif %}
+                </h1>
+                <p class="hero-sub">
+                    {% if LANGUAGE_CODE == 'ar' %}
+                        آلاف المحلات والعروض الحصرية في مكان واحد — سريع، موثوق، ومجاني تمامًا
+                    {% else %}
+                        Thousands of businesses and exclusive deals in one place — fast, trusted, and completely free
+                    {% endif %}
+                </p>
+                <form method="get" action="{% url 'directory:business_search' %}">
+                    <div class="glass-search">
+                        <i class="fas fa-search" style="color:#334155;"></i>
+                        <input type="text" name="q"
+                               placeholder="{% if LANGUAGE_CODE == 'ar' %}ابحث عن محلات، خدمات، عروض...{% else %}Search businesses, services, deals...{% endif %}">
+                        <button type="submit" class="glass-search-btn">
+                            <i class="fas fa-search"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}بحث{% else %}Search{% endif %}
+                        </button>
+                    </div>
+                </form>
+                <div class="d-flex flex-wrap gap-2 mt-3 align-items-center">
+                    <span style="color:#334155;font-size:0.8rem;font-weight:700;">
+                        {% if LANGUAGE_CODE == 'ar' %}اكتشف:{% else %}Explore:{% endif %}
+                    </span>
+                    <a href="{% url 'directory:business_list' %}?category=restaurants" class="qtag">🍽️ {% if LANGUAGE_CODE == 'ar' %}مطاعم{% else %}Restaurants{% endif %}</a>
+                    <a href="{% url 'directory:business_list' %}?category=medical" class="qtag">🏥 {% if LANGUAGE_CODE == 'ar' %}طبي{% else %}Medical{% endif %}</a>
+                    <a href="{% url 'directory:business_list' %}?category=shopping" class="qtag">🛍️ {% if LANGUAGE_CODE == 'ar' %}تسوق{% else %}Shopping{% endif %}</a>
+                    <a href="{% url 'deals:deal_list' %}" class="qtag hot">🔥 {% if LANGUAGE_CODE == 'ar' %}عروض{% else %}Deals{% endif %}</a>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-block">
+                <div class="mini-stats">
+                    <div class="mstat hi">
+                        <span class="ico">🏪</span>
+                        <div class="num">{{ stats.total_businesses|default:"500" }}+</div>
+                        <div class="lbl">{% if LANGUAGE_CODE == 'ar' %}محل مسجل{% else %}Businesses{% endif %}</div>
+                    </div>
+                    <div class="mstat">
+                        <span class="ico">✅</span>
+                        <div class="num">{{ stats.verified_businesses|default:"300" }}+</div>
+                        <div class="lbl">{% if LANGUAGE_CODE == 'ar' %}محل موثّق{% else %}Verified{% endif %}</div>
+                    </div>
+                    <div class="mstat">
+                        <span class="ico">🔥</span>
+                        <div class="num">{{ stats.total_deals|default:"150" }}+</div>
+                        <div class="lbl">{% if LANGUAGE_CODE == 'ar' %}عرض فعّال{% else %}Active Deals{% endif %}</div>
+                    </div>
+                    <div class="mstat hi">
+                        <span class="ico">🗂️</span>
+                        <div class="num">{{ stats.total_categories|default:"25" }}+</div>
+                        <div class="lbl">{% if LANGUAGE_CODE == 'ar' %}فئة{% else %}Categories{% endif %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# ===== TICKER ===== #}
+{% if active_deals %}
+<div class="ticker-bar">
+    <div class="ticker-inner">
+        {% for deal in active_deals %}
+        <a href="{% url 'deals:deal_detail' deal.slug %}" class="tick-item">
+            🔥
+            {% if LANGUAGE_CODE == 'ar' %}{{ deal.title_ar }}{% else %}{{ deal.title_en }}{% endif %}
+            {% if deal.discount_percentage %}
+            <span style="background:rgba(255,255,255,0.2);padding:1px 8px;border-radius:50px;font-size:0.78rem;">-{{ deal.discount_percentage }}%</span>
+            {% endif %}
+            <span class="tick-sep"></span>
+        </a>
+        {% endfor %}
+        {% for deal in active_deals %}
+        <a href="{% url 'deals:deal_detail' deal.slug %}" class="tick-item">
+            🔥
+            {% if LANGUAGE_CODE == 'ar' %}{{ deal.title_ar }}{% else %}{{ deal.title_en }}{% endif %}
+            {% if deal.discount_percentage %}
+            <span style="background:rgba(255,255,255,0.2);padding:1px 8px;border-radius:50px;font-size:0.78rem;">-{{ deal.discount_percentage }}%</span>
+            {% endif %}
+            <span class="tick-sep"></span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{# ===== CATEGORIES BENTO ===== #}
+{% if featured_categories %}
+<section class="py-5" style="background:var(--bg);">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-end mb-4 gap-3 flex-wrap">
+            <div class="sh">
+                <div class="sh-pill"><i class="fas fa-th-large me-1"></i>{% if LANGUAGE_CODE == 'ar' %}الفئات{% else %}CATEGORIES{% endif %}</div>
+                <h2>{% if LANGUAGE_CODE == 'ar' %}تصفح حسب الفئة{% else %}Browse by Category{% endif %}</h2>
+                <p>{% if LANGUAGE_CODE == 'ar' %}استكشف المحلات في فئات مختلفة{% else %}Explore businesses in different categories{% endif %}</p>
+            </div>
+            <a href="{% url 'categories:category_list' %}" class="btn-sec ind">
+                {% if LANGUAGE_CODE == 'ar' %}كل الفئات <i class="fas fa-arrow-left"></i>{% else %}All Categories <i class="fas fa-arrow-right"></i>{% endif %}
+            </a>
+        </div>
+        <div class="bento">
+            {% for category in featured_categories %}
+            <a href="{% url 'categories:category_detail' category.slug %}" class="bento-item">
+                <span class="bento-ico">
+                    {% if category.icon %}<i class="{{ category.icon }}"></i>{% else %}<i class="fas fa-store"></i>{% endif %}
+                </span>
+                <div class="bento-txt">
+                    <div class="bento-name">{% if LANGUAGE_CODE == 'ar' %}{{ category.name_ar }}{% else %}{{ category.name_en }}{% endif %}</div>
+                    <div class="bento-cnt">{{ category.business_count|default:0 }} {% if LANGUAGE_CODE == 'ar' %}محل{% else %}businesses{% endif %}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{# ===== HOT DEALS — HORIZONTAL SCROLL ===== #}
+{% if active_deals %}
+<section class="py-5" style="background:white;">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-end mb-4 gap-3 flex-wrap">
+            <div class="sh">
+                <div class="sh-pill hot"><i class="fas fa-fire me-1"></i>{% if LANGUAGE_CODE == 'ar' %}العروض{% else %}DEALS{% endif %}</div>
+                <h2>{% if LANGUAGE_CODE == 'ar' %}أحدث العروض والخصومات{% else %}Latest Deals & Offers{% endif %}</h2>
+                <p>{% if LANGUAGE_CODE == 'ar' %}عروض حصرية لفترة محدودة — لا تفوّتها!{% else %}Exclusive limited-time deals — don't miss out!{% endif %}</p>
+            </div>
+            <a href="{% url 'deals:deal_list' %}" class="btn-sec red">
+                {% if LANGUAGE_CODE == 'ar' %}كل العروض <i class="fas fa-arrow-left"></i>{% else %}All Deals <i class="fas fa-arrow-right"></i>{% endif %}
+            </a>
+        </div>
+        <div class="hscroll">
+            <div class="deals-row">
+                {% for deal in active_deals %}
+                <div class="dcard">
+                    <div class="dcard-img">
+                        {% if deal.image %}<img src="{{ deal.image.url }}" alt="">
+                        {% else %}<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem;">🎁</div>{% endif %}
+                        {% if deal.discount_percentage %}<span class="dcard-disc">-{{ deal.discount_percentage }}%</span>{% endif %}
+                    </div>
+                    <div class="dcard-body">
+                        <div class="dcard-title">{% if LANGUAGE_CODE == 'ar' %}{{ deal.title_ar }}{% else %}{{ deal.title_en }}{% endif %}</div>
+                        <div class="dcard-biz"><i class="fas fa-store me-1"></i>{% if LANGUAGE_CODE == 'ar' %}{{ deal.business.name_ar }}{% else %}{{ deal.business.name_en }}{% endif %}</div>
+                        <a href="{% url 'deals:deal_detail' deal.slug %}" class="dcard-cta">
+                            {% if LANGUAGE_CODE == 'ar' %}عرض التفاصيل{% else %}View Deal{% endif %}
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{# ===== FEATURED BUSINESSES ===== #}
+{% if featured_businesses %}
+<section class="py-5" style="background:var(--bg);">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-end mb-4 gap-3 flex-wrap">
+            <div class="sh">
+                <div class="sh-pill"><i class="fas fa-star me-1"></i>{% if LANGUAGE_CODE == 'ar' %}مميزة{% else %}FEATURED{% endif %}</div>
+                <h2>{% if LANGUAGE_CODE == 'ar' %}محلات مميزة{% else %}Featured Businesses{% endif %}</h2>
+                <p>{% if LANGUAGE_CODE == 'ar' %}موثّقة ومختارة بعناية{% else %}Verified and carefully selected{% endif %}</p>
+            </div>
+            <a href="{% url 'directory:business_list' %}?featured=1" class="btn-sec ind">
+                {% if LANGUAGE_CODE == 'ar' %}عرض الكل <i class="fas fa-arrow-left"></i>{% else %}View All <i class="fas fa-arrow-right"></i>{% endif %}
+            </a>
+        </div>
+        <div class="row g-4">
+            {% for biz in featured_businesses %}
+            <div class="col-xl-4 col-md-6">
+                <div class="biz-card2">
+                    <div class="biz2-hdr">
+                        {% if biz.cover_image %}<img src="{{ biz.cover_image.url }}" alt="">{% endif %}
+                        {% if biz.logo %}<img src="{{ biz.logo.url }}" class="biz2-logo" alt="">
+                        {% else %}<div class="biz2-logo-ph"><i class="fas fa-store"></i></div>{% endif %}
+                    </div>
+                    <div class="biz2-body">
+                        <div class="biz2-tag">
+                            {% if biz.category.icon %}<i class="{{ biz.category.icon }}"></i>{% endif %}
+                            {% if LANGUAGE_CODE == 'ar' %}{{ biz.category.name_ar }}{% else %}{{ biz.category.name_en }}{% endif %}
+                        </div>
+                        <div class="biz2-title">{% if LANGUAGE_CODE == 'ar' %}{{ biz.name_ar }}{% else %}{{ biz.name_en }}{% endif %}</div>
+                        <div class="biz2-loc">
+                            <i class="fas fa-map-marker-alt"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}{{ biz.address_ar|truncatechars:32 }}{% else %}{{ biz.address_en|truncatechars:32 }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="biz2-foot">
+                        <a href="{% url 'directory:business_detail' biz.slug %}" class="btn-biz">
+                            <i class="fas fa-eye"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}مشاهدة{% else %}View{% endif %}
+                        </a>
+                        {% if biz.is_verified %}
+                        <span class="badge-verified"><i class="fas fa-check-circle me-1"></i>{% if LANGUAGE_CODE == 'ar' %}موثّق{% else %}Verified{% endif %}</span>
+                        {% endif %}
+                        <span style="font-size:0.73rem;color:var(--muted);"><i class="fas fa-eye me-1"></i>{{ biz.view_count|default:0 }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{# ===== GOVERNORATES — SPLIT ===== #}
+{% if governorates %}
+<section class="py-5" style="background:white;">
+    <div class="container">
+        <div class="row align-items-start g-5">
+            <div class="col-lg-4">
+                <div class="sh mb-3">
+                    <div class="sh-pill"><i class="fas fa-map-marked-alt me-1"></i>{% if LANGUAGE_CODE == 'ar' %}المحافظات{% else %}REGIONS{% endif %}</div>
+                    <h2>{% if LANGUAGE_CODE == 'ar' %}تصفح حسب المحافظة{% else %}Browse by Region{% endif %}</h2>
+                    <p>{% if LANGUAGE_CODE == 'ar' %}اكتشف المحلات في محافظتك{% else %}Discover businesses near you{% endif %}</p>
+                </div>
+                <a href="{% url 'directory:governorate_list' %}" class="btn-sec ind">
+                    {% if LANGUAGE_CODE == 'ar' %}كل المحافظات <i class="fas fa-arrow-left"></i>{% else %}All Regions <i class="fas fa-arrow-right"></i>{% endif %}
+                </a>
+            </div>
+            <div class="col-lg-8">
+                <div class="row g-3">
+                    {% for gov in governorates %}
+                    <div class="col-md-6">
+                        <a href="{% url 'directory:governorate_detail' gov.slug %}" class="gov-pill">
+                            <div class="gov-ico">
+                                <i class="{{ gov.icon|default:'fas fa-city' }}"></i>
+                            </div>
+                            <div>
+                                <div class="gov-name">{% if LANGUAGE_CODE == 'ar' %}{{ gov.name_ar }}{% else %}{{ gov.name_en }}{% endif %}</div>
+                                <div class="gov-count">{{ gov.businesses_count }} {% if LANGUAGE_CODE == 'ar' %}محل{% else %}businesses{% endif %}</div>
+                            </div>
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %} gov-arr"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{# ===== LATEST BUSINESSES ===== #}
+{% if latest_businesses %}
+<section class="py-5" style="background:var(--bg);">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-end mb-4 gap-3 flex-wrap">
+            <div class="sh">
+                <div class="sh-pill green"><i class="fas fa-clock me-1"></i>{% if LANGUAGE_CODE == 'ar' %}جديد{% else %}NEW{% endif %}</div>
+                <h2>{% if LANGUAGE_CODE == 'ar' %}أحدث المحلات{% else %}Latest Businesses{% endif %}</h2>
+                <p>{% if LANGUAGE_CODE == 'ar' %}تم إضافتها مؤخراً{% else %}Recently added{% endif %}</p>
+            </div>
+            <a href="{% url 'directory:business_list' %}" class="btn-sec ind">
+                {% if LANGUAGE_CODE == 'ar' %}الكل <i class="fas fa-arrow-left"></i>{% else %}All <i class="fas fa-arrow-right"></i>{% endif %}
+            </a>
+        </div>
+        <div class="row g-4">
+            {% for biz in latest_businesses|slice:":6" %}
+            <div class="col-xl-4 col-md-6">
+                <div class="biz-card2">
+                    <div class="biz2-hdr">
+                        {% if biz.cover_image %}<img src="{{ biz.cover_image.url }}" alt="">{% endif %}
+                        <span class="badge-new" style="position:absolute;top:10px;left:10px;">{% if LANGUAGE_CODE == 'ar' %}جديد{% else %}New{% endif %}</span>
+                        {% if biz.logo %}<img src="{{ biz.logo.url }}" class="biz2-logo" alt="">
+                        {% else %}<div class="biz2-logo-ph"><i class="fas fa-store"></i></div>{% endif %}
+                    </div>
+                    <div class="biz2-body">
+                        <div class="biz2-tag">
+                            {% if biz.category.icon %}<i class="{{ biz.category.icon }}"></i>{% endif %}
+                            {% if LANGUAGE_CODE == 'ar' %}{{ biz.category.name_ar }}{% else %}{{ biz.category.name_en }}{% endif %}
+                        </div>
+                        <div class="biz2-title">{% if LANGUAGE_CODE == 'ar' %}{{ biz.name_ar }}{% else %}{{ biz.name_en }}{% endif %}</div>
+                        <div class="biz2-loc">
+                            <i class="fas fa-map-marker-alt"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}{{ biz.address_ar|truncatechars:32 }}{% else %}{{ biz.address_en|truncatechars:32 }}{% endif %}
+                        </div>
+                    </div>
+                    <div class="biz2-foot">
+                        <a href="{% url 'directory:business_detail' biz.slug %}" class="btn-biz">
+                            <i class="fas fa-eye"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}مشاهدة{% else %}View{% endif %}
+                        </a>
+                        <span style="font-size:0.73rem;color:var(--muted);"><i class="fas fa-eye me-1"></i>{{ biz.view_count|default:0 }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{# ===== CTA ===== #}
+<section class="dark-cta">
+    <div class="container" style="position:relative;z-index:2;">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-7">
+                <h2>{% if LANGUAGE_CODE == 'ar' %}هل لديك محل؟ أضفه الآن مجاناً! 🚀{% else %}Have a Business? List it for Free! 🚀{% endif %}</h2>
+                <p>{% if LANGUAGE_CODE == 'ar' %}انضم لآلاف المحلات وابدأ في استقطاب عملاء جدد اليوم{% else %}Join thousands of businesses and start attracting new customers today{% endif %}</p>
+                <a href="{% url 'directory:business_create' %}" class="cta-btn2">
+                    <i class="fas fa-plus-circle"></i>
+                    {% if LANGUAGE_CODE == 'ar' %}أضف محلك الآن{% else %}Add Your Business{% endif %}
+                </a>
+            </div>
+            <div class="col-lg-5 d-none d-lg-flex flex-column gap-3">
+                <div class="cta-feat"><i class="fas fa-check-circle"></i> {% if LANGUAGE_CODE == 'ar' %}إضافة مجانية 100%{% else %}100% Free Listing{% endif %}</div>
+                <div class="cta-feat"><i class="fas fa-check-circle"></i> {% if LANGUAGE_CODE == 'ar' %}وصول لآلاف العملاء{% else %}Reach Thousands of Customers{% endif %}</div>
+                <div class="cta-feat"><i class="fas fa-check-circle"></i> {% if LANGUAGE_CODE == 'ar' %}نشر العروض والخصومات{% else %}Publish Deals & Discounts{% endif %}</div>
+                <div class="cta-feat"><i class="fas fa-check-circle"></i> {% if LANGUAGE_CODE == 'ar' %}تحليلات وإحصائيات تفصيلية{% else %}Detailed Analytics & Stats{% endif %}</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% comment %} {% extends 'base.html' %}
+{% load static i18n %}
+
+{% block title %}
+    {% if LANGUAGE_CODE == 'ar' %}الرئيسية - دليل أي خدمة{% else %}Home - Daliil Ay Khidma{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary: #667eea;
+    --secondary: #764ba2;
+    --deal-1: #f5576c;
+    --deal-2: #f093fb;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --dark: #1e293b;
+    --muted: #64748b;
+    --light-bg: #f8fafc;
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes float    { 0%,100%{transform:translateY(0)}  50%{transform:translateY(-18px)} }
+@keyframes fadeInUp { from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:translateY(0)} }
+@keyframes pulse    { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+@keyframes shimmer  { 0%{background-position:200% center} 100%{background-position:-200% center} }
+
+/* ========== HERO ========== */
+.hero-section {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    min-height: 88vh;
+    display: flex; align-items: center;
+    position: relative; overflow: hidden;
+    padding: 70px 0 120px;
+    margin-top: -2rem;
+}
+.hero-section::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(circle at 15% 50%, rgba(255,255,255,0.1), transparent 50%),
+        radial-gradient(circle at 85% 80%, rgba(255,255,255,0.08), transparent 45%);
+}
+.hero-content { position: relative; z-index: 2; animation: fadeInUp 0.8s ease both; }
+.hero-title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 900; line-height: 1.25;
+    color: white; margin-bottom: 1.25rem;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+.hero-subtitle {
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    color: rgba(255,255,255,0.9);
+    line-height: 1.75; margin-bottom: 2rem;
+}
+.search-box {
+    background: rgba(255,255,255,0.97);
+    border-radius: 60px; padding: 7px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    display: flex; align-items: center;
+}
+.search-box input {
+    border: none; background: transparent;
+    padding: 12px 20px; font-size: 1rem; flex: 1;
+}
+.search-box input:focus { outline: none; }
+.search-box .search-icon { color: #94a3b8; padding: 0 12px; font-size: 1rem; }
+.search-btn {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white; border: none; border-radius: 50px;
+    padding: 12px 30px; font-weight: 700; font-size: 0.95rem;
+    transition: all 0.3s; white-space: nowrap;
+    display: flex; align-items: center; gap: 0.5rem;
+}
+.search-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102,126,234,0.45); }
+.popular-tag {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: rgba(255,255,255,0.18);
+    border: 1.5px solid rgba(255,255,255,0.3);
+    color: white; padding: 0.4rem 1rem; border-radius: 50px;
+    font-size: 0.85rem; font-weight: 600;
+    text-decoration: none; transition: all 0.25s;
+}
+.popular-tag:hover {
+    background: rgba(255,255,255,0.28); color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
+.hero-float-icon {
+    font-size: 14rem; color: rgba(255,255,255,0.1);
+    animation: float 7s ease-in-out infinite;
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* ========== STATS ========== */
+.stats-section {
+    margin-top: -70px; position: relative; z-index: 10;
+    padding-bottom: 60px;
+}
+.stat-card {
+    background: white; border-radius: 22px; padding: 30px 20px;
+    text-align: center; height: 100%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.04);
+    transition: all 0.4s cubic-bezier(.175,.885,.32,1.275);
+}
+.stat-card:hover { transform: translateY(-12px); box-shadow: 0 20px 50px rgba(0,0,0,0.12); }
+.stat-icon {
+    width: 72px; height: 72px; border-radius: 18px;
+    margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.75rem; transition: transform 0.3s;
+}
+.stat-card:hover .stat-icon { transform: scale(1.12) rotate(6deg); }
+.stat-icon.c1 { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+.stat-icon.c2 { background: linear-gradient(135deg, #11998e, #38ef7d); color: white; }
+.stat-icon.c3 { background: linear-gradient(135deg, var(--deal-2), var(--deal-1)); color: white; }
+.stat-icon.c4 { background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; }
+.stat-number {
+    font-size: 2.2rem; font-weight: 900; margin: 10px 0 6px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.stat-label { color: var(--muted); font-size: 0.95rem; font-weight: 600; }
+
+/* ========== SECTION HEADER ========== */
+.sec-head { margin-bottom: 2.5rem; }
+.sec-head h2 {
+    font-size: clamp(1.6rem, 4vw, 2.2rem); font-weight: 900;
+    color: var(--dark); margin-bottom: 0.5rem;
+}
+.sec-head h2 i {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.sec-head p { color: var(--muted); font-size: 1rem; margin: 0; }
+.sec-head.deals h2 i {
+    background: linear-gradient(135deg, var(--deal-2), var(--deal-1));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.view-all {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    font-weight: 700; font-size: 0.9rem; text-decoration: none;
+    padding: 0.55rem 1.25rem; border-radius: 50px;
+    border: 2px solid; transition: all 0.25s;
+}
+.view-all.primary { border-color: var(--primary); color: var(--primary); }
+.view-all.primary:hover { background: var(--primary); color: white; }
+.view-all.deals  { border-color: var(--deal-1); color: var(--deal-1); }
+.view-all.deals:hover  { background: var(--deal-1); color: white; }
+
+/* ========== CATEGORY CARD ========== */
+.cat-card {
+    background: white; border-radius: 18px; padding: 28px 16px;
+    text-align: center; border: 2px solid transparent;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    transition: all 0.35s cubic-bezier(.175,.885,.32,1.275);
+    height: 100%; text-decoration: none; display: block;
+}
+.cat-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    border-color: var(--primary);
+    box-shadow: 0 16px 40px rgba(102,126,234,0.2);
+}
+.cat-icon {
+    font-size: 2.5rem; margin-bottom: 14px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    transition: transform 0.3s; display: block;
+}
+.cat-card:hover .cat-icon { transform: scale(1.2); }
+.cat-name { font-size: 1rem; font-weight: 800; color: var(--dark); margin-bottom: 5px; }
+.cat-count { font-size: 0.82rem; color: var(--muted); font-weight: 600; }
+
+/* ========== BUSINESS CARD ========== */
+.biz-card {
+    background: white; border-radius: 20px; overflow: hidden;
+    box-shadow: 0 6px 25px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.04);
+    transition: all 0.4s cubic-bezier(.175,.885,.32,1.275);
+    height: 100%;
+}
+.biz-card:hover { transform: translateY(-12px); box-shadow: 0 20px 50px rgba(0,0,0,0.14); }
+.biz-img {
+    height: 200px; position: relative; overflow: hidden;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+.biz-img img { width:100%; height:100%; object-fit:cover; transition: transform 0.5s; }
+.biz-card:hover .biz-img img { transform: scale(1.1); }
+.biz-img .no-img {
+    width:100%; height:100%; display:flex; align-items:center;
+    justify-content:center; font-size:4rem; color:rgba(255,255,255,0.3);
+}
+.vbadge {
+    position: absolute; top: 12px;
+    {% if LANGUAGE_CODE == 'ar' %}right: 12px;{% else %}left: 12px;{% endif %}
+    background: white; color: var(--success);
+    padding: 5px 12px; border-radius: 50px;
+    font-size: 0.78rem; font-weight: 700;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+    display: flex; align-items: center; gap: 0.3rem;
+}
+.nbadge {
+    position: absolute; top: 12px;
+    {% if LANGUAGE_CODE == 'ar' %}left: 12px;{% else %}right: 12px;{% endif %}
+    background: var(--warning); color: white;
+    padding: 5px 12px; border-radius: 50px;
+    font-size: 0.78rem; font-weight: 700;
+}
+.biz-body { padding: 1.25rem; }
+.biz-title { font-size: 1rem; font-weight: 800; color: var(--dark); margin-bottom: 0.5rem; }
+.biz-meta { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem; }
+.biz-meta i { color: var(--primary); width: 14px; }
+.biz-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 0.875rem; margin-top: 0.875rem;
+    border-top: 1px solid #f1f5f9;
+}
+.btn-view {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white; border: none; padding: 8px 20px;
+    border-radius: 50px; font-weight: 700; font-size: 0.82rem;
+    text-decoration: none; transition: all 0.3s;
+    display: inline-flex; align-items: center; gap: 0.4rem;
+}
+.btn-view:hover { color: white; transform: translateY(-2px); box-shadow: 0 5px 18px rgba(102,126,234,0.4); }
+
+/* ========== DEALS SECTION ========== */
+.deals-section {
+    background: linear-gradient(135deg, #fff5f5, #fdf2ff);
+    border-top: 1px solid #fecdd3;
+    border-bottom: 1px solid #fecdd3;
+    padding: 4rem 0;
+}
+.deal-card {
+    background: white; border-radius: 20px; overflow: hidden;
+    border: 1px solid #fecdd3;
+    box-shadow: 0 4px 18px rgba(245,87,108,0.08);
+    transition: all 0.35s ease; height: 100%;
+    display: flex; flex-direction: column;
+}
+.deal-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 18px 45px rgba(245,87,108,0.2);
+    border-color: var(--deal-1);
+}
+.deal-img {
+    height: 175px; position: relative; overflow: hidden;
+    background: linear-gradient(135deg, var(--deal-2), var(--deal-1));
+    flex-shrink: 0;
+}
+.deal-img img { width:100%; height:100%; object-fit:cover; transition: transform 0.5s; }
+.deal-card:hover .deal-img img { transform: scale(1.1); }
+.deal-img .no-img {
+    width:100%; height:100%; display:flex;
+    align-items:center; justify-content:center;
+    font-size:3.5rem; color:rgba(255,255,255,0.35);
+}
+.disc-badge {
+    position: absolute; top: 10px;
+    {% if LANGUAGE_CODE == 'ar' %}left: 10px;{% else %}right: 10px;{% endif %}
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: white; padding: 0.4rem 0.875rem;
+    border-radius: 50px; font-weight: 900; font-size: 1rem;
+    box-shadow: 0 4px 14px rgba(239,68,68,0.45);
+    animation: pulse 2.5s infinite;
+}
+.feat-ribbon {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(135deg, #f59e0b, #f97316);
+    color: white; text-align: center; padding: 4px;
+    font-size: 0.72rem; font-weight: 700;
+}
+.deal-body {
+    padding: 1.1rem; flex: 1;
+    display: flex; flex-direction: column;
+}
+.deal-title { font-size: 0.92rem; font-weight: 800; color: var(--dark); margin-bottom: 0.35rem; line-height: 1.35; }
+.deal-biz {
+    font-size: 0.78rem; color: var(--muted); margin-bottom: 0.5rem;
+    display: flex; align-items: center; gap: 0.35rem; text-decoration: none;
+    transition: color 0.2s;
+}
+.deal-biz:hover { color: var(--deal-1); }
+.deal-biz i { color: var(--deal-1); font-size: 0.72rem; }
+.deal-desc { font-size: 0.8rem; color: #94a3b8; line-height: 1.6; margin-bottom: 0.75rem; flex: 1; }
+.deal-timer {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; padding: 0.35rem 0.75rem; border-radius: 50px;
+    font-size: 0.75rem; font-weight: 700; margin-bottom: 0.875rem;
+}
+.deal-cta {
+    display: block; text-align: center;
+    background: linear-gradient(135deg, var(--deal-2), var(--deal-1));
+    color: white; padding: 0.65rem;
+    border-radius: 12px; font-weight: 700; font-size: 0.85rem;
+    text-decoration: none; transition: all 0.3s; margin-top: auto;
+}
+.deal-cta:hover { color: white; transform: translateY(-2px); box-shadow: 0 6px 18px rgba(245,87,108,0.4); }
+
+
+/* ========== GOVERNORATE CARD ========== */
+.gov-card {
+    background: white; border-radius: 18px; overflow: hidden;
+    border: 2px solid #e2e8f0; text-decoration: none; display: block;
+    transition: all 0.35s cubic-bezier(.175,.885,.32,1.275);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.05);
+}
+.gov-card:hover {
+    border-color: var(--primary); transform: translateY(-8px);
+    box-shadow: 0 16px 35px rgba(102,126,234,0.2);
+}
+.gov-img {
+    height: 110px; overflow: hidden;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    position: relative;
+}
+.gov-img img { width:100%; height:100%; object-fit:cover; transition: transform 0.5s; }
+.gov-card:hover .gov-img img { transform: scale(1.08); }
+.gov-no-img {
+    width:100%; height:100%; display:flex;
+    align-items:center; justify-content:center;
+    font-size:2.5rem; color:rgba(255,255,255,0.35);
+}
+.gov-body { padding: 0.875rem; text-align: center; }
+.gov-name  { font-size:0.9rem; font-weight:800; color:var(--dark); margin-bottom:0.2rem; }
+.gov-count { font-size:0.75rem; color:var(--muted); font-weight:600; }
+
+/* ========== DEALS MARQUEE BANNER ========== */
+.deals-marquee-wrap {
+    background: linear-gradient(135deg, var(--deal-2), var(--deal-1));
+    padding: 0.75rem 0; overflow: hidden; white-space: nowrap;
+}
+.deals-marquee {
+    display: inline-flex; gap: 2rem;
+    animation: marquee 30s linear infinite;
+}
+@keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+.marquee-item {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    color: white; font-weight: 700; font-size: 0.88rem;
+    padding: 0.2rem 1rem; border-radius: 50px;
+    background: rgba(255,255,255,0.15);
+    white-space: nowrap; flex-shrink: 0;
+}
+
+/* ========== GOVERNORATES ========== */
+.gov-card {
+    background: white; border-radius: 16px; padding: 1.25rem;
+    text-align: center; border: 2px solid #e2e8f0;
+    transition: all 0.3s; text-decoration: none; display: block;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.05);
+}
+.gov-card:hover { border-color: var(--primary); transform: translateY(-6px); box-shadow: 0 12px 30px rgba(102,126,234,0.18); }
+.gov-icon { font-size: 2rem; margin-bottom: 0.5rem; display: block; }
+.gov-name { font-size: 0.9rem; font-weight: 800; color: var(--dark); margin: 0; }
+.gov-count { font-size: 0.75rem; color: var(--muted); margin: 0; }
+
+/* ========== CTA STRIP ========== */
+.cta-strip {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    padding: 3.5rem 0; color: white; text-align: center;
+    position: relative; overflow: hidden;
+}
+.cta-strip::before {
+    content:'';position:absolute;inset:0;
+    background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08), transparent 60%);
+}
+.cta-strip h3 { font-size: clamp(1.5rem,4vw,2rem); font-weight: 900; margin-bottom: 0.5rem; }
+.cta-strip p  { opacity: 0.88; font-size: 0.95rem; margin-bottom: 1.5rem; }
+.cta-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: white; color: var(--primary);
+    padding: 0.875rem 2.25rem; border-radius: 50px;
+    font-weight: 800; font-size: 1rem; text-decoration: none;
+    transition: all 0.3s; box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+.cta-btn:hover { transform: translateY(-4px); box-shadow: 0 14px 35px rgba(0,0,0,0.25); color: var(--primary); }
+
+@media (max-width: 768px) {
+    .hero-section { min-height: auto; padding: 50px 0 100px; }
+    .stats-section { margin-top: 30px; }
+    .search-box { border-radius: 16px; padding: 8px; flex-direction: column; gap: 8px; }
+    .search-box input { width: 100%; }
+    .search-btn { width: 100%; justify-content: center; border-radius: 12px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ==================== HERO ==================== #}
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6 hero-content">
+                <h1 class="hero-title">
+                    {% if LANGUAGE_CODE == 'ar' %}
+                        اكتشف أفضل المحلات<br>بسهولة تامة 🎯
+                    {% else %}
+                        Discover the Best<br>Businesses Easily 🎯
+                    {% endif %}
+                </h1>
+                <p class="hero-subtitle">
+                    {% if LANGUAGE_CODE == 'ar' %}
+                        دليلك الذكي الشامل لآلاف المحلات والعروض الحصرية في مدينتك
+                    {% else %}
+                        Your smart guide to thousands of businesses and exclusive deals in your city
+                    {% endif %}
+                </p>
+
+                <form method="get" action="{% url 'directory:business_search' %}">
+                    <div class="search-box">
+                        <span class="search-icon"><i class="fas fa-search"></i></span>
+                        <input type="text" name="q"
+                               placeholder="{% if LANGUAGE_CODE == 'ar' %}ابحث عن محلات، منتجات، خدمات...{% else %}Search businesses, products, services...{% endif %}">
+                        <button type="submit" class="search-btn">
+                            <i class="fas fa-search"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}بحث{% else %}Search{% endif %}
+                        </button>
+                    </div>
+                </form>
+
+                <div class="d-flex flex-wrap gap-2 mt-3 align-items-center">
+                    <span style="color:rgba(255,255,255,0.8);font-size:0.85rem;font-weight:600;">
+                        {% if LANGUAGE_CODE == 'ar' %}الأكثر بحثاً:{% else %}Popular:{% endif %}
+                    </span>
+                    <a href="{% url 'directory:business_list' %}?category=restaurants" class="popular-tag">
+                        🍽️ {% if LANGUAGE_CODE == 'ar' %}مطاعم{% else %}Restaurants{% endif %}
+                    </a>
+                    <a href="{% url 'directory:business_list' %}?category=medical" class="popular-tag">
+                        🏥 {% if LANGUAGE_CODE == 'ar' %}طبي{% else %}Medical{% endif %}
+                    </a>
+                    <a href="{% url 'directory:business_list' %}?category=shopping" class="popular-tag">
+                        🛍️ {% if LANGUAGE_CODE == 'ar' %}تسوق{% else %}Shopping{% endif %}
+                    </a>
+                    <a href="{% url 'deals:deal_list' %}" class="popular-tag" style="background:rgba(245,87,108,0.3);border-color:rgba(245,87,108,0.5);">
+                        🔥 {% if LANGUAGE_CODE == 'ar' %}عروض{% else %}Deals{% endif %}
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-lg-6 d-none d-lg-flex justify-content-center">
+                <div class="hero-float-icon">🏪</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# ==================== STATS ==================== #}
+<section class="stats-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-card">
+                    <div class="stat-icon c1"><i class="fas fa-store-alt"></i></div>
+                    <div class="stat-number">{{ stats.total_businesses|default:"500" }}+</div>
+                    <div class="stat-label">{% if LANGUAGE_CODE == 'ar' %}إجمالي المحلات{% else %}Total Businesses{% endif %}</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-card">
+                    <div class="stat-icon c2"><i class="fas fa-check-double"></i></div>
+                    <div class="stat-number">{{ stats.verified_businesses|default:"300" }}+</div>
+                    <div class="stat-label">{% if LANGUAGE_CODE == 'ar' %}محل موثّق{% else %}Verified Businesses{% endif %}</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-card">
+                    <div class="stat-icon c3"><i class="fas fa-tags"></i></div>
+                    <div class="stat-number">{{ stats.total_deals|default:"150" }}+</div>
+                    <div class="stat-label">{% if LANGUAGE_CODE == 'ar' %}عرض فعّال{% else %}Active Deals{% endif %}</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-card">
+                    <div class="stat-icon c4"><i class="fas fa-th-large"></i></div>
+                    <div class="stat-number">{{ stats.total_categories|default:"25" }}+</div>
+                    <div class="stat-label">{% if LANGUAGE_CODE == 'ar' %}فئة{% else %}Categories{% endif %}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# ==================== DEALS MARQUEE ==================== #}
+{% if active_deals %}
+<div class="deals-marquee-wrap">
+    <div class="deals-marquee">
+        {% for deal in active_deals %}
+        <a href="{% url 'deals:deal_detail' deal.slug %}" class="marquee-item">
+            🔥
+            {% if LANGUAGE_CODE == 'ar' %}{{ deal.title_ar }}{% else %}{{ deal.title_en }}{% endif %}
+            {% if deal.discount_percentage %}
+            <span style="background:rgba(255,255,255,0.25);padding:1px 8px;border-radius:50px;">-{{ deal.discount_percentage }}%</span>
+            {% endif %}
+        </a>
+        {% endfor %}
+        {# duplicate for seamless loop #}
+        {% for deal in active_deals %}
+        <a href="{% url 'deals:deal_detail' deal.slug %}" class="marquee-item">
+            🔥
+            {% if LANGUAGE_CODE == 'ar' %}{{ deal.title_ar }}{% else %}{{ deal.title_en }}{% endif %}
+            {% if deal.discount_percentage %}
+            <span style="background:rgba(255,255,255,0.25);padding:1px 8px;border-radius:50px;">-{{ deal.discount_percentage }}%</span>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{# ==================== CATEGORIES ==================== #}
+{% if featured_categories %}
+<section class="py-5" style="background:var(--light-bg);">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-end sec-head mb-4">
+            <div>
+                <h2><i class="fas fa-th-large me-2"></i>{% if LANGUAGE_CODE == 'ar' %}تصفح حسب الفئة{% else %}Browse by Category{% endif %}</h2>
+                <p>{% if LANGUAGE_CODE == 'ar' %}استكشف المحلات في فئات مختلفة{% else %}Explore businesses in different categories{% endif %}</p>
+            </div>
+            <a href="{% url 'categories:category_list' %}" class="view-all primary d-none d-md-inline-flex">
+                {% if LANGUAGE_CODE == 'ar' %}كل الفئات{% else %}All Categories{% endif %}
+                <i class="fas fa-arrow-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}"></i>
+            </a>
+        </div>
+        <div class="row g-3">
+            {% for category in featured_categories %}
+            <div class="col-xl-2 col-lg-3 col-md-4 col-6">
+                <a href="{% url 'categories:category_detail' category.slug %}" class="cat-card">
+                    <span class="cat-icon">
+                        {% if category.icon %}<i class="{{ category.icon }}"></i>
+                        {% else %}<i class="fas fa-store"></i>{% endif %}
+                    </span>
+                    <div class="cat-name">
+                        {% if LANGUAGE_CODE == 'ar' %}{{ category.name_ar }}{% else %}{{ category.name_en }}{% endif %}
+                    </div>
+                    <div class="cat-count">
+                        {{ category.business_count|default:0 }}
+                        {% if LANGUAGE_CODE == 'ar' %}محل{% else %}businesses{% endif %}
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+
+{# ==================== GOVERNORATES ==================== #}
+{% if governorates %}
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-end sec-head mb-4">
+            <div>
+                <h2><i class="fas fa-map-marked-alt me-2"></i>
+                    {% if LANGUAGE_CODE == 'ar' %}تصفح حسب المحافظة{% else %}Browse by Governorate{% endif %}
+                </h2>
+                <p>{% if LANGUAGE_CODE == 'ar' %}اكتشف المحلات في محافظتك{% else %}Discover businesses in your governorate{% endif %}</p>
+            </div>
+            <a href="{% url 'directory:governorate_list' %}" class="view-all primary d-none d-md-inline-flex">
+                {% if LANGUAGE_CODE == 'ar' %}كل المحافظات{% else %}All Governorates{% endif %}
+                <i class="fas fa-arrow-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}"></i>
+            </a>
+        </div>
+
+        <div class="row g-3">
+            {% for gov in governorates %}
+            <div class="col-xl-2 col-lg-3 col-md-4 col-6">
+                <a href="{% url 'directory:governorate_detail' gov.slug %}" class="gov-card">
+                    <div class="gov-img">
+                        {% if gov.image %}
+                            <img src="{{ gov.image.url }}" alt="">
+                        {% else %}
+                            <div class="gov-no-img">
+                                <i class="{{ gov.icon|default:'fas fa-city' }}"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="gov-body">
+                        <div class="gov-name">
+                            {% if LANGUAGE_CODE == 'ar' %}{{ gov.name_ar }}{% else %}{{ gov.name_en }}{% endif %}
+                        </div>
+                        <div class="gov-count">
+                            {{ gov.businesses_count }} {% if LANGUAGE_CODE == 'ar' %}محل{% else %}businesses{% endif %}
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</section>
+{% endif %}
+
+
+{# ==================== HOT DEALS ==================== #}
+{% if active_deals %}
+<section class="deals-section">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-end sec-head deals mb-4">
+            <div>
+                <h2><i class="fas fa-fire me-2"></i>{% if LANGUAGE_CODE == 'ar' %}أحدث العروض والخصومات 🔥{% else %}Latest Deals & Offers 🔥{% endif %}</h2>
+                <p>{% if LANGUAGE_CODE == 'ar' %}عروض حصرية محدودة - لا تفوّتها!{% else %}Exclusive limited offers — don't miss out!{% endif %}</p>
+            </div>
+            <a href="{% url 'deals:deal_list' %}" class="view-all deals d-none d-md-inline-flex">
+                {% if LANGUAGE_CODE == 'ar' %}كل العروض{% else %}All Deals{% endif %}
+                <i class="fas fa-arrow-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}"></i>
+            </a>
+        </div>
+
+        <div class="row g-3">
+            {% for deal in active_deals %}
+            <div class="col-xl-4 col-md-6">
+                <div class="deal-card">
+                    <div class="deal-img">
+                        {% if deal.image %}
+                            <img src="{{ deal.image.url }}" alt="">
+                        {% else %}
+                            <div class="no-img">🎁</div>
+                        {% endif %}
+                        {% if deal.discount_percentage %}
+                        <div class="disc-badge">-{{ deal.discount_percentage }}%</div>
+                        {% endif %}
+                        {% if deal.is_featured %}
+                        <div class="feat-ribbon">⭐ {% if LANGUAGE_CODE == 'ar' %}مميز{% else %}Featured{% endif %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="deal-body">
+                        <h5 class="deal-title">
+                            {% if LANGUAGE_CODE == 'ar' %}{{ deal.title_ar }}{% else %}{{ deal.title_en }}{% endif %}
+                        </h5>
+                        <a href="{% url 'directory:business_detail' deal.business.slug %}" class="deal-biz">
+                            <i class="fas fa-store"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}{{ deal.business.name_ar }}{% else %}{{ deal.business.name_en }}{% endif %}
+                        </a>
+                        {% if deal.description_ar or deal.description_en %}
+                        <p class="deal-desc">
+                            {% if LANGUAGE_CODE == 'ar' %}{{ deal.description_ar|truncatewords:14 }}{% else %}{{ deal.description_en|truncatewords:14 }}{% endif %}
+                        </p>
+                        {% endif %}
+                        <div class="deal-timer">
+                            <i class="fas fa-clock"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}ينتهي في{% else %}Ends{% endif %}
+                            {{ deal.end_date|date:"d M Y" }}
+                        </div>
+                        <a href="{% url 'deals:deal_detail' deal.slug %}" class="deal-cta">
+                            <i class="fas fa-eye me-1"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}عرض التفاصيل والاستفادة{% else %}View Deal Details{% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="{% url 'deals:deal_list' %}" class="view-all deals">
+                <i class="fas fa-tags"></i>
+                {% if LANGUAGE_CODE == 'ar' %}عرض جميع العروض والخصومات{% else %}View All Deals & Offers{% endif %}
+                <i class="fas fa-arrow-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}"></i>
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{# ==================== FEATURED BUSINESSES ==================== #}
+{% if featured_businesses %}
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-end sec-head mb-4">
+            <div>
+                <h2><i class="fas fa-star me-2"></i>{% if LANGUAGE_CODE == 'ar' %}محلات مميزة{% else %}Featured Businesses{% endif %}</h2>
+                <p>{% if LANGUAGE_CODE == 'ar' %}محلات مختارة بعناية وموثّقة{% else %}Carefully selected and verified businesses{% endif %}</p>
+            </div>
+            <a href="{% url 'directory:business_list' %}?featured=1" class="view-all primary d-none d-md-inline-flex">
+                {% if LANGUAGE_CODE == 'ar' %}عرض الكل{% else %}View All{% endif %}
+                <i class="fas fa-arrow-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}"></i>
+            </a>
+        </div>
+        <div class="row g-4">
+            {% for biz in featured_businesses %}
+            <div class="col-xl-4 col-md-6">
+                <div class="biz-card">
+                    <div class="biz-img">
+                        {% if biz.logo %}<img src="{{ biz.logo.url }}" alt="">
+                        {% else %}<div class="no-img"><i class="fas fa-store-alt"></i></div>{% endif %}
+                        {% if biz.is_verified %}
+                        <span class="vbadge"><i class="fas fa-check-circle"></i>{% if LANGUAGE_CODE == 'ar' %}موثّق{% else %}Verified{% endif %}</span>
+                        {% endif %}
+                    </div>
+                    <div class="biz-body">
+                        <div class="biz-title">
+                            {% if LANGUAGE_CODE == 'ar' %}{{ biz.name_ar }}{% else %}{{ biz.name_en }}{% endif %}
+                        </div>
+                        <div class="biz-meta"><i class="fas fa-th-large"></i>{% if LANGUAGE_CODE == 'ar' %}{{ biz.category.name_ar }}{% else %}{{ biz.category.name_en }}{% endif %}</div>
+                        <div class="biz-meta"><i class="fas fa-map-marker-alt" style="color:#ef4444;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}{{ biz.address_ar|truncatechars:30 }}{% else %}{{ biz.address_en|truncatechars:30 }}{% endif %}
+                        </div>
+                        <div class="biz-footer">
+                            <a href="{% url 'directory:business_detail' biz.slug %}" class="btn-view">
+                                <i class="fas fa-eye"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}مشاهدة{% else %}View{% endif %}
+                            </a>
+                            <span style="font-size:0.78rem;color:var(--muted);">
+                                <i class="fas fa-eye me-1"></i>{{ biz.view_count|default:0 }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{# ==================== LATEST BUSINESSES ==================== #}
+{% if latest_businesses %}
+<section class="py-5" style="background:var(--light-bg);">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-end sec-head mb-4">
+            <div>
+                <h2><i class="fas fa-clock me-2"></i>{% if LANGUAGE_CODE == 'ar' %}أحدث المحلات{% else %}Latest Businesses{% endif %}</h2>
+                <p>{% if LANGUAGE_CODE == 'ar' %}تم إضافتها مؤخراً{% else %}Recently added{% endif %}</p>
+            </div>
+            <a href="{% url 'directory:business_list' %}" class="view-all primary d-none d-md-inline-flex">
+                {% if LANGUAGE_CODE == 'ar' %}الكل{% else %}All{% endif %}
+                <i class="fas fa-arrow-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}"></i>
+            </a>
+        </div>
+        <div class="row g-4">
+            {% for biz in latest_businesses|slice:":6" %}
+            <div class="col-xl-4 col-md-6">
+                <div class="biz-card">
+                    <div class="biz-img">
+                        {% if biz.logo %}<img src="{{ biz.logo.url }}" alt="">
+                        {% else %}<div class="no-img"><i class="fas fa-store-alt"></i></div>{% endif %}
+                        {% if biz.is_verified %}
+                        <span class="vbadge"><i class="fas fa-check-circle"></i>{% if LANGUAGE_CODE == 'ar' %}موثّق{% else %}Verified{% endif %}</span>
+                        {% endif %}
+                        <span class="nbadge">{% if LANGUAGE_CODE == 'ar' %}جديد{% else %}New{% endif %}</span>
+                    </div>
+                    <div class="biz-body">
+                        <div class="biz-title">{% if LANGUAGE_CODE == 'ar' %}{{ biz.name_ar }}{% else %}{{ biz.name_en }}{% endif %}</div>
+                        <div class="biz-meta"><i class="fas fa-th-large"></i>{% if LANGUAGE_CODE == 'ar' %}{{ biz.category.name_ar }}{% else %}{{ biz.category.name_en }}{% endif %}</div>
+                        <div class="biz-meta"><i class="fas fa-map-marker-alt" style="color:#ef4444;"></i>{% if LANGUAGE_CODE == 'ar' %}{{ biz.address_ar|truncatechars:30 }}{% else %}{{ biz.address_en|truncatechars:30 }}{% endif %}</div>
+                        <div class="biz-footer">
+                            <a href="{% url 'directory:business_detail' biz.slug %}" class="btn-view">
+                                <i class="fas fa-eye"></i>{% if LANGUAGE_CODE == 'ar' %}مشاهدة{% else %}View{% endif %}
+                            </a>
+                            <span style="font-size:0.78rem;color:var(--muted);"><i class="fas fa-eye me-1"></i>{{ biz.view_count|default:0 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{# ==================== CTA ==================== #}
+<section class="cta-strip">
+    <div class="container" style="position:relative;z-index:2;">
+        <h3>{% if LANGUAGE_CODE == 'ar' %}هل لديك محل؟ أضفه الآن مجاناً! 🚀{% else %}Have a business? Add it for free! 🚀{% endif %}</h3>
+        <p>{% if LANGUAGE_CODE == 'ar' %}انضم لآلاف المحلات وابدأ في استقطاب عملاء جدد{% else %}Join thousands of businesses and start attracting new customers{% endif %}</p>
+        <a href="{% url 'directory:business_create' %}" class="cta-btn">
+            <i class="fas fa-plus-circle"></i>
+            {% if LANGUAGE_CODE == 'ar' %}أضف محلك الآن{% else %}Add Your Business{% endif %}
+        </a>
+    </div>
+</section>
+
+{% endblock %} {% endcomment %}

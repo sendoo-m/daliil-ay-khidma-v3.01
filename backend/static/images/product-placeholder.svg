@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" role="img" aria-labelledby="title description">
+  <title id="title">Product placeholder</title>
+  <desc id="description">A neutral product package illustration for products without an uploaded image.</desc>
+  <defs>
+    <linearGradient id="background" x1="80" y1="40" x2="720" y2="560" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F2F4FF"/>
+      <stop offset="1" stop-color="#F8F1FF"/>
+    </linearGradient>
+    <linearGradient id="box" x1="298" y1="205" x2="507" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C8FF1"/>
+      <stop offset="1" stop-color="#6852AE"/>
+    </linearGradient>
+    <filter id="shadow" x="214" y="163" width="372" height="330" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#4C3C86" flood-opacity=".18"/>
+    </filter>
+  </defs>
+  <rect width="800" height="600" rx="32" fill="url(#background)"/>
+  <circle cx="126" cy="118" r="58" fill="#FFFFFF" fill-opacity=".55"/>
+  <circle cx="690" cy="480" r="92" fill="#FFFFFF" fill-opacity=".4"/>
+  <g filter="url(#shadow)">
+    <path d="M400 184 535 252 400 320 265 252 400 184Z" fill="#91A1F5"/>
+    <path d="M265 252 400 320V454L265 386V252Z" fill="#7485DF"/>
+    <path d="M535 252 400 320V454L535 386V252Z" fill="url(#box)"/>
+    <path d="m333 218 135 68" stroke="#FFFFFF" stroke-opacity=".78" stroke-width="16" stroke-linecap="round"/>
+    <path d="M400 320v134" stroke="#FFFFFF" stroke-opacity=".28" stroke-width="4"/>
+    <rect x="426" y="349" width="75" height="49" rx="10" fill="#FFFFFF" fill-opacity=".9"/>
+    <path d="M444 366h40M444 380h27" stroke="#7665BC" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <text x="400" y="518" text-anchor="middle" fill="#51486F" font-family="Arial, sans-serif" font-size="26" font-weight="700">صورة المنتج</text>
+</svg>

@@ -1,0 +1,239 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% load i18n %}
+{% load humanize %}
+
+{% block title %}{% trans 'Reviews Management' %}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="page-title">
+        <i class="fas fa-star me-2"></i>
+        {% trans 'Reviews & Ratings' %}
+    </h2>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <select name="business" class="form-select">
+                    <option value="">{% trans 'All Businesses' %}</option>
+                    {% for business in businesses %}
+                        <option value="{{ business.id }}" {% if request.GET.business == business.id|stringformat:"s" %}selected{% endif %}>
+                            {{ business.name_ar }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="rating" class="form-select">
+                    <option value="">{% trans 'All Ratings' %}</option>
+                    <option value="5" {% if request.GET.rating == '5' %}selected{% endif %}>5 ⭐</option>
+                    <option value="4" {% if request.GET.rating == '4' %}selected{% endif %}>4 ⭐</option>
+                    <option value="3" {% if request.GET.rating == '3' %}selected{% endif %}>3 ⭐</option>
+                    <option value="2" {% if request.GET.rating == '2' %}selected{% endif %}>2 ⭐</option>
+                    <option value="1" {% if request.GET.rating == '1' %}selected{% endif %}>1 ⭐</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">{% trans 'All Status' %}</option>
+                    <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>{% trans 'Approved' %}</option>
+                    <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>{% trans 'Pending' %}</option>
+                    <option value="replied" {% if request.GET.status == 'replied' %}selected{% endif %}>{% trans 'Replied' %}</option>
+                    <option value="unreplied" {% if request.GET.status == 'unreplied' %}selected{% endif %}>{% trans 'Unreplied' %}</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="search" class="form-control" placeholder="{% trans 'Search...' %}" value="{{ request.GET.search }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> {% trans 'Filter' %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body text-center text-white">
+                <i class="fas fa-star fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ total_count }}</h3>
+                <p class="mb-0">{% trans 'Total Reviews' %}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card warning">
+            <div class="card-body text-center text-white">
+                <i class="fas fa-clock fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ pending_count }}</h3>
+                <p class="mb-0">{% trans 'Pending Approval' %}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card info">
+            <div class="card-body text-center text-white">
+                <i class="fas fa-reply fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ unreplied_count }}</h3>
+                <p class="mb-0">{% trans 'Needs Reply' %}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reviews List -->
+{% if reviews %}
+<div class="row">
+    <div class="col-12">
+        {% for review in reviews %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="d-flex align-items-start">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">
+                                {% if review.user %}
+                                    {{ review.user.get_full_name|default:review.user.username }}
+                                {% else %}
+                                    {% trans 'Anonymous' %}
+                                {% endif %}
+                            </h5>
+                            <p class="text-muted small mb-1">
+                                <i class="fas fa-store me-1"></i>
+                                {{ review.business.name_ar }}
+                            </p>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>
+                                {{ review.created_at|naturaltime }}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="text-end">
+                        <!-- Rating Stars -->
+                        <div class="mb-2">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= review.rating %}
+                                    <i class="fas fa-star text-warning"></i>
+                                {% else %}
+                                    <i class="far fa-star text-warning"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Status Badges -->
+                        <div>
+                            {% if review.is_approved %}
+                                <span class="badge bg-success">{% trans 'Approved' %}</span>
+                            {% else %}
+                                <span class="badge bg-warning">{% trans 'Pending' %}</span>
+                            {% endif %}
+                            
+                            {% if review.reply %}
+                                <span class="badge bg-info">{% trans 'Replied' %}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Review Comment -->
+                <div class="mb-3">
+                    <p class="mb-0">{{ review.comment }}</p>
+                </div>
+                
+                <!-- Reply Section -->
+                {% if review.reply %}
+                <div class="bg-light p-3 rounded mb-3">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-reply text-primary me-2 mt-1"></i>
+                        <div>
+                            <strong class="d-block mb-1">{% trans 'Your Reply:' %}</strong>
+                            <p class="mb-0">{{ review.reply }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Actions -->
+                <div class="d-flex gap-2">
+                    {% if not review.reply %}
+                    <a href="{% url 'dashboard:review_reply' review.pk %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-reply me-1"></i>
+                        {% trans 'Reply' %}
+                    </a>
+                    {% else %}
+                    <a href="{% url 'dashboard:review_reply' review.pk %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-edit me-1"></i>
+                        {% trans 'Edit Reply' %}
+                    </a>
+                    {% endif %}
+                    
+                    {% if not review.is_approved %}
+                    <button class="btn btn-sm btn-outline-success" onclick="alert('سيتم إضافة هذه الميزة قريباً')">
+                        <i class="fas fa-check me-1"></i>
+                        {% trans 'Approve' %}
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if reviews.has_other_pages %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if reviews.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ reviews.previous_page_number }}{% if request.GET.business %}&business={{ request.GET.business }}{% endif %}{% if request.GET.rating %}&rating={{ request.GET.rating }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+        {% endif %}
+        
+        {% for num in reviews.paginator.page_range %}
+            {% if reviews.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > reviews.number|add:'-3' and num < reviews.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ num }}{% if request.GET.business %}&business={{ request.GET.business }}{% endif %}{% if request.GET.rating %}&rating={{ request.GET.rating }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ num }}</a>
+            </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if reviews.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ reviews.next_page_number }}{% if request.GET.business %}&business={{ request.GET.business }}{% endif %}{% if request.GET.rating %}&rating={{ request.GET.rating }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-star fa-4x text-muted mb-3"></i>
+        <h4>{% trans 'No reviews found' %}</h4>
+        <p class="text-muted">{% trans 'Your customers reviews will appear here' %}</p>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

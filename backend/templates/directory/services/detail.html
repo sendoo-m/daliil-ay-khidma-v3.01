@@ -1,0 +1,1063 @@
+{% extends "base.html" %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block title %}
+    {% if LANGUAGE_CODE == 'ar' %}{{ business.name_ar }}{% else %}{{ business.name_en }}{% endif %} -
+    {% if LANGUAGE_CODE == 'ar' %}الخدمات العامة{% else %}Public Services{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+    /* ===== Hero ===== */
+    .service-hero {
+        height: 380px;
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    }
+    .service-hero img {
+        width: 100%; height: 100%;
+        object-fit: cover; opacity: 0.55;
+        transition: transform 8s ease;
+    }
+    .service-hero:hover img { transform: scale(1.04); }
+    .service-hero-overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 60%);
+        display: flex; align-items: flex-end;
+    }
+    .service-hero-content {
+        padding: 2.5rem;
+        width: 100%; color: white;
+    }
+    .service-type-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: rgba(255,255,255,0.15);
+        border: 1px solid rgba(255,255,255,0.3);
+        backdrop-filter: blur(8px);
+        padding: 5px 16px; border-radius: 20px;
+        font-size: 0.82rem; font-weight: 600;
+        margin-bottom: 0.8rem;
+    }
+    .service-hero-title {
+        font-size: 2rem; font-weight: 900;
+        text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+        margin-bottom: 0.5rem;
+    }
+    .service-hero-meta {
+        display: flex; flex-wrap: wrap; gap: 1rem;
+        font-size: 0.85rem; opacity: 0.9;
+    }
+    .service-hero-meta span {
+        display: flex; align-items: center; gap: 5px;
+    }
+
+    /* Open/Closed live badge */
+    .live-status {
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 5px 14px; border-radius: 20px;
+        font-size: 0.8rem; font-weight: 700;
+        backdrop-filter: blur(6px);
+    }
+    .live-open   { background: rgba(46,204,113,0.25); border:1px solid rgba(46,204,113,0.5); color:#2ecc71; }
+    .live-closed { background: rgba(231,76,60,0.25);  border:1px solid rgba(231,76,60,0.5);  color:#e74c3c; }
+    .live-dot { width:8px; height:8px; border-radius:50%; animation: blink 1.5s infinite; }
+    .live-dot-green { background:#2ecc71; }
+    .live-dot-red   { background:#e74c3c; }
+    @keyframes blink {
+        0%,100% { opacity:1; }
+        50%      { opacity:0.3; }
+    }
+
+    /* ===== Quick Action Bar ===== */
+    .quick-action-bar {
+        background: white;
+        border-bottom: 1px solid #eef2f7;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        position: sticky; top: 0; z-index: 100;
+        padding: 0.85rem 0;
+    }
+    .quick-action-bar .btn {
+        border-radius: 10px; font-size: 0.85rem;
+        font-weight: 600; padding: 0.5rem 1.2rem;
+    }
+    .btn-primary-dark {
+        background: linear-gradient(135deg,#203a43,#2c5364);
+        color: white; border: none;
+    }
+    .btn-primary-dark:hover { opacity: 0.9; color: white; }
+
+    /* ===== Layout ===== */
+    .detail-main { padding: 2rem 0; background: #f0f4f8; min-height: 60vh; }
+    .content-card {
+        background: white; border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .card-title {
+        font-size: 1rem; font-weight: 700; color: #2c3e50;
+        margin-bottom: 1.2rem; padding-bottom: 0.75rem;
+        border-bottom: 2px solid #eef2f7;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .card-title i { color: #2c5364; }
+
+    /* ===== Photo Album ===== */
+    .album-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(2, 160px);
+        gap: 8px;
+    }
+    .album-item {
+        border-radius: 10px; overflow: hidden;
+        cursor: pointer; position: relative;
+        background: #dde3ea;
+    }
+    .album-item img {
+        width: 100%; height: 100%;
+        object-fit: cover; transition: transform 0.3s;
+    }
+    .album-item:hover img { transform: scale(1.05); }
+    .album-item:first-child {
+        grid-column: span 2; grid-row: span 2;
+    }
+    .album-more {
+        position: absolute; inset: 0;
+        background: rgba(44,83,100,0.7);
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 1.3rem; font-weight: 700;
+        border-radius: 10px;
+    }
+
+    /* Lightbox */
+    .lightbox {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.94); z-index: 9999;
+        align-items: center; justify-content: center;
+    }
+    .lightbox.show { display: flex; }
+    .lightbox img { max-width:90vw; max-height:85vh; border-radius:12px; object-fit:contain; }
+    .lightbox-close {
+        position:absolute; top:20px; left:20px;
+        background:rgba(255,255,255,0.12); border:none;
+        color:white; width:42px; height:42px;
+        border-radius:50%; font-size:1.1rem; cursor:pointer;
+    }
+    .lightbox-prev, .lightbox-next {
+        position:absolute; top:50%; transform:translateY(-50%);
+        background:rgba(255,255,255,0.12); border:none;
+        color:white; width:46px; height:46px;
+        border-radius:50%; font-size:1.1rem; cursor:pointer;
+    }
+    .lightbox-prev { right:20px; }
+    .lightbox-next { left:20px; }
+
+    /* ===== Info Table ===== */
+    .info-table { width: 100%; }
+    .info-table tr td {
+        padding: 0.7rem 0;
+        border-bottom: 1px solid #f0f4f8;
+        vertical-align: middle;
+    }
+    .info-table tr:last-child td { border-bottom: none; }
+    .info-table .info-label {
+        width: 40%; font-size: 0.8rem;
+        color: #888; font-weight: 600;
+        display: flex; align-items: center; gap: 7px;
+    }
+    .info-table .info-label i { color: #2c5364; width: 16px; }
+    .info-table .info-value {
+        font-size: 0.88rem; font-weight: 600; color: #333;
+    }
+
+    /* ===== Working Hours ===== */
+    .hours-card {
+        background: linear-gradient(135deg,#203a4310,#2c536415);
+        border: 1.5px solid #2c536420;
+        border-radius: 14px; padding: 1.2rem;
+    }
+    .hours-row {
+        display: flex; justify-content: space-between;
+        align-items: center; padding: 0.45rem 0;
+        border-bottom: 1px dashed #dde3ea;
+        font-size: 0.85rem;
+    }
+    .hours-row:last-child { border-bottom: none; }
+    .hours-row .day  { font-weight: 600; color: #444; }
+    .hours-row .time { color: #2c5364; font-weight: 700; }
+    .hours-row .closed-text { color: #e74c3c; font-weight: 600; }
+
+    /* ===== Emergency Numbers ===== */
+    .emergency-card {
+        background: linear-gradient(135deg,#e74c3c,#c0392b);
+        border-radius: 16px; padding: 1.5rem; color: white;
+        margin-bottom: 1.5rem;
+    }
+    .emergency-card h6 { font-weight: 800; font-size: 1rem; margin-bottom: 1rem; }
+    .emergency-number {
+        display: flex; align-items: center; gap: 12px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 12px; padding: 0.8rem 1rem;
+        margin-bottom: 0.5rem; text-decoration: none; color: white;
+        transition: background 0.2s;
+    }
+    .emergency-number:hover { background: rgba(255,255,255,0.25); color: white; }
+    .emergency-number i { font-size: 1.2rem; }
+    .emergency-num-value { font-size: 1.1rem; font-weight: 800; }
+    .emergency-num-label { font-size: 0.75rem; opacity: 0.85; }
+
+    /* ===== Map ===== */
+    .map-wrapper { height: 260px; border-radius: 14px; overflow: hidden; }
+    .map-wrapper iframe { width: 100%; height: 100%; border: none; }
+    .map-placeholder {
+        height: 260px; background: linear-gradient(135deg,#f0f4f8,#eef2f7);
+        border-radius: 14px; display: flex; align-items: center;
+        justify-content: center; text-align: center;
+        border: 2px dashed rgba(44,83,100,0.25);
+    }
+
+    /* ===== Contact Buttons ===== */
+    .contact-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 0.75rem 0; border-bottom: 1px solid #eef2f7;
+    }
+    .contact-item:last-child { border-bottom: none; }
+    .contact-icon {
+        width: 40px; height: 40px; border-radius: 10px;
+        display: flex; align-items: center;
+        justify-content: center; flex-shrink: 0;
+    }
+    .contact-label { font-size: 0.75rem; color: #999; }
+    .contact-value { font-size: 0.9rem; font-weight: 600; color: #333; }
+
+    /* ===== Reviews ===== */
+    .review-card {
+        border: none; border-radius: 12px;
+        background: #f0f4f8; padding: 1.1rem;
+        margin-bottom: 0.8rem;
+        border-right: 3px solid #2c536430;
+    }
+    .reviewer-avatar {
+        width: 40px; height: 40px; border-radius: 50%;
+        background: linear-gradient(135deg,#203a43,#2c5364);
+        display: flex; align-items: center;
+        justify-content: center;
+        color: white; font-weight: 700;
+        flex-shrink: 0;
+    }
+    .review-rating { color: #f39c12; font-size: 0.85rem; }
+    .review-text   { font-size: 0.85rem; color: #555; margin: 0.4rem 0; }
+    .review-date   { font-size: 0.75rem; color: #aaa; }
+    .rating-big    { font-size: 3.5rem; font-weight: 900; color: #2c3e50; line-height: 1; }
+    .rating-bar    { height: 8px; border-radius: 4px; background: #dde3ea; overflow: hidden; }
+    .rating-bar-fill {
+        height: 100%; border-radius: 4px;
+        background: linear-gradient(135deg,#203a43,#2c5364);
+    }
+
+    /* Review Form */
+    .review-form-card {
+        background: linear-gradient(135deg,#203a4310,#2c536415);
+        border: 1.5px solid #2c536420;
+        border-radius: 14px; padding: 1.5rem;
+    }
+    .star-input { display:flex; flex-direction:row-reverse; justify-content:flex-end; gap:4px; }
+    .star-input input { display: none; }
+    .star-input label { font-size:1.8rem; color:#ddd; cursor:pointer; transition:color 0.2s; }
+    .star-input input:checked ~ label,
+    .star-input label:hover,
+    .star-input label:hover ~ label { color: #f39c12; }
+
+    /* ===== Sticky Sidebar ===== */
+    .sidebar-sticky { position: sticky; top: 80px; }
+
+    /* ===== Breadcrumb ===== */
+    .detail-breadcrumb {
+        background: white; padding: 0.75rem 0;
+        border-bottom: 1px solid #eef2f7; font-size: 0.82rem;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 576px) {
+        .album-grid {
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: auto;
+        }
+        .album-item:first-child { grid-column: span 2; }
+        .service-hero { height: 260px; }
+        .service-hero-title { font-size: 1.4rem; }
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- ===== Breadcrumb ===== -->
+<div class="detail-breadcrumb">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                    <a href="/">{% if LANGUAGE_CODE == 'ar' %}الرئيسية{% else %}Home{% endif %}</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{% url 'directory:services_list' %}">
+                        {% if LANGUAGE_CODE == 'ar' %}الخدمات العامة{% else %}Public Services{% endif %}
+                    </a>
+                </li>
+                {% if business.category %}
+                <li class="breadcrumb-item">
+                    <a href="{% url 'directory:services_list' %}?category={{ business.category.slug }}">
+                        {% if LANGUAGE_CODE == 'ar' %}{{ business.category.name_ar }}{% else %}{{ business.category.name_en }}{% endif %}
+                    </a>
+                </li>
+                {% endif %}
+                <li class="breadcrumb-item active">
+                    {% if LANGUAGE_CODE == 'ar' %}{{ business.name_ar }}{% else %}{{ business.name_en }}{% endif %}
+                </li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+
+<!-- ===== Hero ===== -->
+<div class="service-hero">
+    {% if business.cover_image %}
+        <img src="{{ business.cover_image.url }}"
+             alt="{% if LANGUAGE_CODE == 'ar' %}{{ business.name_ar }}{% else %}{{ business.name_en }}{% endif %}"
+             id="heroImg">
+    {% endif %}
+    <div class="service-hero-overlay">
+        <div class="service-hero-content container">
+
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                <span class="service-type-pill">
+                    {% if business.category.icon %}
+                        <i class="{{ business.category.icon }}"></i>
+                    {% endif %}
+                    {% if LANGUAGE_CODE == 'ar' %}{{ business.category.name_ar }}{% else %}{{ business.category.name_en }}{% endif %}
+                </span>
+                {% if business.working_hours_ar %}
+                <span class="live-status live-open">
+                    <span class="live-dot live-dot-green"></span>
+                    {% if LANGUAGE_CODE == 'ar' %}مفتوح الآن{% else %}Open Now{% endif %}
+                </span>
+                {% endif %}
+                {% if business.is_verified %}
+                <span class="live-status" style="background:rgba(39,174,96,0.2); border-color:rgba(39,174,96,0.4); color:#2ecc71;">
+                    <i class="fas fa-check-circle"></i>
+                    {% if LANGUAGE_CODE == 'ar' %}خدمة موثقة{% else %}Verified Service{% endif %}
+                </span>
+                {% endif %}
+            </div>
+
+            <div class="service-hero-title">
+                {% if LANGUAGE_CODE == 'ar' %}{{ business.name_ar }}{% else %}{{ business.name_en }}{% endif %}
+            </div>
+
+            <div class="service-hero-meta">
+                <span>
+                    <i class="fas fa-map-marker-alt"></i>
+                    {% if LANGUAGE_CODE == 'ar' %}
+                        {{ business.district.name_ar }}، {{ business.district.city.name_ar }}
+                    {% else %}
+                        {{ business.district.name_en }}, {{ business.district.city.name_en }}
+                    {% endif %}
+                </span>
+                {% if business.phone %}
+                <span>
+                    <i class="fas fa-phone"></i> {{ business.phone }}
+                </span>
+                {% endif %}
+                {% if business.average_rating > 0 %}
+                <span>
+                    <i class="fas fa-star text-warning"></i>
+                    {{ business.average_rating }}
+                    ({{ business.total_reviews }}
+                    {% if LANGUAGE_CODE == 'ar' %}تقييم{% else %}reviews{% endif %})
+                </span>
+                {% endif %}
+                <span>
+                    <i class="fas fa-eye"></i>
+                    {{ business.view_count }}
+                    {% if LANGUAGE_CODE == 'ar' %}مشاهدة{% else %}views{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ===== Quick Action Bar ===== -->
+<div class="quick-action-bar">
+    <div class="container d-flex flex-wrap align-items-center gap-2">
+        {% if business.phone %}
+        <a href="tel:{{ business.phone }}" class="btn btn-primary-dark">
+            <i class="fas fa-phone me-1"></i>
+            {% if LANGUAGE_CODE == 'ar' %}اتصال{% else %}Call{% endif %}
+        </a>
+        {% endif %}
+        {% if business.whatsapp %}
+        <a href="https://wa.me/{{ business.whatsapp }}" target="_blank" class="btn btn-success">
+            <i class="fab fa-whatsapp me-1"></i>
+            {% if LANGUAGE_CODE == 'ar' %}واتساب{% else %}WhatsApp{% endif %}
+        </a>
+        {% endif %}
+        {% if business_lat and business_lng %}
+        <a href="#mapSection" class="btn btn-outline-secondary">
+            <i class="fas fa-map-marked-alt me-1"></i>
+            {% if LANGUAGE_CODE == 'ar' %}الموقع{% else %}Location{% endif %}
+        </a>
+        {% endif %}
+        <a href="#reviews" class="btn btn-outline-secondary">
+            <i class="fas fa-star me-1"></i>
+            {% if LANGUAGE_CODE == 'ar' %}التقييمات{% else %}Reviews{% endif %}
+        </a>
+        <button onclick="shareService()" class="btn btn-outline-secondary ms-auto">
+            <i class="fas fa-share-alt me-1"></i>
+            {% if LANGUAGE_CODE == 'ar' %}مشاركة{% else %}Share{% endif %}
+        </button>
+    </div>
+</div>
+
+
+<!-- ===== Main Content ===== -->
+<section class="detail-main">
+    <div class="container">
+        <div class="row g-4">
+
+
+            <!-- ===== Right Column ===== -->
+            <div class="col-lg-8">
+
+                <!-- الوصف -->
+                {% if LANGUAGE_CODE == 'ar' and business.description_ar or LANGUAGE_CODE != 'ar' and business.description_en %}
+                <div class="content-card">
+                    <div class="card-title">
+                        <i class="fas fa-info-circle"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}نبذة عن الخدمة{% else %}About This Service{% endif %}
+                    </div>
+                    <p style="color:#555; line-height:2; font-size:0.92rem;">
+                        {% if LANGUAGE_CODE == 'ar' %}{{ business.description_ar }}{% else %}{{ business.description_en }}{% endif %}
+                    </p>
+                </div>
+                {% endif %}
+
+                <!-- ألبوم الصور -->
+                {% if business.images.all %}
+                <div class="content-card">
+                    <div class="card-title">
+                        <i class="fas fa-photo-video"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}صور الموقع{% else %}Photos{% endif %}
+                        <span class="badge ms-auto"
+                              style="background:#eef2f7; color:#2c5364; font-size:0.75rem;">
+                            {{ business.images.count }}
+                            {% if LANGUAGE_CODE == 'ar' %}صورة{% else %}Photos{% endif %}
+                        </span>
+                    </div>
+                    <div class="album-grid">
+                        {% for img in business.images.all|slice:":6" %}
+                        <div class="album-item"
+                             onclick="openLightbox({{ forloop.counter0 }})">
+                            <img src="{{ img.image.url }}"
+                                 alt="{% if LANGUAGE_CODE == 'ar' %}{{ img.caption_ar|default:business.name_ar }}{% else %}{{ img.caption_en|default:business.name_en }}{% endif %}">
+                            {% if forloop.counter == 6 and business.images.count > 6 %}
+                            <div class="album-more">
+                                +{{ business.images.count|add:"-5" }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- معلومات تفصيلية -->
+                <div class="content-card">
+                    <div class="card-title">
+                        <i class="fas fa-clipboard-list"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}معلومات تفصيلية{% else %}Detailed Information{% endif %}
+                    </div>
+                    <table class="info-table">
+                        <tbody>
+                            {% if business.category %}
+                            <tr>
+                                <td class="info-label">
+                                    <i class="fas fa-tag"></i>
+                                    {% if LANGUAGE_CODE == 'ar' %}نوع الخدمة{% else %}Service Type{% endif %}
+                                </td>
+                                <td class="info-value">
+                                    {% if LANGUAGE_CODE == 'ar' %}{{ business.category.name_ar }}{% else %}{{ business.category.name_en }}{% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% if LANGUAGE_CODE == 'ar' and business.address_ar or LANGUAGE_CODE != 'ar' and business.address_en %}
+                            <tr>
+                                <td class="info-label">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    {% if LANGUAGE_CODE == 'ar' %}العنوان{% else %}Address{% endif %}
+                                </td>
+                                <td class="info-value">
+                                    {% if LANGUAGE_CODE == 'ar' %}{{ business.address_ar }}{% else %}{{ business.address_en }}{% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td class="info-label">
+                                    <i class="fas fa-city"></i>
+                                    {% if LANGUAGE_CODE == 'ar' %}المنطقة{% else %}Area{% endif %}
+                                </td>
+                                <td class="info-value">
+                                    {% if LANGUAGE_CODE == 'ar' %}
+                                        {{ business.district.name_ar }}،
+                                        {{ business.district.city.name_ar }}،
+                                        {{ business.district.city.governorate.name_ar }}
+                                    {% else %}
+                                        {{ business.district.name_en }},
+                                        {{ business.district.city.name_en }},
+                                        {{ business.district.city.governorate.name_en }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if business.phone %}
+                            <tr>
+                                <td class="info-label">
+                                    <i class="fas fa-phone"></i>
+                                    {% if LANGUAGE_CODE == 'ar' %}الهاتف{% else %}Phone{% endif %}
+                                </td>
+                                <td class="info-value">
+                                    <a href="tel:{{ business.phone }}"
+                                       class="text-decoration-none" style="color:#2c5364;">
+                                        {{ business.phone }}
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% if business.email %}
+                            <tr>
+                                <td class="info-label">
+                                    <i class="fas fa-envelope"></i>
+                                    {% if LANGUAGE_CODE == 'ar' %}البريد{% else %}Email{% endif %}
+                                </td>
+                                <td class="info-value">
+                                    <a href="mailto:{{ business.email }}"
+                                       class="text-decoration-none" style="color:#2c5364;">
+                                        {{ business.email }}
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% if business.website %}
+                            <tr>
+                                <td class="info-label">
+                                    <i class="fas fa-globe"></i>
+                                    {% if LANGUAGE_CODE == 'ar' %}الموقع{% else %}Website{% endif %}
+                                </td>
+                                <td class="info-value">
+                                    <a href="{{ business.website }}" target="_blank"
+                                       class="text-decoration-none" style="color:#2c5364;">
+                                        {{ business.website }}
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ساعات العمل -->
+                {% if LANGUAGE_CODE == 'ar' and business.working_hours_ar or LANGUAGE_CODE != 'ar' and business.working_hours_en %}
+                <div class="content-card">
+                    <div class="card-title">
+                        <i class="fas fa-clock"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}ساعات العمل{% else %}Working Hours{% endif %}
+                    </div>
+                    <div class="hours-card">
+                        {% if business.working_hours_ar %}
+                        <div class="hours-row">
+                            <span class="day">
+                                <i class="fas fa-calendar-alt me-2" style="color:#2c5364;"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}أوقات الدوام{% else %}Working Hours{% endif %}
+                            </span>
+                            <span class="time">
+                                {% if LANGUAGE_CODE == 'ar' %}{{ business.working_hours_ar }}{% else %}{{ business.working_hours_en }}{% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- ===== الخريطة ===== -->
+                <div class="content-card" id="mapSection">
+                    <div class="card-title">
+                        <i class="fas fa-map-marked-alt"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}الموقع{% else %}Location{% endif %}
+                    </div>
+                    {% if business_lat and business_lng %}
+                        <div class="map-wrapper">
+                            <iframe id="mapFrame" srcdoc=""
+                                    style="width:100%;height:260px;border:none;border-radius:14px;">
+                            </iframe>
+                        </div>
+                        <a href="https://www.google.com/maps/dir/?api=1&destination={{ business_lat }},{{ business_lng }}"
+                           target="_blank"
+                           style="display:flex;align-items:center;justify-content:center;gap:0.5rem;
+                                  background:linear-gradient(135deg,#203a43,#2c5364);
+                                  color:white;padding:0.75rem;border-radius:12px;text-decoration:none;
+                                  font-weight:700;margin-top:0.75rem;transition:0.3s;"
+                           onmouseover="this.style.transform='translateY(-2px)'"
+                           onmouseout="this.style.transform='none'">
+                            <i class="fas fa-directions"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}احصل على الاتجاهات{% else %}Get Directions{% endif %}
+                        </a>
+                    {% else %}
+                        <div class="map-placeholder">
+                            <div>
+                                <i class="fas fa-map-marked-alt fa-3x mb-2"
+                                   style="color:rgba(44,83,100,0.3);display:block;text-align:center;"></i>
+                                <p class="text-muted mb-0 small">
+                                    {% if LANGUAGE_CODE == 'ar' %}الموقع غير متوفر{% else %}Location not available{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- التقييمات -->
+                <div class="content-card" id="reviews">
+                    <div class="card-title">
+                        <i class="fas fa-star"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}تقييمات الزوار{% else %}Visitor Reviews{% endif %}
+                        <span class="badge ms-auto"
+                              style="background:#eef2f7; color:#2c5364;">
+                            {{ business.total_reviews }}
+                            {% if LANGUAGE_CODE == 'ar' %}تقييم{% else %}Reviews{% endif %}
+                        </span>
+                    </div>
+
+                    {% if business.total_reviews > 0 %}
+                    <div class="row g-3 mb-4 align-items-center">
+                        <div class="col-auto text-center">
+                            <div class="rating-big">{{ business.average_rating }}</div>
+                            <div style="color:#2c5364;">
+                                {% for i in "12345" %}
+                                    <i class="fas fa-star" style="font-size:0.9rem;"></i>
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted">
+                                {% if LANGUAGE_CODE == 'ar' %}من 5{% else %}out of 5{% endif %}
+                            </small>
+                        </div>
+                        <div class="col">
+                            {% for star in "54321" %}
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <small class="text-muted" style="width:20px;">{{ star }}</small>
+                                <div class="rating-bar flex-grow-1">
+                                    <div class="rating-bar-fill"
+                                         style="width:{{ business.rating_percent|default:0 }}%">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% for review in business.reviews.all|slice:":5" %}
+                    <div class="review-card">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="reviewer-avatar">
+                                {{ review.user.username|first|upper }}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <strong style="font-size:0.9rem;">
+                                        {{ review.user.get_full_name|default:review.user.username }}
+                                    </strong>
+                                    <span class="review-date">
+                                        {{ review.created_at|date:"d/m/Y" }}
+                                    </span>
+                                </div>
+                                <div class="review-rating">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= review.rating %}
+                                            <i class="fas fa-star"></i>
+                                        {% else %}
+                                            <i class="far fa-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <p class="review-text">{{ review.comment }}</p>
+                                {% if review.owner_reply %}
+                                <div style="background:white; border-radius:8px; padding:0.6rem 0.9rem; border-right:3px solid #2c5364; margin-top:0.5rem;">
+                                    <small style="color:#2c5364;" class="fw-bold">
+                                        <i class="fas fa-reply me-1"></i>
+                                        {% if LANGUAGE_CODE == 'ar' %}رد المسؤول:{% else %}Official Reply:{% endif %}
+                                    </small>
+                                    <p class="mb-0"
+                                       style="font-size:0.82rem; color:#555; margin-top:4px;">
+                                        {{ review.owner_reply }}
+                                    </p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-star fa-2x mb-2 d-block" style="color:#dde3ea;"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}لا توجد تقييمات بعد — شاركنا رأيك!{% else %}No reviews yet — share your experience!{% endif %}
+                    </div>
+                    {% endfor %}
+
+                    {% if user.is_authenticated %}
+                    <div class="review-form-card mt-4">
+                        <h6 class="fw-bold mb-3">
+                            <i class="fas fa-pen me-2" style="color:#2c5364;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}قيّم هذه الخدمة{% else %}Rate This Service{% endif %}
+                        </h6>
+                        <form method="post"
+                              action="{% url 'reviews:add_review' business.slug %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">
+                                    {% if LANGUAGE_CODE == 'ar' %}التقييم{% else %}Rating{% endif %}
+                                </label>
+                                <div class="star-input">
+                                    {% for i in "54321" %}
+                                    <input type="radio" name="rating"
+                                           id="star{{ i }}" value="{{ i }}">
+                                    <label for="star{{ i }}">
+                                        <i class="fas fa-star"></i>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">
+                                    {% if LANGUAGE_CODE == 'ar' %}تعليقك{% else %}Your Comment{% endif %}
+                                </label>
+                                <textarea name="comment" rows="3"
+                                          class="form-control"
+                                          style="border-radius:10px; border:1.5px solid #dde3ea;"
+                                          placeholder="{% if LANGUAGE_CODE == 'ar' %}كيف وجدت هذه الخدمة؟ هل هي مفيدة؟...{% else %}How was this service? Was it helpful?...{% endif %}">
+                                </textarea>
+                            </div>
+                            <button type="submit"
+                                    class="btn btn-sm rounded-pill px-4 btn-primary-dark">
+                                <i class="fas fa-paper-plane me-1"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}إرسال التقييم{% else %}Submit Review{% endif %}
+                            </button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'accounts:login' %}?next={{ request.path }}"
+                           class="btn btn-sm rounded-pill"
+                           style="border:1.5px solid #2c5364; color:#2c5364;">
+                            <i class="fas fa-sign-in-alt me-1"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}سجّل دخولك لإضافة تقييم{% else %}Login to add a review{% endif %}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+            </div>
+            <!-- ===== End Right Column ===== -->
+
+
+            <!-- ===== Sidebar ===== -->
+            <div class="col-lg-4">
+                <div class="sidebar-sticky">
+
+                    <!-- أرقام الطوارئ -->
+                    {% if business.category.slug == 'police' or business.category.slug == 'fire' or business.category.slug == 'hospital' %}
+                    <div class="emergency-card">
+                        <h6>
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}أرقام الطوارئ{% else %}Emergency Numbers{% endif %}
+                        </h6>
+                        {% if business.phone %}
+                        <a href="tel:{{ business.phone }}" class="emergency-number">
+                            <i class="fas fa-phone-alt"></i>
+                            <div>
+                                <div class="emergency-num-value">{{ business.phone }}</div>
+                                <div class="emergency-num-label">
+                                    {% if LANGUAGE_CODE == 'ar' %}الخط المباشر{% else %}Direct Line{% endif %}
+                                </div>
+                            </div>
+                        </a>
+                        {% endif %}
+                        {% if business.whatsapp %}
+                        <a href="https://wa.me/{{ business.whatsapp }}" target="_blank"
+                           class="emergency-number">
+                            <i class="fab fa-whatsapp"></i>
+                            <div>
+                                <div class="emergency-num-value">{{ business.whatsapp }}</div>
+                                <div class="emergency-num-label">WhatsApp</div>
+                            </div>
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- معلومات التواصل -->
+                    <div class="content-card">
+                        <div class="card-title">
+                            <i class="fas fa-address-card"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}التواصل والوصول{% else %}Contact & Access{% endif %}
+                        </div>
+
+                        {% if business.phone %}
+                        <div class="contact-item">
+                            <div class="contact-icon" style="background:#eef2f7; color:#2c5364;">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div>
+                                <div class="contact-label">
+                                    {% if LANGUAGE_CODE == 'ar' %}الهاتف{% else %}Phone{% endif %}
+                                </div>
+                                <a href="tel:{{ business.phone }}"
+                                   class="contact-value text-decoration-none">
+                                    {{ business.phone }}
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if LANGUAGE_CODE == 'ar' and business.address_ar or LANGUAGE_CODE != 'ar' and business.address_en %}
+                        <div class="contact-item">
+                            <div class="contact-icon" style="background:#fdf0f0; color:#e74c3c;">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div>
+                                <div class="contact-label">
+                                    {% if LANGUAGE_CODE == 'ar' %}العنوان{% else %}Address{% endif %}
+                                </div>
+                                <div class="contact-value">
+                                    {% if LANGUAGE_CODE == 'ar' %}{{ business.address_ar }}{% else %}{{ business.address_en }}{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if LANGUAGE_CODE == 'ar' and business.working_hours_ar or LANGUAGE_CODE != 'ar' and business.working_hours_en %}
+                        <div class="contact-item">
+                            <div class="contact-icon" style="background:#f0fff4; color:#27ae60;">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div>
+                                <div class="contact-label">
+                                    {% if LANGUAGE_CODE == 'ar' %}ساعات العمل{% else %}Working Hours{% endif %}
+                                </div>
+                                <div class="contact-value">
+                                    {% if LANGUAGE_CODE == 'ar' %}{{ business.working_hours_ar }}{% else %}{{ business.working_hours_en }}{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if business.email %}
+                        <div class="contact-item">
+                            <div class="contact-icon" style="background:#fdf3e8; color:#e67e22;">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div>
+                                <div class="contact-label">
+                                    {% if LANGUAGE_CODE == 'ar' %}البريد{% else %}Email{% endif %}
+                                </div>
+                                <a href="mailto:{{ business.email }}"
+                                   class="contact-value text-decoration-none">
+                                    {{ business.email }}
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if business.website %}
+                        <div class="contact-item">
+                            <div class="contact-icon" style="background:#eef2f7; color:#2c5364;">
+                                <i class="fas fa-globe"></i>
+                            </div>
+                            <div>
+                                <div class="contact-label">
+                                    {% if LANGUAGE_CODE == 'ar' %}الموقع الرسمي{% else %}Official Website{% endif %}
+                                </div>
+                                <a href="{{ business.website }}" target="_blank"
+                                   class="contact-value text-decoration-none">
+                                    {% if LANGUAGE_CODE == 'ar' %}زيارة الموقع{% else %}Visit Website{% endif %}
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="d-grid gap-2 mt-3">
+                            {% if business.phone %}
+                            <a href="tel:{{ business.phone }}"
+                               class="btn rounded-pill fw-bold btn-primary-dark">
+                                <i class="fas fa-phone me-2"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}اتصل الآن{% else %}Call Now{% endif %}
+                            </a>
+                            {% endif %}
+                            {% if business_lat and business_lng %}
+                            <a href="#mapSection"
+                               class="btn btn-outline-secondary rounded-pill fw-semibold">
+                                <i class="fas fa-map me-2"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}اعرض على الخريطة{% else %}Show on Map{% endif %}
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- خدمات مشابهة -->
+                    {% if similar_services %}
+                    <div class="content-card">
+                        <div class="card-title">
+                            <i class="fas fa-th-large"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}خدمات مشابهة{% else %}Similar Services{% endif %}
+                        </div>
+                        {% for item in similar_services|slice:":4" %}
+                        <a href="{% url 'directory:business_detail' item.slug %}"
+                           class="d-flex align-items-center gap-2 p-2 rounded-3 text-decoration-none mb-1"
+                           style="transition:background 0.2s;"
+                           onmouseover="this.style.background='#f0f4f8'"
+                           onmouseout="this.style.background=''">
+                            {% if item.cover_image %}
+                            <img src="{{ item.cover_image.url }}"
+                                 width="50" height="50"
+                                 class="rounded-2" style="object-fit:cover; flex-shrink:0;">
+                            {% else %}
+                            <div style="width:50px; height:50px; border-radius:8px;
+                                        background:linear-gradient(135deg,#203a43,#2c5364);
+                                        display:flex; align-items:center; justify-content:center;
+                                        color:white; flex-shrink:0;">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <div style="font-size:0.85rem; font-weight:700; color:#333;">
+                                    {% if LANGUAGE_CODE == 'ar' %}{{ item.name_ar }}{% else %}{{ item.name_en }}{% endif %}
+                                </div>
+                                <div style="font-size:0.75rem; color:#888;">
+                                    {% if LANGUAGE_CODE == 'ar' %}{{ item.district.city.name_ar }}{% else %}{{ item.district.city.name_en }}{% endif %}
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+            <!-- ===== End Sidebar ===== -->
+
+        </div>
+    </div>
+</section>
+
+
+<!-- ===== Lightbox ===== -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <button class="lightbox-close" onclick="closeLightbox()">
+        <i class="fas fa-times"></i>
+    </button>
+    <button class="lightbox-prev"
+            onclick="changeLightbox(-1); event.stopPropagation();">
+        <i class="fas fa-chevron-right"></i>
+    </button>
+    <img id="lightboxImg" src="" alt="">
+    <button class="lightbox-next"
+            onclick="changeLightbox(1); event.stopPropagation();">
+        <i class="fas fa-chevron-left"></i>
+    </button>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ===== MAP (iframe srcdoc - RTL safe) =====
+{% if business_lat and business_lng %}
+(function() {
+    var lat      = parseFloat("{{ business_lat }}");
+    var lng      = parseFloat("{{ business_lng }}");
+    var bname    = "{% if LANGUAGE_CODE == 'ar' %}{{ business.name_ar|escapejs }}{% else %}{{ business.name_en|escapejs }}{% endif %}";
+    var dirLabel = "{% if LANGUAGE_CODE == 'ar' %}فتح في خرائط Google{% else %}Open in Google Maps{% endif %}";
+    var mapsUrl  = "https://www.google.com/maps?q=" + lat + "," + lng;
+
+    var mapHTML = [
+        '<!DOCTYPE html><html><head><meta charset="utf-8">',
+        '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>',
+        '<style>html,body{margin:0;padding:0;width:100%;height:100%;}#m{width:100%;height:100%;}</style>',
+        '</head><body><div id="m"></div>',
+        '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>',
+        '<script>',
+        'var map=L.map("m").setView([' + lat + ',' + lng + '],15);',
+        'L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"&copy; OpenStreetMap",maxZoom:19}).addTo(map);',
+        'var icon=L.divIcon({className:"",html:"<div style=\'width:20px;height:20px;background:linear-gradient(135deg,#203a43,#2c5364);border-radius:50%;border:3px solid white;box-shadow:0 0 0 4px rgba(44,83,100,0.25);\'><\/div>",iconSize:[20,20],iconAnchor:[10,10],popupAnchor:[0,-14]});',
+        'var marker=L.marker([' + lat + ',' + lng + '],{icon:icon}).addTo(map);',
+        'var popupContent=document.createElement("div");',
+        'popupContent.innerHTML="<strong style=\'color:#203a43;\'>' + bname.replace(/\\/g,"\\\\").replace(/\'/g,"\\'") + '<\/strong><br><a href=\'' + mapsUrl + '\' target=\'_blank\' style=\'color:#2c5364;font-size:0.82rem;\'>' + dirLabel + '<\/a>";',
+        'marker.bindPopup(popupContent).openPopup();',
+        '<\/script></body></html>'
+    ].join('');
+
+    var frame = document.getElementById('mapFrame');
+    if (frame) frame.srcdoc = mapHTML;
+})();
+{% endif %}
+
+
+// ===== Lightbox =====
+const images = [
+    {% for img in business.images.all %}"{{ img.image.url }}"{% if not forloop.last %},{% endif %}{% endfor %}
+];
+let currentImg = 0;
+
+function openLightbox(index) {
+    currentImg = index;
+    document.getElementById('lightboxImg').src = images[index];
+    document.getElementById('lightbox').classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+function closeLightbox(e) {
+    if (!e || e.target === document.getElementById('lightbox') ||
+        e.currentTarget.classList.contains('lightbox-close')) {
+        document.getElementById('lightbox').classList.remove('show');
+        document.body.style.overflow = '';
+    }
+}
+function changeLightbox(dir) {
+    currentImg = (currentImg + dir + images.length) % images.length;
+    document.getElementById('lightboxImg').src = images[currentImg];
+}
+document.addEventListener('keydown', e => {
+    if (document.getElementById('lightbox').classList.contains('show')) {
+        if (e.key === 'ArrowRight') changeLightbox(-1);
+        if (e.key === 'ArrowLeft')  changeLightbox(1);
+        if (e.key === 'Escape')     closeLightbox();
+    }
+});
+
+
+// ===== Share =====
+function shareService() {
+    if (navigator.share) {
+        navigator.share({
+            title: '{% if LANGUAGE_CODE == "ar" %}{{ business.name_ar }}{% else %}{{ business.name_en }}{% endif %}',
+            text: '{% if LANGUAGE_CODE == "ar" %}{{ business.category.name_ar }} في {{ business.district.city.name_ar }}{% else %}{{ business.category.name_en }} in {{ business.district.city.name_en }}{% endif %}',
+            url: window.location.href
+        });
+    } else {
+        navigator.clipboard.writeText(window.location.href);
+        alert('{% if LANGUAGE_CODE == "ar" %}تم نسخ الرابط!{% else %}Link copied!{% endif %}');
+    }
+}
+</script>
+{% endblock %}

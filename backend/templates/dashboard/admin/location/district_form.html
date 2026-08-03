@@ -1,0 +1,115 @@
+{% extends 'dashboard/admin/base.html' %}
+
+{% block title %}{{ action }} حي{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fas fa-map-marker-alt text-danger me-2"></i> {{ action }} حي</h4>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_home' %}">الرئيسية</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_districts_list' %}">الأحياء</a></li>
+            <li class="breadcrumb-item active">{{ action }}</li>
+        </ol></nav>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-info-circle text-primary me-2"></i> بيانات الحي</h6>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <!-- Step 1: Governorate (for filtering) -->
+                        <div class="col-12">
+                            <label class="form-label fw-bold">المحافظة <small class="text-muted">(لتصفية المدن)</small></label>
+                            <select class="form-select" id="govSelect">
+                                <option value="">-- اختر المحافظة أولاً --</option>
+                                {% for gov in governorates %}
+                                <option value="{{ gov.id }}"
+                                    {% if obj and obj.city.governorate_id == gov.id %}selected{% endif %}>
+                                    {{ gov.name_ar }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Step 2: City -->
+                        <div class="col-12">
+                            <label class="form-label fw-bold">المدينة <span class="text-danger">*</span></label>
+                            <select name="city" class="form-select" id="citySelect" required>
+                                <option value="">-- اختر المدينة --</option>
+                                {% for city in cities %}
+                                <option value="{{ city.id }}"
+                                    data-gov="{{ city.governorate_id }}"
+                                    {% if obj and obj.city_id == city.id %}selected{% endif %}>
+                                    {{ city.name_ar }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">الاسم بالعربية <span class="text-danger">*</span></label>
+                            <input type="text" name="name_ar" class="form-control"
+                                value="{{ obj.name_ar|default:'' }}" placeholder="مثال: حي السلام" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">الاسم بالإنجليزية</label>
+                            <input type="text" name="name_en" class="form-control"
+                                value="{{ obj.name_en|default:'' }}" placeholder="e.g. El-Salam District">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="is_active"
+                                    {% if not obj or obj.is_active %}checked{% endif %}>
+                                <label class="form-check-label fw-bold" for="is_active">نشط</label>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="my-4">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i> {{ action }} الحي
+                        </button>
+                        <a href="{% url 'dashboard:admin_districts_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i> إلغاء
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Filter cities by governorate
+function filterCities() {
+    const govId = document.getElementById('govSelect').value;
+    const citySelect = document.getElementById('citySelect');
+    const options = citySelect.querySelectorAll('option');
+    
+    options.forEach(opt => {
+        if (!opt.value) return; // keep placeholder
+        opt.style.display = (!govId || opt.dataset.gov === govId) ? '' : 'none';
+    });
+    
+    // Reset if current selection doesn't match
+    const selected = citySelect.querySelector('option:checked');
+    if (selected && selected.value && govId && selected.dataset.gov !== govId) {
+        citySelect.value = '';
+    }
+}
+
+document.getElementById('govSelect').addEventListener('change', filterCities);
+
+// Run on load if editing
+window.addEventListener('load', filterCities);
+</script>
+{% endblock %}

@@ -1,0 +1,544 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'Detailed Statistics' %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+    
+    .metric-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+        overflow: hidden;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    }
+    
+    .metric-header {
+        padding: 1.5rem;
+        border-bottom: 2px solid #f3f4f6;
+        background: #f9fafb;
+    }
+    
+    .metric-body {
+        padding: 2rem;
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+    
+    .metric-label {
+        color: #6b7280;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    .metric-change {
+        font-size: 0.85rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        display: inline-block;
+        margin-top: 0.5rem;
+    }
+    
+    .metric-change.positive {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .metric-change.negative {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    
+    .chart-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+    
+    .chart-card .card-header {
+        background: white;
+        border-bottom: 2px solid #f3f4f6;
+        padding: 1.5rem;
+        border-radius: 15px 15px 0 0 !important;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 350px;
+        padding: 1rem;
+    }
+    
+    .stat-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .stat-list-item {
+        padding: 1rem;
+        border-bottom: 1px solid #f3f4f6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background 0.2s ease;
+    }
+    
+    .stat-list-item:hover {
+        background: #f9fafb;
+    }
+    
+    .stat-list-item:last-child {
+        border-bottom: none;
+    }
+    
+    .progress-bar-custom {
+        height: 8px;
+        border-radius: 10px;
+        background: #e5e7eb;
+        overflow: hidden;
+        margin-top: 0.5rem;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        transition: width 0.5s ease;
+    }
+    
+    .top-business-item {
+        padding: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        transition: all 0.2s ease;
+    }
+    
+    .top-business-item:hover {
+        border-color: #667eea;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+    
+    .rank-badge {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    
+    .rank-1 { background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%); color: #92400e; }
+    .rank-2 { background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%); color: #1f2937; }
+    .rank-3 { background: linear-gradient(135deg, #cd7f32 0%, #e6a85c 100%); color: #78350f; }
+    .rank-other { background: #f3f4f6; color: #6b7280; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats Header -->
+<div class="stats-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <h1 class="mb-2" style="font-size: 2rem; font-weight: 700;">
+                <i class="fas fa-chart-line me-2"></i>
+                {% trans 'Detailed Statistics' %}
+            </h1>
+            <p class="mb-0 opacity-90">{% trans 'Comprehensive analytics for your businesses' %}</p>
+        </div>
+        <div class="mt-3 mt-md-0">
+            <button class="btn btn-light" onclick="window.print()">
+                <i class="fas fa-download me-2"></i>
+                {% trans 'Export Report' %}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Overview Metrics -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-body text-center">
+                <div class="metric-value" style="color: #667eea;">{{ stats.overview.total_businesses }}</div>
+                <div class="metric-label">{% trans 'Total Businesses' %}</div>
+                <div class="metric-change positive">
+                    <i class="fas fa-check-circle me-1"></i>
+                    {{ stats.overview.verified_businesses }} {% trans 'Verified' %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-body text-center">
+                <div class="metric-value" style="color: #10b981;">{{ stats.products.total }}</div>
+                <div class="metric-label">{% trans 'Total Products' %}</div>
+                <div class="metric-change positive">
+                    <i class="fas fa-arrow-up me-1"></i>
+                    {{ stats.products.new_last_30_days }} {% trans 'this month' %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-body text-center">
+                <div class="metric-value" style="color: #f59e0b;">{{ stats.deals.active }}</div>
+                <div class="metric-label">{% trans 'Active Deals' %}</div>
+                <div class="metric-change positive">
+                    <i class="fas fa-fire me-1"></i>
+                    {{ stats.deals.total }} {% trans 'Total' %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="metric-card">
+            <div class="metric-body text-center">
+                <div class="metric-value" style="color: #8b5cf6;">{{ stats.reviews.average_rating|floatformat:1 }}</div>
+                <div class="metric-label">{% trans 'Average Rating' %}</div>
+                <div class="metric-change positive">
+                    <i class="fas fa-star me-1"></i>
+                    {{ stats.reviews.total }} {% trans 'Reviews' %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <!-- Engagement Chart -->
+    <div class="col-lg-8">
+        <div class="chart-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-area text-primary me-2"></i>
+                    {% trans 'Engagement Analytics' %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="engagementChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Deal Types Distribution -->
+    <div class="col-lg-4">
+        <div class="chart-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-tags text-warning me-2"></i>
+                    {% trans 'Deal Types' %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="dealTypesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Statistics -->
+<div class="row g-4 mb-4">
+    <!-- Business Statistics -->
+    <div class="col-lg-6">
+        <div class="chart-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-store text-primary me-2"></i>
+                    {% trans 'Business Statistics' %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="stat-list">
+                    <li class="stat-list-item">
+                        <div>
+                            <strong>{% trans 'Total Businesses' %}</strong>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" style="width: 100%;"></div>
+                            </div>
+                        </div>
+                        <span class="badge bg-primary">{{ stats.businesses.total }}</span>
+                    </li>
+                    <li class="stat-list-item">
+                        <div>
+                            <strong>{% trans 'Active' %}</strong>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" style="width: {% widthratio stats.businesses.active stats.businesses.total 100 %}%;"></div>
+                            </div>
+                        </div>
+                        <span class="badge bg-success">{{ stats.businesses.active }}</span>
+                    </li>
+                    <li class="stat-list-item">
+                        <div>
+                            <strong>{% trans 'Verified' %}</strong>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" style="width: {% widthratio stats.businesses.verified stats.businesses.total 100 %}%;"></div>
+                            </div>
+                        </div>
+                        <span class="badge bg-info">{{ stats.businesses.verified }}</span>
+                    </li>
+                    <li class="stat-list-item">
+                        <div>
+                            <strong>{% trans 'Featured' %}</strong>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" style="width: {% widthratio stats.businesses.featured stats.businesses.total 100 %}%;"></div>
+                            </div>
+                        </div>
+                        <span class="badge bg-warning text-dark">{{ stats.businesses.featured }}</span>
+                    </li>
+                    <li class="stat-list-item">
+                        <div>
+                            <strong>{% trans 'New (Last 30 Days)' %}</strong>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" style="width: {% widthratio stats.businesses.new_last_30_days stats.businesses.total 100 %}%;"></div>
+                            </div>
+                        </div>
+                        <span class="badge bg-secondary">{{ stats.businesses.new_last_30_days }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Product Statistics -->
+    <div class="col-lg-6">
+        <div class="chart-card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-box text-success me-2"></i>
+                    {% trans 'Product Statistics' %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="stat-list">
+                    <li class="stat-list-item">
+                        <div>
+                            <strong>{% trans 'Total Products' %}</strong>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" style="width: 100%; background: linear-gradient(90deg, #10b981 0%, #34d399 100%);"></div>
+                            </div>
+                        </div>
+                        <span class="badge bg-success">{{ stats.products.total }}</span>
+                    </li>
+                    <li class="stat-list-item">
+                        <div>
+                            <strong>{% trans 'Available' %}</strong>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" style="width: {% widthratio stats.products.available stats.products.total 100 %}%; background: linear-gradient(90deg, #10b981 0%, #34d399 100%);"></div>
+                            </div>
+                        </div>
+                        <span class="badge bg-success">{{ stats.products.available }}</span>
+                    </li>
+                    <li class="stat-list-item">
+                        <div>
+                            <strong>{% trans 'Products' %}</strong>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" style="width: {% widthratio stats.products.products stats.products.total 100 %}%; background: linear-gradient(90deg, #10b981 0%, #34d399 100%);"></div>
+                            </div>
+                        </div>
+                        <span class="badge" style="background: #10b981;">{{ stats.products.products }}</span>
+                    </li>
+                    <li class="stat-list-item">
+                        <div>
+                            <strong>{% trans 'Services' %}</strong>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" style="width: {% widthratio stats.products.services stats.products.total 100 %}%; background: linear-gradient(90deg, #10b981 0%, #34d399 100%);"></div>
+                            </div>
+                        </div>
+                        <span class="badge" style="background: #059669;">{{ stats.products.services }}</span>
+                    </li>
+                    <li class="stat-list-item">
+                        <div>
+                            <strong>{% trans 'Featured' %}</strong>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" style="width: {% widthratio stats.products.featured stats.products.total 100 %}%; background: linear-gradient(90deg, #10b981 0%, #34d399 100%);"></div>
+                            </div>
+                        </div>
+                        <span class="badge" style="background: #047857;">{{ stats.products.featured }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Performing Businesses -->
+<div class="chart-card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-trophy text-warning me-2"></i>
+            {% trans 'Top Performing Businesses' %}
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if top_businesses %}
+            <div class="row g-3">
+                {% for business in top_businesses %}
+                <div class="col-lg-6">
+                    <div class="top-business-item">
+                        <div class="d-flex align-items-center">
+                            <div class="rank-badge rank-{% if forloop.counter <= 3 %}{{ forloop.counter }}{% else %}other{% endif %} me-3">
+                                {{ forloop.counter }}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ business.name_ar }}</h6>
+                                <small class="text-muted">{{ business.category.name_ar }}</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="mb-1">
+                                    <i class="fas fa-eye text-primary me-1"></i>
+                                    <strong>{{ business.view_count }}</strong>
+                                </div>
+                                <div>
+                                    <i class="fas fa-mouse-pointer text-success me-1"></i>
+                                    <strong>{{ business.click_count }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-chart-line fa-3x mb-3" style="opacity: 0.3;"></i>
+                <p>{% trans 'No data available yet' %}</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+    // Engagement Chart
+    const engagementCtx = document.getElementById('engagementChart');
+    if (engagementCtx) {
+        new Chart(engagementCtx, {
+            type: 'bar',
+            data: {
+                labels: ['آخر 7 أيام', 'آخر 30 يوم', 'إجمالي'],
+                datasets: [
+                    {
+                        label: 'المشاهدات',
+                        data: [
+                            {{ stats.engagement.views_last_7|default:0 }},
+                            {{ stats.engagement.views_last_30|default:0 }},
+                            {{ stats.engagement.total_views|default:0 }}
+                        ],
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: 'rgb(102, 126, 234)',
+                        borderWidth: 2,
+                        borderRadius: 8
+                    },
+                    {
+                        label: 'النقرات',
+                        data: [
+                            {{ stats.engagement.clicks_last_7|default:0 }},
+                            {{ stats.engagement.clicks_last_30|default:0 }},
+                            {{ stats.engagement.total_clicks|default:0 }}
+                        ],
+                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                        borderColor: 'rgb(16, 185, 129)',
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Deal Types Chart
+    const dealTypesCtx = document.getElementById('dealTypesChart');
+    if (dealTypesCtx) {
+        new Chart(dealTypesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['نشط', 'قادم', 'منتهي'],
+                datasets: [{
+                    data: [
+                        {{ stats.deals.active|default:0 }},
+                        {{ stats.deals.upcoming|default:0 }},
+                        {{ stats.deals.expired|default:0 }}
+                    ],
+                    backgroundColor: [
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(59, 130, 246, 0.8)',
+                        'rgba(156, 163, 175, 0.8)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

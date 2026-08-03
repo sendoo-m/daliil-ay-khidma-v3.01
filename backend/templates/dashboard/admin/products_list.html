@@ -1,0 +1,245 @@
+{% extends 'dashboard/admin/base.html' %}
+{% load humanize %}
+
+{% block title %}إدارة المنتجات{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">
+            <i class="fas fa-box me-2" style="color:#3498db;"></i> إدارة المنتجات والخدمات
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'dashboard:admin_home' %}">الرئيسية</a>
+                </li>
+                <li class="breadcrumb-item active">المنتجات</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="{% url 'dashboard:admin_product_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i> إضافة منتج / خدمة
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" name="search" value="{{ search }}"
+                           class="form-control" placeholder="ابحث بالاسم أو اسم المحل...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="type" class="form-select form-select-sm">
+                    <option value="">كل الأنواع</option>
+                    <option value="product" {% if type_filter == 'product' %}selected{% endif %}>منتج</option>
+                    <option value="service" {% if type_filter == 'service' %}selected{% endif %}>خدمة</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">كل الحالات</option>
+                    <option value="available"   {% if status_filter == 'available' %}selected{% endif %}>متاح</option>
+                    <option value="unavailable" {% if status_filter == 'unavailable' %}selected{% endif %}>غير متاح</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary flex-fill">
+                    <i class="fas fa-filter me-1"></i> فلتر
+                </button>
+                {% if search or type_filter or status_filter %}
+                <a href="{% url 'dashboard:admin_products_list' %}"
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-times"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold">
+            <i class="fas fa-box me-2 text-muted"></i> قائمة المنتجات
+            <span class="badge bg-primary ms-2">{{ total_count }}</span>
+        </h6>
+        {% if search or type_filter or status_filter %}
+        <small class="text-muted">
+            <i class="fas fa-filter me-1"></i>
+            نتائج الفلتر: {{ page_obj.paginator.count }}
+        </small>
+        {% endif %}
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>المنتج</th>
+                        <th>المحل</th>
+                        <th>النوع</th>
+                        <th>السعر</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td class="text-muted small">{{ product.id }}</td>
+
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                {% if product.image %}
+                                <img src="{{ product.image.url }}" width="40" height="40"
+                                     class="rounded" style="object-fit:cover;flex-shrink:0;">
+                                {% else %}
+                                <div class="rounded bg-light d-flex align-items-center justify-content-center"
+                                     style="width:40px;height:40px;flex-shrink:0;">
+                                    <i class="fas fa-box text-muted small"></i>
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <strong class="d-block">{{ product.name_ar }}</strong>
+                                    {% if product.is_featured %}
+                                    <span class="badge bg-warning" style="font-size:0.65rem;">
+                                        <i class="fas fa-star me-1"></i>مُبرز
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+
+                        <td>
+                            <a href="{% url 'dashboard:admin_business_detail' product.business.id %}"
+                               class="text-decoration-none text-dark fw-bold">
+                                {{ product.business.name_ar }}
+                            </a>
+                        </td>
+
+                        <td>
+                            {% if product.product_type == 'product' %}
+                            <span class="badge bg-info">
+                                <i class="fas fa-box me-1"></i>{{ product.get_product_type_display }}
+                            </span>
+                            {% else %}
+                            <span class="badge" style="background:#9b59b6;">
+                                <i class="fas fa-concierge-bell me-1"></i>{{ product.get_product_type_display }}
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if product.price %}
+                            <strong class="text-success">{{ product.price|floatformat:2|intcomma }}</strong>
+                            <small class="text-muted">جنيه</small>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if product.is_available %}
+                            <span class="badge bg-success"><i class="fas fa-check me-1"></i>متاح</span>
+                            {% else %}
+                            <span class="badge bg-secondary"><i class="fas fa-times me-1"></i>غير متاح</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{% url 'dashboard:admin_product_detail' product.id %}"
+                                   class="btn btn-sm btn-outline-primary" title="عرض">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'dashboard:admin_product_edit' product.id %}"
+                                   class="btn btn-sm btn-outline-warning" title="تعديل">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'dashboard:admin_product_toggle' product.id %}"
+                                   class="btn btn-sm btn-outline-secondary" title="تفعيل/إيقاف">
+                                    <i class="fas fa-power-off"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="fas fa-box fa-3x mb-3 d-block opacity-25"></i>
+                            {% if search or type_filter or status_filter %}
+                            لا توجد نتائج للفلتر المحدد
+                            {% else %}
+                            لا توجد منتجات
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-2">
+        <small class="text-muted">
+            عرض {{ page_obj.start_index }}–{{ page_obj.end_index }}
+            من {{ page_obj.paginator.count }} منتج
+        </small>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+
+                <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+                    {% if page_obj.has_previous %}
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&search={{ search }}&type={{ type_filter }}&status={{ status_filter }}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                    {% else %}
+                    <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+                    {% endif %}
+                </li>
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}&search={{ search }}&type={{ type_filter }}&status={{ status_filter }}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+                    {% if page_obj.has_next %}
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&search={{ search }}&type={{ type_filter }}&status={{ status_filter }}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                    {% else %}
+                    <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+                    {% endif %}
+                </li>
+
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

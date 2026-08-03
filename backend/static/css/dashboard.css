@@ -1,0 +1,45 @@
+/* Dashboard Specific Styles */
+
+.sidebar {
+    min-height: 100vh;
+    background-color: var(--dark-color);
+    padding: 1rem 0;
+}
+
+.sidebar .nav-link {
+    color: #d1d5db;
+    padding: 0.8rem 1.5rem;
+    transition: all 0.3s;
+    border-right: 3px solid transparent;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+    color: white;
+    background-color: rgba(255,255,255,0.1);
+    border-right-color: var(--primary-color);
+}
+
+.dashboard-card {
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.stat-card h3 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.stat-card p {
+    opacity: 0.9;
+    margin-bottom: 0;
+}

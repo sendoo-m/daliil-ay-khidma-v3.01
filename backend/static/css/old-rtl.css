@@ -1,0 +1,86 @@
+/* ==========================================
+   RTL Styles - Arabic Support
+   ========================================== */
+
+body.rtl {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Navbar RTL */
+body.rtl .navbar-nav {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+body.rtl .nav-link {
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+}
+
+/* Dropdown RTL */
+body.rtl .dropdown-menu {
+    right: 0;
+    left: auto;
+}
+
+/* ✅ Icons RTL (المشكلة: كنت بتضيف margin-left لكل أيقونة - بيبوّظ layouts)
+   نخليها smart: الأيقونة جوه زر أو لينك فقط */
+body.rtl .btn i,
+body.rtl a i,
+body.rtl .nav-link i {
+    margin-right: 0;
+    margin-left: 0.5rem;
+}
+
+/* Forms RTL */
+body.rtl .form-control,
+body.rtl .form-select {
+    text-align: right;
+}
+
+/* Input group radius */
+body.rtl .input-group > :not(:first-child):not(.dropdown-menu) {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+body.rtl .input-group > :first-child {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+/* Pagination RTL (ممتاز) */
+body.rtl .pagination {
+    direction: ltr;
+}
+
+/* Breadcrumb RTL (السهم بدل \\) */
+body.rtl .breadcrumb-item + .breadcrumb-item::before {
+    content: "›" !important;
+}
+
+/* ✅ Leaflet MAP FIX in RTL (الأهم) */
+body.rtl .leaflet-container,
+body.rtl #businessMap {
+    direction: ltr !important;
+    text-align: left !important;
+}
+
+body.rtl .leaflet-control-container {
+    direction: ltr !important;
+}
+
+body.rtl .leaflet-popup-content-wrapper,
+body.rtl .leaflet-popup-content {
+    direction: rtl; /* محتوى البوباب عربي */
+    text-align: right;
+}
+
+/* Leaflet fix for RTL (important) */
+body.rtl .leaflet-container {
+  direction: ltr !important;
+}
+body.rtl .leaflet-popup-content {
+  direction: rtl;
+  text-align: right;
+}

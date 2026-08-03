@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block title %}
+    {% if LANGUAGE_CODE == 'ar' %}شروط الخدمة - دليل أي خدمة{% else %}Terms of Service - Directory{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+:root { --p1:#6366f1; --p2:#8b5cf6; --dark:#0f172a; --mid:#475569; --muted:#94a3b8; --bg:#f8fafc; --border:#e2e8f0; }
+.legal-hero {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    padding: 4rem 0 3rem; color: white; position: relative; overflow: hidden;
+}
+.legal-hero::before {
+    content:''; position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+.legal-hero::after {
+    content:''; position:absolute; inset:0;
+    background: radial-gradient(ellipse at 80% 50%, rgba(139,92,246,0.2), transparent 55%);
+}
+.legal-badge {
+    display:inline-flex; align-items:center; gap:0.5rem;
+    background:rgba(139,92,246,0.15); border:1px solid rgba(139,92,246,0.35);
+    color:#c4b5fd; padding:0.4rem 1rem; border-radius:50px;
+    font-size:0.82rem; font-weight:700; margin-bottom:1.25rem;
+}
+.legal-title { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:900; margin-bottom:0.75rem; }
+.legal-subtitle { color:#64748b; font-size:0.95rem; }
+.toc-card {
+    background:white; border-radius:18px; border:1.5px solid var(--border);
+    box-shadow:0 4px 20px rgba(0,0,0,0.05); padding:1.75rem;
+    margin-bottom:2rem; position:sticky; top:80px;
+}
+.toc-title { font-weight:800; font-size:0.9rem; color:var(--dark); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; }
+.toc-title i { color:var(--p1); }
+.toc-link {
+    display:flex; align-items:center; gap:0.6rem; padding:0.45rem 0.6rem;
+    border-radius:8px; font-size:0.83rem; color:var(--mid); font-weight:600;
+    text-decoration:none; transition:all 0.2s;
+}
+.toc-link:hover { background:rgba(99,102,241,0.07); color:var(--p1); }
+.toc-link i { color:var(--p1); width:16px; text-align:center; font-size:0.75rem; }
+.legal-section {
+    background:white; border-radius:18px; border:1.5px solid var(--border);
+    box-shadow:0 3px 12px rgba(0,0,0,0.04); padding:2rem;
+    margin-bottom:1.25rem; scroll-margin-top:90px;
+}
+.sec-num {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:34px; height:34px; border-radius:9px;
+    background:linear-gradient(135deg,var(--p1),var(--p2));
+    color:white; font-weight:900; font-size:0.85rem; flex-shrink:0;
+}
+.sec-heading { font-size:1.05rem; font-weight:800; color:var(--dark); display:flex; align-items:center; gap:0.75rem; margin-bottom:1.1rem; }
+.legal-text { color:var(--mid); font-size:0.9rem; line-height:1.95; }
+.legal-text ul { padding-right:1.2rem; margin-bottom:0; }
+.legal-text ul li { margin-bottom:0.5rem; }
+.legal-text strong { color:var(--dark); }
+.warn-box {
+    background:rgba(245,158,11,0.07); border:1px solid rgba(245,158,11,0.25);
+    border-radius:12px; padding:1rem 1.25rem; margin-top:1rem;
+    font-size:0.87rem; color:#92400e;
+    display:flex; gap:0.75rem;
+}
+.warn-box i { color:#f59e0b; margin-top:2px; flex-shrink:0; }
+.update-bar {
+    background:rgba(16,185,129,0.07); border:1px solid rgba(16,185,129,0.2);
+    border-radius:12px; padding:0.875rem 1.25rem;
+    display:flex; align-items:center; gap:0.75rem;
+    font-size:0.83rem; color:#065f46; font-weight:600; margin-bottom:2rem;
+}
+.update-bar i { color:#10b981; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<section class="legal-hero">
+    <div class="container text-center position-relative" style="z-index:2;">
+        <div class="d-flex justify-content-center">
+            <div class="legal-badge">
+                <i class="fas fa-file-contract"></i>
+                {% if LANGUAGE_CODE == 'ar' %}شروط الخدمة{% else %}Terms of Service{% endif %}
+            </div>
+        </div>
+        <h1 class="legal-title">
+            {% if LANGUAGE_CODE == 'ar' %}اتفاقية الاستخدام 📋{% else %}Terms of Service 📋{% endif %}
+        </h1>
+        <p class="legal-subtitle">
+            {% if LANGUAGE_CODE == 'ar' %}
+                يُرجى قراءة هذه الشروط قبل استخدام الموقع
+            {% else %}
+                Please read these terms before using our platform
+            {% endif %}
+        </p>
+    </div>
+</section>
+
+<section class="py-5" style="background:var(--bg);">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-3 d-none d-lg-block">
+                <div class="toc-card">
+                    <div class="toc-title"><i class="fas fa-list-ul"></i>{% if LANGUAGE_CODE == 'ar' %}المحتويات{% else %}Contents{% endif %}</div>
+                    <a href="#t1" class="toc-link"><i class="fas fa-circle"></i>{% if LANGUAGE_CODE == 'ar' %}القبول بالشروط{% else %}Acceptance{% endif %}</a>
+                    <a href="#t2" class="toc-link"><i class="fas fa-circle"></i>{% if LANGUAGE_CODE == 'ar' %}استخدام الموقع{% else %}Use of Site{% endif %}</a>
+                    <a href="#t3" class="toc-link"><i class="fas fa-circle"></i>{% if LANGUAGE_CODE == 'ar' %}إضافة المحلات{% else %}Business Listings{% endif %}</a>
+                    <a href="#t4" class="toc-link"><i class="fas fa-circle"></i>{% if LANGUAGE_CODE == 'ar' %}العروض والخصومات{% else %}Deals & Offers{% endif %}</a>
+                    <a href="#t5" class="toc-link"><i class="fas fa-circle"></i>{% if LANGUAGE_CODE == 'ar' %}الملكية الفكرية{% else %}Intellectual Property{% endif %}</a>
+                    <a href="#t6" class="toc-link"><i class="fas fa-circle"></i>{% if LANGUAGE_CODE == 'ar' %}إخلاء المسؤولية{% else %}Disclaimer{% endif %}</a>
+                    <a href="#t7" class="toc-link"><i class="fas fa-circle"></i>{% if LANGUAGE_CODE == 'ar' %}إنهاء الحساب{% else %}Termination{% endif %}</a>
+                    <a href="#t8" class="toc-link"><i class="fas fa-circle"></i>{% if LANGUAGE_CODE == 'ar' %}القانون المطبّق{% else %}Governing Law{% endif %}</a>
+                </div>
+            </div>
+            <div class="col-lg-9">
+                <div class="update-bar">
+                    <i class="fas fa-calendar-check"></i>
+                    {% if LANGUAGE_CODE == 'ar' %}
+                        آخر تحديث: مارس 2026 — باستخدامك الموقع فأنت توافق على هذه الشروط.
+                    {% else %}
+                        Last updated: March 2026 — By using the site, you agree to these terms.
+                    {% endif %}
+                </div>
+
+                <!-- 1 -->
+                <div class="legal-section" id="t1">
+                    <div class="sec-heading"><span class="sec-num">1</span>{% if LANGUAGE_CODE == 'ar' %}القبول بالشروط{% else %}Acceptance of Terms{% endif %}</div>
+                    <div class="legal-text">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            <p>باستخدامك لموقع <strong>دليل أي خدمة</strong> أو تسجيلك فيه، فأنت توافق على الالتزام بهذه الشروط وسياسة الخصوصية. إذا كنت لا توافق على هذه الشروط، يُرجى عدم استخدام الموقع.</p>
+                        {% else %}
+                            <p>By using or registering on <strong>Daliil Ay Khidma</strong>, you agree to comply with these terms and the Privacy Policy. If you do not agree, please discontinue use of the site.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 2 -->
+                <div class="legal-section" id="t2">
+                    <div class="sec-heading"><span class="sec-num">2</span>{% if LANGUAGE_CODE == 'ar' %}قواعد الاستخدام{% else %}Acceptable Use{% endif %}</div>
+                    <div class="legal-text">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            <p>يُحظر عليك استخدام الموقع في:</p>
+                            <ul>
+                                <li>نشر محتوى مضلل أو احتيالي أو مسيء</li>
+                                <li>التعدي على حقوق الملكية الفكرية للغير</li>
+                                <li>محاولة اختراق المنصة أو تعطيل خدماتها</li>
+                                <li>إنشاء حسابات وهمية أو انتحال صفة آخرين</li>
+                                <li>جمع بيانات المستخدمين دون إذن مسبق</li>
+                            </ul>
+                        {% else %}
+                            <ul>
+                                <li>Posting misleading, fraudulent, or abusive content</li>
+                                <li>Infringing third-party intellectual property rights</li>
+                                <li>Attempting to breach or disrupt platform services</li>
+                                <li>Creating fake accounts or impersonating others</li>
+                                <li>Collecting user data without prior permission</li>
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 3 -->
+                <div class="legal-section" id="t3">
+                    <div class="sec-heading"><span class="sec-num">3</span>{% if LANGUAGE_CODE == 'ar' %}إضافة المحلات{% else %}Business Listings{% endif %}</div>
+                    <div class="legal-text">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            <p>عند إضافة محل أو خدمة، أنت تضمن ما يلي:</p>
+                            <ul>
+                                <li>جميع المعلومات المدخلة <strong>صحيحة ودقيقة</strong></li>
+                                <li>لديك صلاحية قانونية لتمثيل هذا المحل</li>
+                                <li>الصور والمحتوى المرفق خالٍ من حقوق الملكية لطرف ثالث</li>
+                            </ul>
+                            <p>نحتفظ بحق حذف أي محل يُخالف هذه الشروط أو سياسة المحتوى دون إشعار مسبق.</p>
+                        {% else %}
+                            <p>When adding a business or service, you guarantee that:</p>
+                            <ul>
+                                <li>All information provided is <strong>accurate and truthful</strong></li>
+                                <li>You have legal authority to represent this business</li>
+                                <li>Uploaded images and content are free of third-party rights</li>
+                            </ul>
+                            <p>We reserve the right to remove any listing that violates these terms without prior notice.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 4 -->
+                <div class="legal-section" id="t4">
+                    <div class="sec-heading"><span class="sec-num">4</span>{% if LANGUAGE_CODE == 'ar' %}العروض والخصومات{% else %}Deals & Offers{% endif %}</div>
+                    <div class="legal-text">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            <ul>
+                                <li>يتحمل صاحب المحل المسؤولية الكاملة عن صحة العرض المنشور</li>
+                                <li>يجب أن تكون نسب الخصم حقيقية وقابلة للتطبيق فعلياً</li>
+                                <li>نحتفظ بحق حذف أي عرض مضلل فور الإبلاغ عنه</li>
+                            </ul>
+                        {% else %}
+                            <ul>
+                                <li>Business owners bear full responsibility for the accuracy of published deals</li>
+                                <li>Discount percentages must be genuine and practically applicable</li>
+                                <li>We reserve the right to remove any misleading offer upon report</li>
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 5 -->
+                <div class="legal-section" id="t5">
+                    <div class="sec-heading"><span class="sec-num">5</span>{% if LANGUAGE_CODE == 'ar' %}الملكية الفكرية{% else %}Intellectual Property{% endif %}</div>
+                    <div class="legal-text">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            <p>جميع محتويات الموقع (الشعارات، التصميمات، الكود، النصوص) هي ملك حصري لـ <strong>دليل أي خدمة</strong>. يُحظر نسخها أو إعادة استخدامها دون إذن خطي مسبق.</p>
+                        {% else %}
+                            <p>All site content (logos, designs, code, text) is the exclusive property of <strong>Daliil Ay Khidma</strong>. Copying or reusing without prior written permission is prohibited.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 6 -->
+                <div class="legal-section" id="t6">
+                    <div class="sec-heading"><span class="sec-num">6</span>{% if LANGUAGE_CODE == 'ar' %}إخلاء المسؤولية{% else %}Disclaimer{% endif %}</div>
+                    <div class="legal-text">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            <p>الموقع يُقدَّم "كما هو" دون ضمانات. نحن غير مسؤولين عن:</p>
+                            <ul>
+                                <li>دقة المعلومات المقدمة من أصحاب المحلات</li>
+                                <li>أي خسائر ناجمة عن التعاملات بين المستخدمين والمحلات</li>
+                                <li>انقطاع الخدمة بسبب صيانة أو أعطال خارجة عن إرادتنا</li>
+                            </ul>
+                        {% else %}
+                            <p>The site is provided "as is" without warranties. We are not responsible for:</p>
+                            <ul>
+                                <li>Accuracy of information provided by business owners</li>
+                                <li>Losses arising from transactions between users and businesses</li>
+                                <li>Service interruptions due to maintenance or external outages</li>
+                            </ul>
+                        {% endif %}
+                        <div class="warn-box">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>{% if LANGUAGE_CODE == 'ar' %}تحقق دائمًا من معلومات المحل قبل التوجه إليه أو إتمام أي صفقة.{% else %}Always verify business information before visiting or completing any transaction.{% endif %}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7 -->
+                <div class="legal-section" id="t7">
+                    <div class="sec-heading"><span class="sec-num">7</span>{% if LANGUAGE_CODE == 'ar' %}إنهاء الحساب{% else %}Termination{% endif %}</div>
+                    <div class="legal-text">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            <p>نحتفظ بالحق في تعليق أو إنهاء أي حساب يُخالف هذه الشروط أو يُلحق ضررًا بالمستخدمين أو بسمعة المنصة، وذلك دون الحاجة لإشعار مسبق في الحالات الجسيمة.</p>
+                        {% else %}
+                            <p>We reserve the right to suspend or terminate any account that violates these terms or harms users or the platform's reputation, without prior notice in serious cases.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 8 -->
+                <div class="legal-section" id="t8">
+                    <div class="sec-heading"><span class="sec-num">8</span>{% if LANGUAGE_CODE == 'ar' %}القانون المطبّق{% else %}Governing Law{% endif %}</div>
+                    <div class="legal-text">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            <p>تخضع هذه الشروط للقوانين المعمول بها. في حال وجود أي نزاع، يُفضَّل حله وديًا أولاً عبر <a href="{% url 'core:support' %}" style="color:var(--p1);font-weight:700;">الدعم الفني</a>.</p>
+                        {% else %}
+                            <p>These terms are governed by applicable laws. In case of any dispute, amicable resolution is preferred first through <a href="{% url 'core:support' %}" style="color:var(--p1);font-weight:700;">Technical Support</a>.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

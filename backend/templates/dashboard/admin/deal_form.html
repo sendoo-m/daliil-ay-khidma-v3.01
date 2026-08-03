@@ -1,0 +1,275 @@
+{% extends 'dashboard/admin/base.html' %}
+
+{% block title %}{{ action }} عرض{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_home' %}">لوحة التحكم</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_deals_list' %}">العروض</a></li>
+        <li class="breadcrumb-item active">{{ action }} عرض</li>
+    </ol>
+</nav>
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">
+            <i class="fas fa-percent" style="color: #f39c12;"></i> {{ action }} عرض / خصم
+        </h2>
+        <p class="text-muted mb-0">إضافة عرض أو خصم جديد</p>
+    </div>
+    <a href="{% url 'dashboard:admin_deals_list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right me-1"></i> رجوع
+    </a>
+</div>
+
+<!-- Form -->
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    {% if form.errors %}
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        <strong>خطأ!</strong> يرجى تصحيح الأخطاء
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+    
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <!-- معلومات العرض -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> معلومات العرض</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-heading text-primary me-1"></i>
+                                العنوان بالعربي <span class="text-danger">*</span>
+                            </label>
+                            {{ form.title_ar }}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-heading text-primary me-1"></i>
+                                العنوان بالإنجليزي <span class="text-danger">*</span>
+                            </label>
+                            {{ form.title_en }}
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-align-right text-secondary me-1"></i>
+                                الوصف بالعربي
+                            </label>
+                            {{ form.description_ar }}
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-align-left text-secondary me-1"></i>
+                                الوصف بالإنجليزي
+                            </label>
+                            {{ form.description_en }}
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-file-alt text-info me-1"></i>
+                                الشروط بالعربي
+                            </label>
+                            {{ form.terms_ar }}
+                            <div class="form-text">شروط وأحكام استخدام العرض</div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-file-alt text-info me-1"></i>
+                                الشروط بالإنجليزي
+                            </label>
+                            {{ form.terms_en }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- التوقيت -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <h5 class="mb-0"><i class="fas fa-calendar me-2"></i> فترة العرض</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-calendar-plus text-success me-1"></i>
+                                تاريخ البداية <span class="text-danger">*</span>
+                            </label>
+                            {{ form.start_date }}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-calendar-times text-danger me-1"></i>
+                                تاريخ النهاية <span class="text-danger">*</span>
+                            </label>
+                            {{ form.end_date }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- نوع العرض -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0"><i class="fas fa-percent text-warning me-2"></i> الخصم</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-tags text-primary me-1"></i>
+                            نوع العرض <span class="text-danger">*</span>
+                        </label>
+                        {{ form.deal_type }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-percentage text-success me-1"></i>
+                            نسبة الخصم %
+                        </label>
+                        {{ form.discount_percentage }}
+                        <div class="form-text">مثال: 25 لخصم 25%</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-coins text-warning me-1"></i>
+                            مبلغ الخصم
+                        </label>
+                        {{ form.discount_amount }}
+                        <div class="form-text">مبلغ ثابت بالريال</div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-money-bill text-danger me-1"></i>
+                            السعر الأصلي
+                        </label>
+                        {{ form.original_price }}
+                    </div>
+                    
+                    <div>
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-money-bill-wave text-success me-1"></i>
+                            السعر بعد الخصم
+                        </label>
+                        {{ form.final_price }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- الإعدادات -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0"><i class="fas fa-cog text-info me-2"></i> الإعدادات</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-users text-primary me-1"></i>
+                            الحد الأقصى للاستخدام
+                        </label>
+                        {{ form.max_uses }}
+                        <div class="form-text">عدد مرات الاستخدام الكلي</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-user text-success me-1"></i>
+                            لكل مستخدم
+                        </label>
+                        {{ form.max_uses_per_user }}
+                        <div class="form-text">عدد مرات للمستخدم الواحد</div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <div class="form-check form-switch">
+                                {{ form.is_active }}
+                                <label class="form-check-label fw-bold">
+                                    <i class="fas fa-toggle-on text-success me-1"></i>
+                                    نشط
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-2">العرض متاح للاستخدام</small>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="p-3 bg-light rounded">
+                            <div class="form-check form-switch">
+                                {{ form.is_featured }}
+                                <label class="form-check-label fw-bold">
+                                    <i class="fas fa-star text-warning me-1"></i>
+                                    مميّز
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-2">يظهر في الصفحة الرئيسية</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- صورة العرض -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0"><i class="fas fa-image text-primary me-2"></i> صورة العرض</h5>
+                </div>
+                <div class="card-body p-4 text-center">
+                    {% if deal.image %}
+                    <img src="{{ deal.image.url }}" class="img-fluid rounded mb-3">
+                    {% else %}
+                    <div class="bg-light rounded p-4 mb-3">
+                        <i class="fas fa-image fa-3x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    {{ form.image }}
+                    <div class="form-text text-start mt-2">صورة جذابة للعرض</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Buttons -->
+    <div class="d-flex gap-2 justify-content-center mt-4">
+        <button type="submit" class="btn btn-admin btn-lg px-5">
+            <i class="fas fa-save me-2"></i> {{ action }}
+        </button>
+        <a href="{% url 'dashboard:admin_deals_list' %}" class="btn btn-secondary btn-lg px-5">
+            <i class="fas fa-times me-2"></i> إلغاء
+        </a>
+    </div>
+</form>
+
+<style>
+.form-control, .form-select, textarea.form-control {
+    border: 1.5px solid #e0e0e0;
+    padding: 0.65rem 1rem;
+    border-radius: 8px;
+}
+textarea.form-control { min-height: 100px; }
+.card { border-radius: 12px; }
+</style>
+{% endblock %}

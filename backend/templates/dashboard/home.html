@@ -1,0 +1,653 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans 'Dashboard' %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Modern Dashboard Styles */
+    .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+    
+    /* Demo Notice Banner */
+    .demo-notice {
+        background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+        border: 3px solid #e17055;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 25px rgba(225, 112, 85, 0.2);
+    }
+    
+    .demo-notice h4 {
+        color: #d63031;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    
+    .demo-notice p {
+        color: #2d3436;
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .demo-account {
+        background: white;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        display: inline-block;
+        margin-right: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    
+    .demo-account strong {
+        color: #0984e3;
+        font-size: 1.1rem;
+    }
+    
+    .demo-account small {
+        color: #636e72;
+        display: block;
+        margin-top: 0.3rem;
+    }
+    
+    .stat-card {
+        border: none;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        overflow: hidden;
+        position: relative;
+        height: 100%;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    }
+    
+    .stat-card-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .stat-card-success {
+        background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+        color: #065f46;
+    }
+    
+    .stat-card-warning {
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        color: #92400e;
+    }
+    
+    .stat-card-info {
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        color: #075985;
+    }
+    
+    .stat-card .card-body {
+        padding: 2rem;
+    }
+    
+    .stat-icon {
+        font-size: 3rem;
+        opacity: 0.9;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        line-height: 1;
+    }
+    
+    .stat-label {
+        font-size: 0.95rem;
+        opacity: 0.9;
+        font-weight: 500;
+    }
+    
+    .stat-sub {
+        font-size: 0.85rem;
+        opacity: 0.8;
+        margin-top: 0.5rem;
+    }
+    
+    .section-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+    
+    .section-card .card-header {
+        background: white;
+        border-bottom: 2px solid #f3f4f6;
+        padding: 1.5rem;
+        border-radius: 15px 15px 0 0 !important;
+    }
+    
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #1f2937;
+    }
+    
+    .section-icon {
+        margin-right: 0.5rem;
+    }
+    
+    .business-item, .product-item {
+        padding: 1rem;
+        border-bottom: 1px solid #f3f4f6;
+        transition: all 0.2s ease;
+    }
+    
+    .business-item:last-child, .product-item:last-child {
+        border-bottom: none;
+    }
+    
+    .business-item:hover, .product-item:hover {
+        background: #f9fafb;
+        transform: translateX(-5px);
+    }
+    
+    .deal-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .deal-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    }
+    
+    .empty-state {
+        padding: 3rem 2rem;
+        text-align: center;
+    }
+    
+    .empty-state-icon {
+        font-size: 4rem;
+        color: #e5e7eb;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state-text {
+        color: #9ca3af;
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .badge-status {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-top: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+        .stat-number {
+            font-size: 2rem;
+        }
+        
+        .stat-icon {
+            font-size: 2.5rem;
+        }
+        
+        .dashboard-header {
+            padding: 1.5rem;
+        }
+        
+        .demo-account {
+            display: block;
+            margin-right: 0;
+        }
+    }
+    
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-fade-in-up {
+        animation: fadeInUp 0.6s ease-out;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Demo Notice Banner (Only show if no data) -->
+{% if not has_data %}
+<div class="demo-notice animate-fade-in-up">
+    <h4>
+        <i class="fas fa-info-circle me-2"></i>
+        لا توجد بيانات لهذا الحساب!
+    </h4>
+    <p class="mb-3">
+        لاختبار لوحة التحكم بالبيانات التجريبية، قم بتسجيل الخروج والدخول بأحد الحسابات التالية:
+    </p>
+    <div>
+        {% for account in demo_accounts %}
+        <div class="demo-account">
+            <strong><i class="fas fa-user me-1"></i> {{ account.username }}</strong>
+            <small>{{ account.name }} - {{ account.businesses }} محلات</small>
+            <small class="text-success"><i class="fas fa-key me-1"></i> كلمة المرور: <code>test123</code></small>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="mt-3">
+        <a href="{% url 'accounts:logout' %}" class="btn btn-danger btn-lg">
+            <i class="fas fa-sign-out-alt me-2"></i>
+            تسجيل الخروج والتبديل للحساب التجريبي
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Dashboard Header -->
+<div class="dashboard-header animate-fade-in-up">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <h1 class="mb-2" style="font-size: 2rem; font-weight: 700;">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                {% trans 'Welcome' %}, {{ user.get_full_name|default:user.username }}!
+            </h1>
+            <p class="mb-0 opacity-90">{% trans 'Here is your business overview' %}</p>
+        </div>
+        <div class="mt-3 mt-md-0">
+            <a href="{% url 'dashboard:business_create' %}" class="btn btn-light btn-lg">
+                <i class="fas fa-plus me-2"></i>
+                {% trans 'Add New Business' %}
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-3 col-md-6 animate-fade-in-up" style="animation-delay: 0.1s;">
+        <div class="stat-card stat-card-primary">
+            <div class="card-body text-center">
+                <i class="fas fa-store stat-icon"></i>
+                <div class="stat-number">{{ stats.total_businesses }}</div>
+                <div class="stat-label">{% trans 'Total Businesses' %}</div>
+                <div class="stat-sub">
+                    <i class="fas fa-check-circle me-1"></i>
+                    {{ stats.verified_businesses }} {% trans 'Verified' %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 animate-fade-in-up" style="animation-delay: 0.2s;">
+        <div class="stat-card stat-card-success">
+            <div class="card-body text-center">
+                <i class="fas fa-box stat-icon"></i>
+                <div class="stat-number">{{ stats.total_products }}</div>
+                <div class="stat-label">{% trans 'Total Products' %}</div>
+                <div class="stat-sub">
+                    <i class="fas fa-check me-1"></i>
+                    {{ stats.active_products }} {% trans 'Available' %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 animate-fade-in-up" style="animation-delay: 0.3s;">
+        <div class="stat-card stat-card-warning">
+            <div class="card-body text-center">
+                <i class="fas fa-tags stat-icon"></i>
+                <div class="stat-number">{{ stats.total_deals }}</div>
+                <div class="stat-label">{% trans 'Total Deals' %}</div>
+                <div class="stat-sub">
+                    <i class="fas fa-fire me-1"></i>
+                    {{ stats.active_deals }} {% trans 'Active' %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 animate-fade-in-up" style="animation-delay: 0.4s;">
+        <div class="stat-card stat-card-info">
+            <div class="card-body text-center">
+                <i class="fas fa-eye stat-icon"></i>
+                <div class="stat-number">{{ stats.total_views }}</div>
+                <div class="stat-label">{% trans 'Total Views' %}</div>
+                <div class="stat-sub">
+                    <i class="fas fa-mouse-pointer me-1"></i>
+                    {{ stats.total_clicks }} {% trans 'Clicks' %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8 animate-fade-in-up" style="animation-delay: 0.5s;">
+        <div class="section-card">
+            <div class="card-header">
+                <h5 class="section-title">
+                    <i class="fas fa-chart-line section-icon text-primary"></i>
+                    {% trans 'Monthly Performance' %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 animate-fade-in-up" style="animation-delay: 0.6s;">
+        <div class="section-card">
+            <div class="card-header">
+                <h5 class="section-title">
+                    <i class="fas fa-chart-pie section-icon text-success"></i>
+                    {% trans 'Business Types' %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="businessTypesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Row -->
+<div class="row g-4">
+    
+    <!-- Recent Businesses -->
+    <div class="col-lg-6 animate-fade-in-up" style="animation-delay: 0.7s;">
+        <div class="section-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="section-title">
+                    <i class="fas fa-store section-icon text-primary"></i>
+                    {% trans 'Recent Businesses' %}
+                </h5>
+                <a href="{% url 'dashboard:business_list' %}" class="btn btn-sm btn-outline-primary">
+                    {% trans 'View All' %}
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_businesses %}
+                    {% for business in recent_businesses %}
+                    <div class="business-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    <a href="{% url 'dashboard:business_detail' business.slug %}" class="text-decoration-none text-dark">
+                                        {{ business.name_ar }}
+                                    </a>
+                                </h6>
+                                <small class="text-muted">
+                                    <span class="badge bg-light text-dark">{{ business.get_business_type_display }}</span>
+                                    {{ business.category.name_ar }}
+                                </small>
+                            </div>
+                            <div class="text-end ms-3">
+                                {% if business.is_verified %}
+                                <i class="fas fa-check-circle text-success" title="{% trans 'Verified' %}"></i>
+                                {% endif %}
+                                {% if business.is_active %}
+                                <span class="badge badge-status bg-success">{% trans 'Active' %}</span>
+                                {% else %}
+                                <span class="badge badge-status bg-secondary">{% trans 'Inactive' %}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-eye me-1"></i> {{ business.view_count }}
+                                <i class="fas fa-mouse-pointer ms-2 me-1"></i> {{ business.click_count }}
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-store empty-state-icon"></i>
+                    <p class="empty-state-text">{% trans 'No businesses yet' %}</p>
+                    <a href="{% url 'dashboard:business_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        {% trans 'Add Your First Business' %}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Products -->
+    <div class="col-lg-6 animate-fade-in-up" style="animation-delay: 0.8s;">
+        <div class="section-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="section-title">
+                    <i class="fas fa-box section-icon text-success"></i>
+                    {% trans 'Recent Products' %}
+                </h5>
+                <a href="{% url 'dashboard:product_list' %}" class="btn btn-sm btn-outline-success">
+                    {% trans 'View All' %}
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_products %}
+                    {% for product in recent_products %}
+                    <div class="product-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ product.name_ar }}</h6>
+                                <small class="text-muted">{{ product.business.name_ar }}</small>
+                            </div>
+                            <div class="text-end ms-3">
+                                <strong class="text-primary" style="font-size: 1.1rem;">
+                                    {{ product.price|floatformat:0 }}
+                                    <small>{% trans 'SAR' %}</small>
+                                </strong>
+                                {% if not product.is_available %}
+                                <br><span class="badge badge-status bg-danger mt-1">{% trans 'Unavailable' %}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-box empty-state-icon"></i>
+                    <p class="empty-state-text">{% trans 'No products yet' %}</p>
+                    <a href="{% url 'dashboard:product_create' %}" class="btn btn-success">
+                        <i class="fas fa-plus me-2"></i>
+                        {% trans 'Add Your First Product' %}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Active Deals -->
+    <div class="col-12 animate-fade-in-up" style="animation-delay: 0.9s;">
+        <div class="section-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="section-title">
+                    <i class="fas fa-tags section-icon text-warning"></i>
+                    {% trans 'Active Deals' %}
+                </h5>
+                <a href="{% url 'dashboard:deal_list' %}" class="btn btn-sm btn-outline-warning">
+                    {% trans 'View All' %}
+                </a>
+            </div>
+            <div class="card-body">
+                {% if active_deals %}
+                <div class="row g-3">
+                    {% for deal in active_deals %}
+                    <div class="col-lg-4 col-md-6">
+                        <div class="deal-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <span class="badge bg-warning text-dark">{{ deal.get_deal_type_display }}</span>
+                                    {% if deal.is_featured %}
+                                    <i class="fas fa-star text-warning" title="{% trans 'Featured' %}"></i>
+                                    {% endif %}
+                                </div>
+                                <h6 class="card-title mb-2">{{ deal.title_ar }}</h6>
+                                <p class="card-text small text-muted mb-3">
+                                    <i class="fas fa-store me-1"></i>
+                                    {{ deal.business.name_ar }}
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>
+                                        {{ deal.days_remaining }} {% trans 'days left' %}
+                                    </small>
+                                    <small class="text-success fw-bold">
+                                        <i class="fas fa-users me-1"></i>
+                                        {{ deal.claim_count }} {% trans 'claims' %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-tags empty-state-icon"></i>
+                    <p class="empty-state-text">{% trans 'No active deals' %}</p>
+                    <a href="{% url 'dashboard:deal_create' %}" class="btn btn-warning">
+                        <i class="fas fa-plus me-2"></i>
+                        {% trans 'Create Your First Deal' %}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+    // Monthly Performance Chart
+    const monthlyCtx = document.getElementById('monthlyChart');
+    if (monthlyCtx) {
+        new Chart(monthlyCtx, {
+            type: 'line',
+            data: {
+                labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو'],
+                datasets: [
+                    {
+                        label: 'المشاهدات',
+                        data: [120, 190, 300, 500, 420, {{ stats.total_views }}],
+                        borderColor: 'rgb(102, 126, 234)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'النقرات',
+                        data: [80, 140, 220, 350, 300, {{ stats.total_clicks }}],
+                        borderColor: 'rgb(132, 250, 176)',
+                        backgroundColor: 'rgba(132, 250, 176, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Business Types Pie Chart
+    const typesCtx = document.getElementById('businessTypesChart');
+    if (typesCtx) {
+        new Chart(typesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['محل تجاري', 'حرفة', 'خدمة عامة'],
+                datasets: [{
+                    data: [
+                        {{ stats.total_businesses|default:1 }},
+                        Math.floor({{ stats.total_businesses|default:1 }} * 0.3),
+                        Math.floor({{ stats.total_businesses|default:1 }} * 0.2)
+                    ],
+                    backgroundColor: [
+                        'rgba(102, 126, 234, 0.8)',
+                        'rgba(132, 250, 176, 0.8)',
+                        'rgba(252, 182, 159, 0.8)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

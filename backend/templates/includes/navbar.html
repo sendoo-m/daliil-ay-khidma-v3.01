@@ -1,0 +1,60 @@
+{% load static i18n %}
+<nav class="main-navbar navbar navbar-expand-lg">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'core:home' %}">
+            <i class="fas fa-store-alt"></i>
+            <span>{% if LANGUAGE_CODE == 'ar' %}{{ site_settings.site_name_ar|default:"دليل أي خدمة" }}{% else %}{{ site_settings.site_name_en|default:"Daliil Ay Khidma" }}{% endif %}</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="fas fa-bars" style="color:white; font-size:1.5rem;"></i>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'core:home' %}"><i class="fas fa-home"></i>{% if LANGUAGE_CODE == 'ar' %}الرئيسية{% else %}Home{% endif %}</a></li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {% if 'shops' in request.path or 'crafts' in request.path or 'services' in request.path or 'business' in request.path %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown"><i class="fas fa-th-large"></i>{% if LANGUAGE_CODE == 'ar' %}الدليل{% else %}Directory{% endif %}</a>
+                    <ul class="dropdown-menu shadow-sm navigation-menu">
+                        <li><a class="dropdown-item py-2" href="{% url 'directory:shops_list' %}"><span class="dropdown-icon primary-icon"><i class="fas fa-store"></i></span><span>{% if LANGUAGE_CODE == 'ar' %}المحلات التجارية{% else %}Shops{% endif %}</span></a></li>
+                        <li><a class="dropdown-item py-2" href="{% url 'directory:crafts_list' %}"><span class="dropdown-icon danger-icon"><i class="fas fa-tools"></i></span><span>{% if LANGUAGE_CODE == 'ar' %}الحرف والمهن{% else %}Crafts & Trades{% endif %}</span></a></li>
+                        <li><a class="dropdown-item py-2" href="{% url 'directory:services_list' %}"><span class="dropdown-icon dark-icon"><i class="fas fa-building"></i></span><span>{% if LANGUAGE_CODE == 'ar' %}الخدمات العامة{% else %}Public Services{% endif %}</span></a></li>
+                        <li><hr class="dropdown-divider mx-3"></li>
+                        <li><a class="dropdown-item py-2" href="{% url 'directory:business_list' %}"><span class="dropdown-icon muted-icon"><i class="fas fa-list"></i></span><span>{% if LANGUAGE_CODE == 'ar' %}عرض الدليل بالكامل{% else %}View full directory{% endif %}</span></a></li>
+                    </ul>
+                </li>
+                <li class="nav-item"><a class="nav-link {% if 'category' in request.path %}active{% endif %}" href="{% url 'categories:category_list' %}"><i class="fas fa-tags"></i>{% if LANGUAGE_CODE == 'ar' %}الأقسام{% else %}Categories{% endif %}</a></li>
+                <li class="nav-item"><a class="nav-link {% if 'map' in request.path %}active{% endif %}" href="{% url 'directory:map' %}"><i class="fas fa-map-marked-alt"></i>{% if LANGUAGE_CODE == 'ar' %}الخريطة{% else %}Map{% endif %}</a></li>
+                <li class="nav-item"><a class="nav-link {% if 'deal' in request.path %}active{% endif %}" href="{% url 'deals:deal_list' %}"><i class="fas fa-percent"></i>{% if LANGUAGE_CODE == 'ar' %}العروض{% else %}Deals{% endif %}</a></li>
+                <li class="nav-item"><a class="nav-link pricing-link {% if '/subscriptions/' in request.path %}active{% endif %}" href="{% url 'subscriptions:pricing_comparison' %}"><i class="fas fa-crown"></i>{% if LANGUAGE_CODE == 'ar' %}الاشتراكات والباقات{% else %}Subscriptions{% endif %}<span class="pricing-badge">{% if LANGUAGE_CODE == 'ar' %}للأنشطة{% else %}Business{% endif %}</span></a></li>
+                {% if user.is_staff %}<li class="nav-item"><a class="nav-link admin-subscriptions-link {% if '/dashboard/admin/subscriptions/' in request.path %}active{% endif %}" href="{% url 'dashboard:admin_subscriptions_home' %}"><i class="fas fa-chart-pie"></i>{% if LANGUAGE_CODE == 'ar' %}إدارة الاشتراكات{% else %}Manage Subscriptions{% endif %}</a></li>{% endif %}
+            </ul>
+
+            <ul class="navbar-nav align-items-center gap-1">
+                <li class="nav-item dropdown me-1"><a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="fas fa-globe"></i>{% if LANGUAGE_CODE == 'ar' %}ع{% else %}EN{% endif %}</a><ul class="dropdown-menu dropdown-menu-end shadow-sm navigation-menu language-menu"><li><a class="dropdown-item {% if LANGUAGE_CODE == 'ar' %}active{% endif %}" href="{% url 'core:set_language' %}?language=ar&next={{ request.get_full_path|urlencode }}">🇸🇦 العربية</a></li><li><a class="dropdown-item {% if LANGUAGE_CODE == 'en' %}active{% endif %}" href="{% url 'core:set_language' %}?language=en&next={{ request.get_full_path|urlencode }}">🇺🇸 English</a></li></ul></li>
+
+                {% if user.is_authenticated %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown"><span class="user-avatar">{{ user.username|first|upper }}</span><span class="user-name">{{ user.get_full_name|default:user.username|truncatewords:1 }}</span></a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow user-menu">
+                        <li class="user-menu-header"><div class="fw-bold">{{ user.get_full_name|default:user.username }}</div><div class="text-muted small">{{ user.email }}</div></li>
+                        <li><a class="dropdown-item rounded-3" href="{% url 'dashboard:index' %}"><i class="fas fa-tachometer-alt text-primary"></i>{% if LANGUAGE_CODE == 'ar' %}لوحة التحكم{% else %}Dashboard{% endif %}</a></li>
+                        <li><a class="dropdown-item rounded-3" href="{% url 'directory:my_businesses' %}"><i class="fas fa-store text-primary"></i>{% if LANGUAGE_CODE == 'ar' %}أنشطتي{% else %}My Businesses{% endif %}</a></li>
+                        <li><a class="dropdown-item rounded-3" href="{% url 'subscriptions:my_subscription' %}"><i class="fas fa-gem text-warning"></i>{% if LANGUAGE_CODE == 'ar' %}اشتراكي{% else %}My Subscription{% endif %}</a></li>
+                        <li><a class="dropdown-item rounded-3" href="{% url 'subscriptions:pricing_comparison' %}"><i class="fas fa-layer-group text-success"></i>{% if LANGUAGE_CODE == 'ar' %}ترقية الباقة{% else %}Upgrade Plan{% endif %}</a></li>
+                        {% if user.is_staff %}<li><hr class="dropdown-divider"></li><li><a class="dropdown-item rounded-3" href="{% url 'dashboard:admin_subscriptions_home' %}"><i class="fas fa-chart-pie text-primary"></i>{% if LANGUAGE_CODE == 'ar' %}إدارة الاشتراكات{% else %}Manage Subscriptions{% endif %}</a></li><li><a class="dropdown-item rounded-3" href="{% url 'admin:index' %}"><i class="fas fa-cog text-secondary"></i>{% if LANGUAGE_CODE == 'ar' %}لوحة Django{% else %}Django Admin{% endif %}</a></li>{% endif %}
+                        <li><hr class="dropdown-divider"></li><li><a class="dropdown-item rounded-3 text-danger" href="{% url 'accounts:logout' %}"><i class="fas fa-sign-out-alt"></i>{% if LANGUAGE_CODE == 'ar' %}تسجيل الخروج{% else %}Logout{% endif %}</a></li>
+                    </ul>
+                </li>
+                {% else %}
+                <li class="nav-item"><a class="nav-link" href="{% url 'accounts:login' %}"><i class="fas fa-sign-in-alt"></i>{% if LANGUAGE_CODE == 'ar' %}دخول{% else %}Login{% endif %}</a></li>
+                <li class="nav-item"><a class="btn btn-navbar" href="{% url 'accounts:register' %}"><i class="fas fa-user-plus"></i>{% if LANGUAGE_CODE == 'ar' %}إنشاء حساب{% else %}Register{% endif %}</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<style>
+.navigation-menu{border-radius:14px;border:0;min-width:225px;padding:.55rem}.dropdown-icon{width:34px;height:34px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}.primary-icon{background:#eef1ff;color:#667eea}.danger-icon{background:#fff0f5;color:#f5576c}.dark-icon{background:#eef2f7;color:#2c5364}.muted-icon{background:#f5f5f5;color:#64748b}.dropdown-item{display:flex!important;align-items:center;gap:10px;transition:background .2s ease}.dropdown-item:hover{background:#f8f9ff!important}.dropdown-item.active{background:#eef1ff!important;color:#667eea!important}.pricing-link,.admin-subscriptions-link{position:relative}.pricing-badge{margin-inline-start:5px;padding:2px 7px;border-radius:999px;background:#fff2cc;color:#8a5b00;font-size:.62rem;font-weight:800}.admin-subscriptions-link{background:rgba(255,255,255,.1);border-radius:10px}.user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:800}.user-menu{border-radius:16px;border:0;min-width:235px;padding:.5rem}.user-menu-header{padding:.7rem .85rem;margin-bottom:.35rem;background:#f8f9ff;border-radius:11px}@media(max-width:1199px){.pricing-badge,.user-name{display:none}}@media(max-width:991px){.pricing-badge,.user-name{display:inline}.main-navbar .navbar-nav{align-items:stretch!important}}
+</style>

@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+
+{% block title %}
+    {% if LANGUAGE_CODE == 'ar' %}{{ district.name_ar }}{% else %}{{ district.name_en }}{% endif %}
+    - {% if LANGUAGE_CODE == 'ar' %}{{ district.city.name_ar }}{% else %}{{ district.city.name_en }}{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+:root { --primary:#667eea;--secondary:#764ba2;--dark:#1e293b;--muted:#64748b;--light-bg:#f8fafc; }
+.dist-header { background:linear-gradient(135deg,#f093fb,#f5576c);padding:3rem 0;color:white;position:relative;overflow:hidden; }
+.dist-header::before { content:'📍';position:absolute;font-size:14rem;opacity:0.07;top:50%;right:3%;transform:translateY(-50%); }
+.breadcrumb-item a { color:rgba(255,255,255,0.8);text-decoration:none; }
+.breadcrumb-item a:hover { color:white; }
+.breadcrumb-item.active { color:white; }
+.breadcrumb-item+.breadcrumb-item::before { color:rgba(255,255,255,0.5); }
+
+.stat-strip { background:white;border-bottom:1px solid #e2e8f0;padding:0.875rem 0; }
+.s-item { flex:1;text-align:center;padding:0.5rem 1rem;border-left:1px solid #e2e8f0; }
+.s-item:first-child { border-left:none; }
+[dir="rtl"] .s-item { border-left:none;border-right:1px solid #e2e8f0; }
+[dir="rtl"] .s-item:first-child { border-right:none; }
+.s-item .sn { font-size:1.5rem;font-weight:900;color:var(--dark); }
+.s-item .sl { font-size:0.72rem;color:var(--muted);font-weight:600;text-transform:uppercase; }
+
+.sec-card { background:white;border-radius:20px;padding:1.75rem;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:1.5rem;border:1px solid rgba(0,0,0,0.04); }
+.sec-title { font-size:0.95rem;font-weight:800;color:var(--dark);margin-bottom:1.25rem;display:flex;align-items:center;gap:0.6rem; }
+.sec-title .t-icon { width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#f093fb,#f5576c);display:flex;align-items:center;justify-content:center;color:white;font-size:0.85rem; }
+
+.biz-card {
+    background:white;border-radius:18px;overflow:hidden;border:1px solid #e2e8f0;
+    transition:all 0.3s;text-decoration:none;display:flex;flex-direction:column;
+    box-shadow:0 3px 12px rgba(0,0,0,0.06);
+}
+.biz-card:hover { transform:translateY(-8px);box-shadow:0 16px 35px rgba(102,126,234,0.18);border-color:var(--primary); }
+.biz-img { height:150px;background:linear-gradient(135deg,var(--primary),var(--secondary));position:relative;overflow:hidden; }
+.biz-img img { width:100%;height:100%;object-fit:cover;transition:transform 0.5s; }
+.biz-card:hover .biz-img img { transform:scale(1.08); }
+.biz-img .no-img { width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:rgba(255,255,255,0.3); }
+.vbadge { position:absolute;top:8px;{% if LANGUAGE_CODE == 'ar' %}right:8px;{% else %}left:8px;{% endif %}background:white;color:#065f46;padding:3px 10px;border-radius:50px;font-size:0.72rem;font-weight:700; }
+.biz-body { padding:1rem;flex:1; }
+.biz-name { font-size:0.9rem;font-weight:800;color:var(--dark);margin-bottom:0.35rem; }
+.biz-cat  { font-size:0.78rem;color:var(--muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="dist-header">
+    <div class="container">
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'core:home' %}"><i class="fas fa-home me-1"></i>{% if LANGUAGE_CODE == 'ar' %}الرئيسية{% else %}Home{% endif %}</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'directory:governorate_list' %}">{% if LANGUAGE_CODE == 'ar' %}المحافظات{% else %}Governorates{% endif %}</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'directory:governorate_detail' district.city.governorate.slug %}">{% if LANGUAGE_CODE == 'ar' %}{{ district.city.governorate.name_ar }}{% else %}{{ district.city.governorate.name_en }}{% endif %}</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'directory:city_detail' district.city.slug %}">{% if LANGUAGE_CODE == 'ar' %}{{ district.city.name_ar }}{% else %}{{ district.city.name_en }}{% endif %}</a></li>
+                <li class="breadcrumb-item active">{% if LANGUAGE_CODE == 'ar' %}{{ district.name_ar }}{% else %}{{ district.name_en }}{% endif %}</li>
+            </ol>
+        </nav>
+        <h1 style="font-size:clamp(1.8rem,4vw,2.5rem);font-weight:900;margin-bottom:0.35rem;">
+            <i class="fas fa-map-pin me-2"></i>
+            {% if LANGUAGE_CODE == 'ar' %}{{ district.name_ar }}{% else %}{{ district.name_en }}{% endif %}
+        </h1>
+        <p style="opacity:0.88;margin:0;">
+            {% if LANGUAGE_CODE == 'ar' %}
+                {{ district.city.name_ar }}، {{ district.city.governorate.name_ar }}
+            {% else %}
+                {{ district.city.name_en }}, {{ district.city.governorate.name_en }}
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="stat-strip">
+    <div class="container"><div class="d-flex">
+        <div class="s-item"><div class="sn">{{ total_businesses }}</div><div class="sl">{% if LANGUAGE_CODE == 'ar' %}محل{% else %}Businesses{% endif %}</div></div>
+        <div class="s-item"><div class="sn">{{ district.city.districts_count }}</div><div class="sl">{% if LANGUAGE_CODE == 'ar' %}أحياء المدينة{% else %}City Districts{% endif %}</div></div>
+    </div></div>
+</div>
+
+<div style="background:var(--light-bg);padding:2rem 0 4rem;">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-8">
+
+                <div class="sec-card">
+                    <div class="sec-title">
+                        <div class="t-icon"><i class="fas fa-store"></i></div>
+                        {% if LANGUAGE_CODE == 'ar' %}محلات الحي{% else %}Businesses in this District{% endif %}
+                        <span style="background:#f1f5f9;color:var(--muted);padding:2px 10px;border-radius:50px;font-size:0.78rem;">{{ total_businesses }}</span>
+                    </div>
+
+                    {% if businesses.object_list %}
+                    <div class="row g-3">
+                        {% for biz in businesses %}
+                        <div class="col-md-6">
+                            <a href="{% url 'directory:business_detail' biz.slug %}" class="biz-card">
+                                <div class="biz-img">
+                                    {% if biz.logo %}<img src="{{ biz.logo.url }}" alt="">
+                                    {% else %}<div class="no-img"><i class="fas fa-store"></i></div>{% endif %}
+                                    {% if biz.is_verified %}<span class="vbadge"><i class="fas fa-check-circle me-1"></i>{% if LANGUAGE_CODE == 'ar' %}موثّق{% else %}Verified{% endif %}</span>{% endif %}
+                                </div>
+                                <div class="biz-body">
+                                    <div class="biz-name">{% if LANGUAGE_CODE == 'ar' %}{{ biz.name_ar }}{% else %}{{ biz.name_en }}{% endif %}</div>
+                                    <div class="biz-cat"><i class="fas fa-th-large me-1" style="color:var(--primary);"></i>{% if LANGUAGE_CODE == 'ar' %}{{ biz.category.name_ar }}{% else %}{{ biz.category.name_en }}{% endif %}</div>
+                                </div>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {# PAGINATION #}
+                    {% if businesses.has_other_pages %}
+                    <div class="d-flex justify-content-center gap-2 mt-4 flex-wrap">
+                        {% if businesses.has_previous %}
+                        <a href="?page={{ businesses.previous_page_number }}" style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;border:1.5px solid #e2e8f0;text-decoration:none;color:var(--dark);font-weight:700;transition:0.2s;">
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}right{% else %}left{% endif %}"></i>
+                        </a>
+                        {% endif %}
+                        {% for num in businesses.paginator.page_range %}
+                            {% if businesses.number == num %}
+                            <span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#f093fb,#f5576c);color:white;font-weight:700;">{{ num }}</span>
+                            {% elif num > businesses.number|add:'-3' and num < businesses.number|add:'3' %}
+                            <a href="?page={{ num }}" style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;border:1.5px solid #e2e8f0;text-decoration:none;color:var(--dark);font-weight:700;">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+                        {% if businesses.has_next %}
+                        <a href="?page={{ businesses.next_page_number }}" style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;border:1.5px solid #e2e8f0;text-decoration:none;color:var(--dark);font-weight:700;transition:0.2s;">
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-store" style="font-size:3rem;color:#e2e8f0;"></i>
+                        <p class="text-muted mt-2">{% if LANGUAGE_CODE == 'ar' %}لا توجد محلات في هذا الحي{% else %}No businesses in this district{% endif %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+            </div>
+
+            <div class="col-lg-4">
+                <div style="position:sticky;top:90px;">
+                    <div class="sec-card">
+                        <div class="sec-title"><div class="t-icon"><i class="fas fa-info-circle"></i></div>{% if LANGUAGE_CODE == 'ar' %}معلومات الحي{% else %}District Info{% endif %}</div>
+                        <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                            <div style="display:flex;justify-content:space-between;padding:0.75rem;background:var(--light-bg);border-radius:12px;">
+                                <span style="color:var(--muted);font-size:0.85rem;">{% if LANGUAGE_CODE == 'ar' %}المدينة{% else %}City{% endif %}</span>
+                                <a href="{% url 'directory:city_detail' district.city.slug %}" style="font-weight:800;color:var(--primary);text-decoration:none;">{% if LANGUAGE_CODE == 'ar' %}{{ district.city.name_ar }}{% else %}{{ district.city.name_en }}{% endif %}</a>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;padding:0.75rem;background:var(--light-bg);border-radius:12px;">
+                                <span style="color:var(--muted);font-size:0.85rem;">{% if LANGUAGE_CODE == 'ar' %}المحافظة{% else %}Governorate{% endif %}</span>
+                                <a href="{% url 'directory:governorate_detail' district.city.governorate.slug %}" style="font-weight:800;color:var(--primary);text-decoration:none;">{% if LANGUAGE_CODE == 'ar' %}{{ district.city.governorate.name_ar }}{% else %}{{ district.city.governorate.name_en }}{% endif %}</a>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;padding:0.75rem;background:var(--light-bg);border-radius:12px;">
+                                <span style="color:var(--muted);font-size:0.85rem;">{% if LANGUAGE_CODE == 'ar' %}المحلات{% else %}Businesses{% endif %}</span>
+                                <strong>{{ total_businesses }}</strong>
+                            </div>
+                        </div>
+                        <a href="{% url 'directory:business_list' %}?district={{ district.slug }}"
+                           style="display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-top:1rem;padding:0.875rem;background:linear-gradient(135deg,#f093fb,#f5576c);color:white;border-radius:14px;font-weight:700;text-decoration:none;">
+                            <i class="fas fa-store"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}عرض جميع المحلات{% else %}View All Businesses{% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

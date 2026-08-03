@@ -1,0 +1,86 @@
+{% extends 'dashboard/admin/base.html' %}
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block title %}{% if LANGUAGE_CODE|slice:':2' == 'ar' %}تعديل خطة الاشتراك{% else %}Edit Subscription Plan{% endif %}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}تعديل خطة الاشتراك{% else %}Edit Subscription Plan{% endif %}</h1>
+    <p class="text-muted mb-0">{{ plan.display_name_ar }} / {{ plan.display_name_en }}</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{% url 'dashboard:admin_subscription_plans' %}">
+    <i class="fas fa-arrow-{% if LANGUAGE_CODE|slice:':2' == 'ar' %}right{% else %}left{% endif %}"></i>
+    {% if LANGUAGE_CODE|slice:':2' == 'ar' %}العودة إلى الخطط{% else %}Back to Plans{% endif %}
+  </a>
+</div>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  <div class="row g-4">
+    <div class="col-xl-8">
+      <div class="table-card mb-4">
+        <h2 class="h5 fw-bold mb-3"><i class="fas fa-circle-info text-primary me-2"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}المعلومات الأساسية{% else %}Basic Information{% endif %}</h2>
+        <div class="row g-3">
+          <div class="col-md-4"><label class="form-label fw-semibold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}نوع الخطة{% else %}Plan Type{% endif %}</label>{{ form.name }}{% for error in form.name.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>
+          <div class="col-md-4"><label class="form-label fw-semibold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الاسم بالعربية{% else %}Arabic Name{% endif %}</label>{{ form.display_name_ar }}{% for error in form.display_name_ar.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>
+          <div class="col-md-4"><label class="form-label fw-semibold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الاسم بالإنجليزية{% else %}English Name{% endif %}</label>{{ form.display_name_en }}{% for error in form.display_name_en.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>
+          <div class="col-md-6"><label class="form-label fw-semibold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الوصف بالعربية{% else %}Arabic Description{% endif %}</label>{{ form.description_ar }}{% for error in form.description_ar.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>
+          <div class="col-md-6"><label class="form-label fw-semibold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الوصف بالإنجليزية{% else %}English Description{% endif %}</label>{{ form.description_en }}{% for error in form.description_en.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>
+        </div>
+      </div>
+
+      <div class="table-card mb-4">
+        <h2 class="h5 fw-bold mb-3"><i class="fas fa-coins text-primary me-2"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الأسعار{% else %}Pricing{% endif %}</h2>
+        <div class="row g-3">
+          <div class="col-md-3"><label class="form-label fw-semibold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}شهري{% else %}Monthly{% endif %}</label>{{ form.price_monthly }}{% for error in form.price_monthly.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>
+          <div class="col-md-3"><label class="form-label fw-semibold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}ربع سنوي{% else %}Quarterly{% endif %}</label>{{ form.price_quarterly }}{% for error in form.price_quarterly.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>
+          <div class="col-md-3"><label class="form-label fw-semibold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}نصف سنوي{% else %}Semi-Annual{% endif %}</label>{{ form.price_semi_annual }}{% for error in form.price_semi_annual.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>
+          <div class="col-md-3"><label class="form-label fw-semibold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}سنوي{% else %}Annual{% endif %}</label>{{ form.price_annual }}{% for error in form.price_annual.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>
+        </div>
+      </div>
+
+      <div class="table-card mb-4">
+        <h2 class="h5 fw-bold mb-3"><i class="fas fa-gauge-high text-primary me-2"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الحدود{% else %}Limits{% endif %}</h2>
+        <div class="row g-3">
+          <div class="col-md-4"><label class="form-label fw-semibold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الحد الأقصى للمنتجات{% else %}Maximum Products{% endif %}</label>{{ form.max_products }}<div class="form-text">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}القيمة 0 تعني غير محدود{% else %}Use 0 for unlimited{% endif %}</div></div>
+          <div class="col-md-4"><label class="form-label fw-semibold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}صور كل منتج{% else %}Images per Product{% endif %}</label>{{ form.max_images_per_product }}</div>
+          <div class="col-md-4"><label class="form-label fw-semibold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}صور معرض النشاط{% else %}Business Gallery Images{% endif %}</label>{{ form.max_business_images }}</div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <h2 class="h5 fw-bold mb-3"><i class="fas fa-list-check text-primary me-2"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}المزايا والصلاحيات{% else %}Features & Permissions{% endif %}</h2>
+        <div class="row g-3">
+          {% for field in form %}
+            {% if field.name == 'can_upload_images' or field.name == 'can_show_prices' or field.name == 'has_delivery_options' or field.name == 'has_analytics' or field.name == 'featured_in_search' or field.name == 'can_create_deals' or field.name == 'has_social_media_links' or field.name == 'has_verified_badge' %}
+            <div class="col-md-6"><div class="form-check form-switch border rounded-3 p-3 ps-5 h-100">{{ field }}<label class="form-check-label fw-semibold" for="{{ field.id_for_label }}">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{% if field.name == 'can_upload_images' %}رفع الصور{% elif field.name == 'can_show_prices' %}عرض الأسعار{% elif field.name == 'has_delivery_options' %}خيارات التوصيل{% elif field.name == 'has_analytics' %}لوحة التحليلات{% elif field.name == 'featured_in_search' %}الظهور المميز في البحث{% elif field.name == 'can_create_deals' %}إنشاء العروض{% elif field.name == 'has_social_media_links' %}روابط التواصل الاجتماعي{% else %}شارة التوثيق{% endif %}{% else %}{% if field.name == 'can_upload_images' %}Upload Images{% elif field.name == 'can_show_prices' %}Show Prices{% elif field.name == 'has_delivery_options' %}Delivery Options{% elif field.name == 'has_analytics' %}Analytics Dashboard{% elif field.name == 'featured_in_search' %}Featured in Search{% elif field.name == 'can_create_deals' %}Create Deals{% elif field.name == 'has_social_media_links' %}Social Media Links{% else %}Verified Badge{% endif %}{% endif %}</label></div></div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4">
+      <div class="table-card mb-4 sticky-xl-top" style="top:1rem;">
+        <h2 class="h5 fw-bold mb-3"><i class="fas fa-palette text-primary me-2"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}العرض والحالة{% else %}Display & Status{% endif %}</h2>
+        <div class="mb-3"><label class="form-label fw-semibold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}لون الخطة{% else %}Plan Color{% endif %}</label>{{ form.color }}{% for error in form.color.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>
+        <div class="mb-3"><label class="form-label fw-semibold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}أيقونة Font Awesome{% else %}Font Awesome Icon{% endif %}</label>{{ form.icon }}</div>
+        <div class="mb-3"><label class="form-label fw-semibold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}ترتيب العرض{% else %}Display Order{% endif %}</label>{{ form.order }}</div>
+        <div class="form-check form-switch mb-3">{{ form.is_active }}<label class="form-check-label fw-semibold" for="{{ form.is_active.id_for_label }}">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الخطة نشطة{% else %}Plan is Active{% endif %}</label></div>
+        <div class="form-check form-switch mb-4">{{ form.is_popular }}<label class="form-check-label fw-semibold" for="{{ form.is_popular.id_for_label }}">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الخطة الأكثر شيوعًا{% else %}Popular Plan{% endif %}</label></div>
+        <div class="d-grid gap-2">
+          <button class="btn btn-primary btn-lg" type="submit"><i class="fas fa-floppy-disk"></i> {% if LANGUAGE_CODE|slice:':2' == 'ar' %}حفظ التعديلات{% else %}Save Changes{% endif %}</button>
+          <a class="btn btn-outline-secondary" href="{% url 'dashboard:admin_subscription_plans' %}">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}إلغاء{% else %}Cancel{% endif %}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

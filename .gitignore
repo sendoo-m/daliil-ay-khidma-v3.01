@@ -1,0 +1,29 @@
+# Flutter
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+**/doc/api/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+db.sqlite3
+*.log
+staticfiles/
+media/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Editors
+.idea/
+.vscode/
+*.iml
+.DS_Store

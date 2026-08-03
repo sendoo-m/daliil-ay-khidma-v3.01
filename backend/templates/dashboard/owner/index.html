@@ -1,0 +1,218 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}لوحة التحكم - صاحب محل{% endblock %}
+
+{% block sidebar_title %}🏪 لوحة المحلات{% endblock %}
+
+{% block sidebar_menu %}
+<li>
+    <a href="{% url 'dashboard:dashboard:owner_dashboard' %}" class="active">
+        <i class="fas fa-home"></i> الرئيسية
+    </a>
+</li>
+<li>
+    <a href="{% url 'dashboard:dashboard:business_list' %}">
+        <i class="fas fa-store"></i> محلاتي <span class="badge bg-light text-dark">{{ total_businesses }}</span>
+    </a>
+</li>
+<li>
+    <a href="{% url 'dashboard:dashboard:product_list' %}">
+        <i class="fas fa-box"></i> منتجاتي <span class="badge bg-light text-dark">{{ total_products }}</span>
+    </a>
+</li>
+<li>
+    <a href="{% url 'dashboard:dashboard:deal_list' %}">
+        <i class="fas fa-tags"></i> عروضي <span class="badge bg-warning text-dark">{{ active_deals }}</span>
+    </a>
+</li>
+<li>
+    <a href="{% url 'dashboard:dashboard:review_list' %}">
+        <i class="fas fa-star"></i> التعليقات <span class="badge bg-danger">{{ pending_reviews }}</span>
+    </a>
+</li>
+<li><hr style="border-color: rgba(255,255,255,0.2);"></li>
+<li>
+    <a href="/">
+        <i class="fas fa-globe"></i> عرض الموقع
+    </a>
+</li>
+<li>
+    <a href="{% url 'account:logout' %}">
+        <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+    </a>
+</li>
+{% endblock %}
+
+{% block page_title %}🏠 لوحة التحكم الرئيسية{% endblock %}
+
+{% block content %}
+<!-- Statistics Cards -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="icon blue">
+                <i class="fas fa-store"></i>
+            </div>
+            <h3>{{ total_businesses }}</h3>
+            <p>إجمالي المحلات</p>
+            <small class="text-success"><i class="fas fa-check"></i> {{ active_businesses }} نشط</small>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="icon green">
+                <i class="fas fa-box"></i>
+            </div>
+            <h3>{{ total_products }}</h3>
+            <p>إجمالي المنتجات</p>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="icon orange">
+                <i class="fas fa-tags"></i>
+            </div>
+            <h3>{{ active_deals }}</h3>
+            <p>العروض النشطة</p>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="icon red">
+                <i class="fas fa-star"></i>
+            </div>
+            <h3>{{ avg_rating|floatformat:1 }}</h3>
+            <p>متوسط التقييم</p>
+            <small><i class="fas fa-comments"></i> {{ pending_reviews }} بانتظار الرد</small>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Stats -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="stat-card">
+            <h5><i class="fas fa-eye"></i> إحصائيات المشاهدات</h5>
+            <hr>
+            <div class="row text-center">
+                <div class="col-6">
+                    <h4 class="text-primary">{{ total_views|default:0 }}</h4>
+                    <p class="text-muted">إجمالي المشاهدات</p>
+                </div>
+                <div class="col-6">
+                    <h4 class="text-success">{{ total_clicks|default:0 }}</h4>
+                    <p class="text-muted">إجمالي النقرات</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="stat-card">
+            <h5><i class="fas fa-check-circle"></i> حالة المحلات</h5>
+            <hr>
+            <div class="row text-center">
+                <div class="col-4">
+                    <h4 class="text-success">{{ active_businesses }}</h4>
+                    <p class="text-muted">نشط</p>
+                </div>
+                <div class="col-4">
+                    <h4 class="text-info">{{ verified_businesses }}</h4>
+                    <p class="text-muted">معتمد</p>
+                </div>
+                <div class="col-4">
+                    <h4 class="text-warning">{{ total_businesses|add:"-"|add:verified_businesses }}</h4>
+                    <p class="text-muted">بانتظار الاعتماد</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Businesses -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="custom-table">
+            <div class="p-3 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="m-0"><i class="fas fa-store"></i> محلاتي الأخيرة</h5>
+                <a href="{% url 'dashboard:dashboard:business_list' %}" class="btn btn-light btn-sm">
+                    عرض الكل <i class="fas fa-arrow-left"></i>
+                </a>
+            </div>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th>النوع</th>
+                        <th>التصنيف</th>
+                        <th>الحالة</th>
+                        <th>المشاهدات</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for business in businesses %}
+                    <tr>
+                        <td>
+                            <strong>{{ business.name_ar }}</strong><br>
+                            <small class="text-muted">{{ business.name_en }}</small>
+                        </td>
+                        <td>{{ business.get_business_type_display }}</td>
+                        <td>{{ business.category.name_ar }}</td>
+                        <td>
+                            {% if business.is_active %}
+                                <span class="badge bg-success">نشط</span>
+                            {% else %}
+                                <span class="badge bg-secondary">غير نشط</span>
+                            {% endif %}
+                            {% if business.is_verified %}
+                                <span class="badge bg-info">معتمد</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ business.view_count }}</td>
+                        <td>
+                            <a href="{% url 'dashboard:dashboard:business_edit' business.slug %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                            لا توجد محلات بعد
+                            <br><br>
+                            <a href="{% url 'dashboard:dashboard:business_create' %}" class="btn btn-gradient">
+                                <i class="fas fa-plus"></i> إضافة محل جديد
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-md-4">
+        <a href="{% url 'dashboard:dashboard:business_create' %}" class="btn btn-gradient btn-lg w-100">
+            <i class="fas fa-plus"></i> إضافة محل جديد
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'dashboard:dashboard:product_create' %}" class="btn btn-success btn-lg w-100">
+            <i class="fas fa-box"></i> إضافة منتج جديد
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'dashboard:dashboard:deal_create' %}" class="btn btn-warning btn-lg w-100">
+            <i class="fas fa-tags"></i> إضافة عرض جديد
+        </a>
+    </div>
+</div>
+{% endblock %}

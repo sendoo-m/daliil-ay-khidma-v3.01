@@ -1,0 +1,240 @@
+{% extends 'dashboard/admin/base.html' %}
+{% load humanize %}
+
+{% block title %}تفاصيل المستخدم{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_home' %}">لوحة التحكم</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_users_list' %}">المستخدمين</a></li>
+        <li class="breadcrumb-item active">{{ user_obj.username }}</li>
+    </ol>
+</nav>
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">
+        <i class="fas fa-user" style="color: #3498db;"></i> تفاصيل المستخدم
+    </h2>
+    <a href="{% url 'dashboard:admin_users_list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right me-1"></i> رجوع
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Profile Card -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                <div class="profile-avatar mb-3">
+                    {{ user_obj.username|slice:":1"|upper }}
+                </div>
+                <h4 class="fw-bold mb-1">{{ user_obj.username }}</h4>
+                <p class="text-muted mb-3">
+                    <i class="fas fa-envelope me-1"></i>{{ user_obj.email }}
+                </p>
+                
+                <!-- Status Badges -->
+                <div class="mb-3">
+                    {% if user_obj.is_active %}
+                    <span class="badge bg-success-soft text-success p-2">
+                        <i class="fas fa-check-circle me-1"></i>حساب نشط
+                    </span>
+                    {% else %}
+                    <span class="badge bg-danger-soft text-danger p-2">
+                        <i class="fas fa-times-circle me-1"></i>حساب معطّل
+                    </span>
+                    {% endif %}
+                    
+                    {% if user_obj.is_staff %}
+                    <span class="badge bg-primary-soft text-primary p-2">
+                        <i class="fas fa-user-shield me-1"></i>مشرف
+                    </span>
+                    {% endif %}
+                    
+                    {% if user_obj.is_superuser %}
+                    <span class="badge bg-warning-soft text-warning p-2">
+                        <i class="fas fa-crown me-1"></i>مدير
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <!-- Quick Stats -->
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded">
+                            <h4 class="mb-0 fw-bold text-primary">{{ businesses.count }}</h4>
+                            <small class="text-muted">محل</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded">
+                            <h4 class="mb-0 fw-bold text-success">{{ user_obj.reviews.count|default:0 }}</h4>
+                            <small class="text-muted">تقييم</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="d-grid gap-2">
+                    <a href="{% url 'dashboard:admin_user_edit' user_obj.id %}" class="btn btn-primary">
+                        <i class="fas fa-edit me-1"></i> تعديل المستخدم
+                    </a>
+                    <a href="{% url 'dashboard:admin_user_toggle' user_obj.id %}" 
+                       class="btn btn-outline-warning"
+                       onclick="return confirm('هل أنت متأكد؟')">
+                        <i class="fas fa-power-off me-1"></i>
+                        {% if user_obj.is_active %}تعطيل{% else %}تفعيل{% endif %} الحساب
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Details Tabs -->
+    <div class="col-lg-8">
+        <!-- Info Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> معلومات الحساب</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <i class="fas fa-user text-primary"></i>
+                            <div>
+                                <small class="text-muted d-block">الاسم الأول</small>
+                                <strong>{{ user_obj.first_name|default:"-" }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <i class="fas fa-user text-success"></i>
+                            <div>
+                                <small class="text-muted d-block">الاسم الأخير</small>
+                                <strong>{{ user_obj.last_name|default:"-" }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <i class="fas fa-calendar-plus text-info"></i>
+                            <div>
+                                <small class="text-muted d-block">تاريخ التسجيل</small>
+                                <strong>{{ user_obj.date_joined|date:"Y-m-d" }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-item">
+                            <i class="fas fa-clock text-warning"></i>
+                            <div>
+                                <small class="text-muted d-block">آخر تسجيل دخول</small>
+                                <strong>{{ user_obj.last_login|date:"Y-m-d"|default:"-" }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Businesses Card -->
+        {% if businesses %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">
+                    <i class="fas fa-store text-success me-2"></i>
+                    محلات المستخدم ({{ businesses.count }})
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for business in businesses %}
+                    <a href="{% url 'dashboard:admin_business_detail' business.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex align-items-center">
+                            {% if business.logo %}
+                            <img src="{{ business.logo.url }}" class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                            {% else %}
+                            <div class="bg-success text-white rounded me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            {% endif %}
+                            <div class="flex-grow-1">
+                                <strong class="d-block">{{ business.name_ar }}</strong>
+                                <small class="text-muted">
+                                    <i class="fas fa-layer-group me-1"></i>{{ business.category.name_ar }}
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                {% if business.is_verified %}
+                                <span class="badge bg-success-soft text-success">
+                                    <i class="fas fa-check-circle"></i> موثّق
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning-soft text-warning">
+                                    <i class="fas fa-clock"></i> غير موثق
+                                </span>
+                                {% endif %}
+                                <div class="mt-1">
+                                    <small class="text-muted">
+                                        <i class="fas fa-eye me-1"></i>{{ business.view_count|intcomma }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-store fa-3x text-muted mb-3"></i>
+                <p class="text-muted mb-0">لا يملك هذا المستخدم أي محلات بعد</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    font-weight: bold;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.info-item i {
+    font-size: 1.5rem;
+}
+
+.bg-success-soft { background-color: #d4edda !important; }
+.bg-danger-soft { background-color: #f8d7da !important; }
+.bg-primary-soft { background-color: #cfe2ff !important; }
+.bg-warning-soft { background-color: #fff3cd !important; }
+</style>
+{% endblock %}

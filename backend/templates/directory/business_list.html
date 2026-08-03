@@ -1,0 +1,448 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+
+{% block title %}
+    {% if LANGUAGE_CODE == 'ar' %}
+        جميع المحلات - دليل أي خدمة
+    {% else %}
+        All businesses - Daliil Ay Khidma
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.business-card {
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    height: 100%;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.business-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.business-image {
+    height: 200px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.business-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.business-card:hover .business-image img {
+    transform: scale(1.1);
+}
+
+.filter-card {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    position: sticky;
+    top: 100px;
+}
+
+.badge-verified {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: white;
+    color: #10b981;
+    padding: 6px 12px;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.badge-featured {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #f59e0b;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 3rem 0;
+    margin-bottom: 3rem;
+    border-radius: 0 0 30px 30px;
+    color: white;
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+}
+
+.breadcrumb-item a {
+    color: rgba(255,255,255,0.9);
+    text-decoration: none;
+}
+
+.breadcrumb-item.active {
+    color: white;
+}
+
+.btn-filter {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 0.75rem;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.btn-filter:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+    color: white;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 5rem 2rem;
+}
+
+.empty-state i {
+    font-size: 5rem;
+    color: #e2e8f0;
+    margin-bottom: 2rem;
+}
+
+.pagination {
+    margin-top: 3rem;
+}
+
+.page-link {
+    border-radius: 8px;
+    margin: 0 4px;
+    border: none;
+    color: #667eea;
+    font-weight: 600;
+}
+
+.page-item.active .page-link {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ==================== Page Header ==================== #}
+<div class="page-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-3">
+                    <i class="fas fa-store me-3"></i>
+                    {% if LANGUAGE_CODE == 'ar' %}جميع المحلات{% else %}All businesses{% endif %}
+                </h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'core:home' %}">
+                                {% if LANGUAGE_CODE == 'ar' %}الرئيسية{% else %}Home{% endif %}
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active">
+                            {% if LANGUAGE_CODE == 'ar' %}المحلات{% else %}Businesses{% endif %}
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <span class="badge bg-white text-primary" style="font-size: 1.5rem; padding: 1rem 2rem;">
+                    {{ total_count|default:0 }}
+                    {% if LANGUAGE_CODE == 'ar' %}محل{% else %}businesses{% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="row g-4">
+
+        {# ==================== Filters Sidebar ==================== #}
+        <div class="col-lg-3">
+            <div class="filter-card">
+                <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.25rem; border-radius: 16px 16px 0 0;">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-filter me-2"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}فلترة النتائج{% else %}Filter results{% endif %}
+                    </h5>
+                </div>
+                <div class="card-body" style="padding: 1.5rem;">
+                    <form method="get" id="filterForm">
+
+                        {# Search #}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                {% if LANGUAGE_CODE == 'ar' %}البحث{% else %}Search{% endif %}
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   name="q"
+                                   value="{{ request.GET.q }}"
+                                   placeholder="{% if LANGUAGE_CODE == 'ar' %}ابحث عن محل...{% else %}Search businesses...{% endif %}">
+                        </div>
+
+                        {# Category #}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                {% if LANGUAGE_CODE == 'ar' %}الفئة{% else %}Category{% endif %}
+                            </label>
+                            <select class="form-select" name="category">
+                                <option value="">
+                                    {% if LANGUAGE_CODE == 'ar' %}جميع الفئات{% else %}All categories{% endif %}
+                                </option>
+                                {% for category in categories %}
+                                <option value="{{ category.slug }}" {% if request.GET.category == category.slug %}selected{% endif %}>
+                                    {% if LANGUAGE_CODE == 'ar' %}{{ category.name_ar }}{% else %}{{ category.name_en }}{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        {# City #}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                {% if LANGUAGE_CODE == 'ar' %}المدينة{% else %}City{% endif %}
+                            </label>
+                            <select class="form-select" name="city">
+                                <option value="">
+                                    {% if LANGUAGE_CODE == 'ar' %}جميع المدن{% else %}All cities{% endif %}
+                                </option>
+                                {% for city in cities %}
+                                <option value="{{ city.slug }}" {% if request.GET.city == city.slug %}selected{% endif %}>
+                                    {% if LANGUAGE_CODE == 'ar' %}{{ city.name_ar }}{% else %}{{ city.name_en }}{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        {# Sort #}
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                {% if LANGUAGE_CODE == 'ar' %}الترتيب{% else %}Sort by{% endif %}
+                            </label>
+                            <select class="form-select" name="sort">
+                                <option value="-created_at" {% if request.GET.sort == '-created_at' %}selected{% endif %}>
+                                    {% if LANGUAGE_CODE == 'ar' %}الأحدث أولاً{% else %}Newest first{% endif %}
+                                </option>
+                                <option value="created_at" {% if request.GET.sort == 'created_at' %}selected{% endif %}>
+                                    {% if LANGUAGE_CODE == 'ar' %}الأقدم أولاً{% else %}Oldest first{% endif %}
+                                </option>
+                                <option value="popular" {% if request.GET.sort == 'popular' %}selected{% endif %}>
+                                    {% if LANGUAGE_CODE == 'ar' %}الأكثر شهرة{% else %}Most popular{% endif %}
+                                </option>
+                                <option value="name_ar" {% if request.GET.sort == 'name_ar' %}selected{% endif %}>
+                                    {% if LANGUAGE_CODE == 'ar' %}الاسم (أ-ي){% else %}Name (A-Z){% endif %}
+                                </option>
+                            </select>
+                        </div>
+
+                        {# Buttons #}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-filter">
+                                <i class="fas fa-check me-2"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}تطبيق الفلترة{% else %}Apply filters{% endif %}
+                            </button>
+                            <a href="{% url 'directory:business_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}إعادة تعيين{% else %}Reset{% endif %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {# ==================== Business List ==================== #}
+        <div class="col-lg-9">
+            {% if businesses %}
+            <div class="row g-4">
+                {% for business in businesses %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="business-card card">
+
+                        {# Image #}
+                        <div class="business-image">
+                            {% if business.logo %}
+                                <img src="{{ business.logo.url }}" alt="{{ business.name }}">
+                            {% else %}
+                                <div class="d-flex align-items-center justify-content-center h-100">
+                                    <i class="fas fa-store-alt fa-4x text-white opacity-50"></i>
+                                </div>
+                            {% endif %}
+
+                            {# Badges #}
+                            {% if business.is_verified %}
+                            <span class="badge-verified">
+                                <i class="fas fa-check-circle me-1"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}موثّق{% else %}Verified{% endif %}
+                            </span>
+                            {% endif %}
+
+                            {% if business.is_featured %}
+                            <span class="badge-featured">
+                                <i class="fas fa-star me-1"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}مميز{% else %}Featured{% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        {# Content #}
+                        <div class="card-body" style="padding: 1.25rem;">
+                            <h5 class="card-title mb-2 fw-bold">
+                                {% if LANGUAGE_CODE == 'ar' %}
+                                    {{ business.name_ar }}
+                                {% else %}
+                                    {{ business.name_en|default:business.name_ar }}
+                                {% endif %}
+                            </h5>
+
+                            <p class="text-muted small mb-2">
+                                <i class="fas fa-th-large me-1" style="color: #667eea;"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}
+                                    {{ business.category.name_ar }}
+                                {% else %}
+                                    {{ business.category.name_en|default:business.category.name_ar }}
+                                {% endif %}
+                            </p>
+
+                            <p class="text-muted small mb-3">
+                                <i class="fas fa-map-marker-alt me-1" style="color: #ef4444;"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}
+                                    {{ business.address_ar|truncatechars:40 }}
+                                {% else %}
+                                    {{ business.address_en|default:business.address_ar|truncatechars:40 }}
+                                {% endif %}
+                            </p>
+
+                            {% if LANGUAGE_CODE == 'ar' and business.description_ar %}
+                            <p class="card-text small text-muted mb-3">
+                                {{ business.description_ar|truncatewords:12 }}
+                            </p>
+                            {% elif LANGUAGE_CODE == 'en' and business.description_en %}
+                            <p class="card-text small text-muted mb-3">
+                                {{ business.description_en|truncatewords:12 }}
+                            </p>
+                            {% endif %}
+
+                            {# Footer #}
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                                <a href="{% url 'directory:business_detail' business.slug %}"
+                                   class="btn btn-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>
+                                    {% if LANGUAGE_CODE == 'ar' %}عرض التفاصيل{% else %}View details{% endif %}
+                                </a>
+                                <span class="text-muted small">
+                                    <i class="fas fa-eye me-1"></i>
+                                    {{ business.view_count|default:0 }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {# ==================== Pagination ==================== #}
+            {% if businesses.has_other_pages %}
+            <nav aria-label="{% if LANGUAGE_CODE == 'ar' %}التنقل بين الصفحات{% else %}Page navigation{% endif %}">
+                <ul class="pagination justify-content-center">
+
+                    {% if businesses.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page={{ businesses.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.city %}&city={{ request.GET.city }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">
+                            {% if LANGUAGE_CODE == 'ar' %}
+                                <i class="fas fa-chevron-right"></i>
+                            {% else %}
+                                <i class="fas fa-chevron-left"></i>
+                            {% endif %}
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in businesses.paginator.page_range %}
+                        {% if businesses.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > businesses.number|add:'-3' and num < businesses.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.city %}&city={{ request.GET.city }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if businesses.has_next %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page={{ businesses.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.city %}&city={{ request.GET.city }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">
+                            {% if LANGUAGE_CODE == 'ar' %}
+                                <i class="fas fa-chevron-left"></i>
+                            {% else %}
+                                <i class="fas fa-chevron-right"></i>
+                            {% endif %}
+                        </a>
+                    </li>
+                    {% endif %}
+
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            {# ==================== Empty State ==================== #}
+            <div class="empty-state">
+                <i class="fas fa-store"></i>
+                <h3 class="text-muted mb-3">
+                    {% if LANGUAGE_CODE == 'ar' %}
+                        لم يتم العثور على محلات
+                    {% else %}
+                        No businesses found
+                    {% endif %}
+                </h3>
+                <p class="text-muted mb-4">
+                    {% if LANGUAGE_CODE == 'ar' %}
+                        جرب كلمات بحث مختلفة أو غيّر معايير الفلترة
+                    {% else %}
+                        Try different keywords or change your filter options
+                    {% endif %}
+                </p>
+                <a href="{% url 'directory:business_list' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-redo me-2"></i>
+                    {% if LANGUAGE_CODE == 'ar' %}إعادة تعيين البحث{% else %}Reset search{% endif %}
+                </a>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

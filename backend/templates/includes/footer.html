@@ -1,0 +1,857 @@
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+
+<footer style="background:#0f172a; border-top:1px solid #1e293b; padding-top:4rem;">
+
+
+    <!-- Top Wave -->
+    <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6); height:3px; margin-bottom:3.5rem;"></div>
+
+
+    <div class="container">
+        <div class="row g-5">
+
+
+            <!-- عمود 1: الهوية -->
+            <div class="col-lg-4 col-md-6">
+                <div class="mb-3 d-flex align-items-center gap-2">
+                    <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:white;">
+                        <i class="fas fa-store-alt"></i>
+                    </div>
+                    <span style="font-size:1.15rem;font-weight:900;color:white;">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            {{ site_settings.site_name_ar|default:"دليل أي خدمة" }}
+                        {% else %}
+                            {{ site_settings.site_name_en|default:"Daliil Ay Khidma" }}
+                        {% endif %}
+                    </span>
+                </div>
+                <p style="color:#475569;font-size:0.88rem;line-height:1.85;margin-bottom:1.5rem;">
+                    {% if LANGUAGE_CODE == 'ar' %}
+                        {{ site_settings.site_description_ar|default:"دليلك الشامل للعثور على أفضل المحلات والخدمات في منطقتك. اكتشف آلاف الأنشطة التجارية والعروض المميزة." }}
+                    {% else %}
+                        {{ site_settings.site_description_en|default:"Your complete guide to find the best businesses and services in your area. Discover thousands of listings and exclusive deals." }}
+                    {% endif %}
+                </p>
+
+                <!-- Social -->
+                <div class="d-flex gap-2 flex-wrap">
+
+                    {% if site_settings.facebook %}
+                    <a href="{{ site_settings.facebook }}" target="_blank" rel="noopener" title="Facebook"
+                       style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid #1e293b;display:flex;align-items:center;justify-content:center;color:#64748b;text-decoration:none;transition:all 0.25s;"
+                       onmouseover="this.style.background='linear-gradient(135deg,#6366f1,#8b5cf6)';this.style.color='white';this.style.borderColor='transparent';"
+                       onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#64748b';this.style.borderColor='#1e293b';">
+                        <i class="fab fa-facebook-f" style="font-size:0.85rem;"></i>
+                    </a>
+                    {% endif %}
+
+                    {% if site_settings.twitter %}
+                    <a href="{{ site_settings.twitter }}" target="_blank" rel="noopener" title="Twitter"
+                       style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid #1e293b;display:flex;align-items:center;justify-content:center;color:#64748b;text-decoration:none;transition:all 0.25s;"
+                       onmouseover="this.style.background='linear-gradient(135deg,#6366f1,#8b5cf6)';this.style.color='white';this.style.borderColor='transparent';"
+                       onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#64748b';this.style.borderColor='#1e293b';">
+                        <i class="fab fa-twitter" style="font-size:0.85rem;"></i>
+                    </a>
+                    {% endif %}
+
+                    {% if site_settings.instagram %}
+                    <a href="{{ site_settings.instagram }}" target="_blank" rel="noopener" title="Instagram"
+                       style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid #1e293b;display:flex;align-items:center;justify-content:center;color:#64748b;text-decoration:none;transition:all 0.25s;"
+                       onmouseover="this.style.background='linear-gradient(135deg,#6366f1,#8b5cf6)';this.style.color='white';this.style.borderColor='transparent';"
+                       onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#64748b';this.style.borderColor='#1e293b';">
+                        <i class="fab fa-instagram" style="font-size:0.85rem;"></i>
+                    </a>
+                    {% endif %}
+
+                    {% if site_settings.youtube %}
+                    <a href="{{ site_settings.youtube }}" target="_blank" rel="noopener" title="YouTube"
+                       style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid #1e293b;display:flex;align-items:center;justify-content:center;color:#64748b;text-decoration:none;transition:all 0.25s;"
+                       onmouseover="this.style.background='linear-gradient(135deg,#6366f1,#8b5cf6)';this.style.color='white';this.style.borderColor='transparent';"
+                       onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#64748b';this.style.borderColor='#1e293b';">
+                        <i class="fab fa-youtube" style="font-size:0.85rem;"></i>
+                    </a>
+                    {% endif %}
+
+                    {% if site_settings.whatsapp %}
+                    <a href="https://wa.me/{{ site_settings.whatsapp }}" target="_blank" rel="noopener" title="WhatsApp"
+                       style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid #1e293b;display:flex;align-items:center;justify-content:center;color:#64748b;text-decoration:none;transition:all 0.25s;"
+                       onmouseover="this.style.background='linear-gradient(135deg,#25d366,#128c7e)';this.style.color='white';this.style.borderColor='transparent';"
+                       onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#64748b';this.style.borderColor='#1e293b';">
+                        <i class="fab fa-whatsapp" style="font-size:0.85rem;"></i>
+                    </a>
+                    {% endif %}
+
+                </div>
+            </div>
+
+
+            <!-- عمود 2: روابط سريعة -->
+            <div class="col-lg-2 col-md-6 col-6">
+                <p style="color:white;font-weight:800;font-size:0.88rem;margin-bottom:1.25rem;letter-spacing:0.05em;text-transform:uppercase;">
+                    {% if LANGUAGE_CODE == 'ar' %}روابط سريعة{% else %}Quick Links{% endif %}
+                </p>
+                <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0.6rem;">
+                    <li>
+                        <a href="{% url 'core:home' %}"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}" style="font-size:0.65rem;color:#6366f1;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}الرئيسية{% else %}Home{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'directory:business_list' %}"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}" style="font-size:0.65rem;color:#6366f1;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}المحلات{% else %}Businesses{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'categories:category_list' %}"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}" style="font-size:0.65rem;color:#6366f1;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}الأقسام{% else %}Categories{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'deals:deal_list' %}"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}" style="font-size:0.65rem;color:#6366f1;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}العروض{% else %}Deals{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'core:about' %}"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}" style="font-size:0.65rem;color:#6366f1;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}من نحن{% else %}About{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'core:contact' %}"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}" style="font-size:0.65rem;color:#6366f1;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}اتصل بنا{% else %}Contact{% endif %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+
+            <!-- عمود 3: أقسام مميزة -->
+            <div class="col-lg-2 col-md-6 col-6">
+                <p style="color:white;font-weight:800;font-size:0.88rem;margin-bottom:1.25rem;letter-spacing:0.05em;text-transform:uppercase;">
+                    {% if LANGUAGE_CODE == 'ar' %}أقسام مميزة{% else %}Top Categories{% endif %}
+                </p>
+                <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0.6rem;">
+                    <li>
+                        <a href="{% url 'directory:business_list' %}?category=restaurants"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <span style="font-size:0.9rem;">🍽️</span>
+                            {% if LANGUAGE_CODE == 'ar' %}مطاعم{% else %}Restaurants{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'directory:business_list' %}?category=cafes"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <span style="font-size:0.9rem;">☕</span>
+                            {% if LANGUAGE_CODE == 'ar' %}كافيهات{% else %}Cafes{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'directory:business_list' %}?category=shopping"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <span style="font-size:0.9rem;">🛍️</span>
+                            {% if LANGUAGE_CODE == 'ar' %}تسوّق{% else %}Shopping{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'directory:business_list' %}?category=medical"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <span style="font-size:0.9rem;">🏥</span>
+                            {% if LANGUAGE_CODE == 'ar' %}طبي{% else %}Medical{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'directory:business_list' %}?category=services"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <span style="font-size:0.9rem;">🔧</span>
+                            {% if LANGUAGE_CODE == 'ar' %}خدمات{% else %}Services{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'categories:category_list' %}"
+                           style="color:#6366f1;text-decoration:none;font-size:0.83rem;font-weight:700;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#6366f1';">
+                            <i class="fas fa-th-large" style="font-size:0.7rem;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}عرض الكل{% else %}View All{% endif %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+
+            <!-- عمود 4: معلومات التواصل -->
+            <div class="col-lg-4 col-md-6">
+                <p style="color:white;font-weight:800;font-size:0.88rem;margin-bottom:1.25rem;letter-spacing:0.05em;text-transform:uppercase;">
+                    {% if LANGUAGE_CODE == 'ar' %}تواصل معنا{% else %}Contact Us{% endif %}
+                </p>
+                <ul style="list-style:none;padding:0;margin:0 0 1.5rem;display:flex;flex-direction:column;gap:0.875rem;">
+
+                    <!-- العنوان -->
+                    {% if site_settings.address %}
+                    <li style="display:flex;align-items:flex-start;gap:0.75rem;">
+                        <div style="width:34px;height:34px;border-radius:9px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-map-marker-alt" style="color:#818cf8;font-size:0.85rem;"></i>
+                        </div>
+                        <span style="color:#475569;font-size:0.85rem;padding-top:0.4rem;">
+                            {{ site_settings.address }}
+                        </span>
+                    </li>
+                    {% endif %}
+
+                    <!-- الهاتف -->
+                    {% if site_settings.contact_phone %}
+                    <li style="display:flex;align-items:center;gap:0.75rem;">
+                        <div style="width:34px;height:34px;border-radius:9px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-phone" style="color:#818cf8;font-size:0.85rem;"></i>
+                        </div>
+                        <a href="tel:{{ site_settings.contact_phone }}"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            {{ site_settings.contact_phone }}
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <!-- البريد -->
+                    {% if site_settings.contact_email %}
+                    <li style="display:flex;align-items:center;gap:0.75rem;">
+                        <div style="width:34px;height:34px;border-radius:9px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-envelope" style="color:#818cf8;font-size:0.85rem;"></i>
+                        </div>
+                        <a href="mailto:{{ site_settings.contact_email }}"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            {{ site_settings.contact_email }}
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <!-- متاح 24/7 -->
+                    <li style="display:flex;align-items:center;gap:0.75rem;">
+                        <div style="width:34px;height:34px;border-radius:9px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-circle" style="color:#10b981;font-size:0.45rem;"></i>
+                        </div>
+                        <span style="color:#475569;font-size:0.85rem;">
+                            {% if LANGUAGE_CODE == 'ar' %}متاح 24/7{% else %}Available 24/7{% endif %}
+                        </span>
+                    </li>
+
+                </ul>
+
+                <!-- CTA صغير -->
+                <a href="{% url 'core:support' %}"
+                   style="display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;padding:0.65rem 1.4rem;border-radius:10px;font-weight:700;font-size:0.85rem;text-decoration:none;transition:all 0.3s;"
+                   onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(99,102,241,0.4)';"
+                   onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none';">
+                    <i class="fas fa-headset"></i>
+                    {% if LANGUAGE_CODE == 'ar' %}الدعم الفني{% else %}Technical Support{% endif %}
+                </a>
+            </div>
+
+
+        </div>
+
+
+        <!-- Divider -->
+        <div style="height:1px;background:linear-gradient(90deg,transparent,#1e293b,transparent);margin:2.5rem 0;"></div>
+
+
+        <!-- Footer Bottom -->
+        <div class="row align-items-center pb-4 g-3">
+            <div class="col-md-5 text-center text-md-{% if LANGUAGE_CODE == 'ar' %}end{% else %}start{% endif %}">
+                <p style="margin:0;color:#334155;font-size:0.82rem;">
+                    <i class="fas fa-copyright" style="color:#6366f1;"></i>
+                    2026
+                    {% if LANGUAGE_CODE == 'ar' %}
+                        {{ site_settings.site_name_ar|default:"دليل أي خدمة" }}. جميع الحقوق محفوظة.
+                    {% else %}
+                        {{ site_settings.site_name_en|default:"Daliil Ay Khidma" }}. All rights reserved.
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-md-7 text-center text-md-{% if LANGUAGE_CODE == 'ar' %}start{% else %}end{% endif %}">
+                <div class="d-flex flex-wrap justify-content-center justify-content-md-{% if LANGUAGE_CODE == 'ar' %}start{% else %}end{% endif %} gap-3">
+                    <a href="{% url 'core:privacy_policy' %}"
+                       style="color:#334155;text-decoration:none;font-size:0.82rem;font-weight:600;transition:color 0.2s;"
+                       onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#334155';">
+                        <i class="fas fa-shield-alt me-1" style="color:#6366f1;"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}سياسة الخصوصية{% else %}Privacy Policy{% endif %}
+                    </a>
+                    <span style="color:#1e293b;">|</span>
+                    <a href="{% url 'core:terms_of_service' %}"
+                       style="color:#334155;text-decoration:none;font-size:0.82rem;font-weight:600;transition:color 0.2s;"
+                       onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#334155';">
+                        <i class="fas fa-file-contract me-1" style="color:#6366f1;"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}شروط الخدمة{% else %}Terms of Service{% endif %}
+                    </a>
+                    <span style="color:#1e293b;">|</span>
+                    <a href="{% url 'core:support' %}"
+                       style="color:#334155;text-decoration:none;font-size:0.82rem;font-weight:600;transition:color 0.2s;"
+                       onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#334155';">
+                        <i class="fas fa-headset me-1" style="color:#6366f1;"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}الدعم الفني{% else %}Support{% endif %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+
+{% comment %} {% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+<footer style="background:#0f172a; border-top:1px solid #1e293b; padding-top:4rem;">
+
+    <!-- Top Wave -->
+    <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6); height:3px; margin-bottom:3.5rem;"></div>
+
+    <div class="container">
+        <div class="row g-5">
+
+            <!-- عمود 1: الهوية -->
+            <div class="col-lg-4 col-md-6">
+                <div class="mb-3 d-flex align-items-center gap-2">
+                    <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:white;">
+                        <i class="fas fa-store-alt"></i>
+                    </div>
+                    <span style="font-size:1.15rem;font-weight:900;color:white;">
+                        {% if LANGUAGE_CODE == 'ar' %}دليل أي خدمة{% else %}Daliil Ay Khidma{% endif %}
+                    </span>
+                </div>
+                <p style="color:#475569;font-size:0.88rem;line-height:1.85;margin-bottom:1.5rem;">
+                    {% if LANGUAGE_CODE == 'ar' %}
+                        دليلك الشامل للعثور على أفضل المحلات والخدمات في منطقتك.
+                        اكتشف آلاف الأنشطة التجارية والعروض المميزة.
+                    {% else %}
+                        Your complete guide to find the best businesses and services in your area.
+                        Discover thousands of listings and exclusive deals.
+                    {% endif %}
+                </p>
+                <!-- Social -->
+                <div class="d-flex gap-2 flex-wrap">
+                    
+                    <a href="#" title="Facebook" style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid #1e293b;display:flex;align-items:center;justify-content:center;color:#64748b;text-decoration:none;transition:all 0.25s;"
+                       onmouseover="this.style.background='linear-gradient(135deg,#6366f1,#8b5cf6)';this.style.color='white';this.style.borderColor='transparent';"
+                       onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#64748b';this.style.borderColor='#1e293b';">
+                        <i class="fab fa-facebook-f" style="font-size:0.85rem;"></i>
+                    </a>
+                    <a href="#" title="Twitter" style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid #1e293b;display:flex;align-items:center;justify-content:center;color:#64748b;text-decoration:none;transition:all 0.25s;"
+                       onmouseover="this.style.background='linear-gradient(135deg,#6366f1,#8b5cf6)';this.style.color='white';this.style.borderColor='transparent';"
+                       onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#64748b';this.style.borderColor='#1e293b';">
+                        <i class="fab fa-twitter" style="font-size:0.85rem;"></i>
+                    </a>
+                    <a href="#" title="Instagram" style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid #1e293b;display:flex;align-items:center;justify-content:center;color:#64748b;text-decoration:none;transition:all 0.25s;"
+                       onmouseover="this.style.background='linear-gradient(135deg,#6366f1,#8b5cf6)';this.style.color='white';this.style.borderColor='transparent';"
+                       onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#64748b';this.style.borderColor='#1e293b';">
+                        <i class="fab fa-instagram" style="font-size:0.85rem;"></i>
+                    </a>
+                    <a href="#" title="LinkedIn" style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid #1e293b;display:flex;align-items:center;justify-content:center;color:#64748b;text-decoration:none;transition:all 0.25s;"
+                       onmouseover="this.style.background='linear-gradient(135deg,#6366f1,#8b5cf6)';this.style.color='white';this.style.borderColor='transparent';"
+                       onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#64748b';this.style.borderColor='#1e293b';">
+                        <i class="fab fa-linkedin-in" style="font-size:0.85rem;"></i>
+                    </a>
+                    <a href="https://wa.me/966123456789" title="WhatsApp" style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid #1e293b;display:flex;align-items:center;justify-content:center;color:#64748b;text-decoration:none;transition:all 0.25s;"
+                       onmouseover="this.style.background='linear-gradient(135deg,#25d366,#128c7e)';this.style.color='white';this.style.borderColor='transparent';"
+                       onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.color='#64748b';this.style.borderColor='#1e293b';">
+                        <i class="fab fa-whatsapp" style="font-size:0.85rem;"></i>
+                    </a>
+                   
+                </div>
+            </div>
+
+            <!-- عمود 2: روابط سريعة -->
+            <div class="col-lg-2 col-md-6 col-6">
+                <p style="color:white;font-weight:800;font-size:0.88rem;margin-bottom:1.25rem;letter-spacing:0.05em;text-transform:uppercase;">
+                    {% if LANGUAGE_CODE == 'ar' %}روابط سريعة{% else %}Quick Links{% endif %}
+                </p>
+                <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0.6rem;">
+                    {% with links=True %}
+                    <li>
+                        <a href="{% url 'core:home' %}"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}" style="font-size:0.65rem;color:#6366f1;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}الرئيسية{% else %}Home{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'directory:business_list' %}"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}" style="font-size:0.65rem;color:#6366f1;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}المحلات{% else %}Businesses{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'categories:category_list' %}"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}" style="font-size:0.65rem;color:#6366f1;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}الأقسام{% else %}Categories{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'deals:deal_list' %}"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}" style="font-size:0.65rem;color:#6366f1;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}العروض{% else %}Deals{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'core:about' %}"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}" style="font-size:0.65rem;color:#6366f1;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}من نحن{% else %}About{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'core:contact' %}"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <i class="fas fa-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}" style="font-size:0.65rem;color:#6366f1;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}اتصل بنا{% else %}Contact{% endif %}
+                        </a>
+                    </li>
+                    {% endwith %}
+                </ul>
+            </div>
+
+            <!-- عمود 3: أقسام مميزة -->
+            <div class="col-lg-2 col-md-6 col-6">
+                <p style="color:white;font-weight:800;font-size:0.88rem;margin-bottom:1.25rem;letter-spacing:0.05em;text-transform:uppercase;">
+                    {% if LANGUAGE_CODE == 'ar' %}أقسام مميزة{% else %}Top Categories{% endif %}
+                </p>
+                <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0.6rem;">
+                    <li>
+                        <a href="{% url 'directory:business_list' %}?category=restaurants"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <span style="font-size:0.9rem;">🍽️</span>
+                            {% if LANGUAGE_CODE == 'ar' %}مطاعم{% else %}Restaurants{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'directory:business_list' %}?category=cafes"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <span style="font-size:0.9rem;">☕</span>
+                            {% if LANGUAGE_CODE == 'ar' %}كافيهات{% else %}Cafes{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'directory:business_list' %}?category=shopping"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <span style="font-size:0.9rem;">🛍️</span>
+                            {% if LANGUAGE_CODE == 'ar' %}تسوّق{% else %}Shopping{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'directory:business_list' %}?category=medical"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <span style="font-size:0.9rem;">🏥</span>
+                            {% if LANGUAGE_CODE == 'ar' %}طبي{% else %}Medical{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'directory:business_list' %}?category=services"
+                           style="color:#475569;text-decoration:none;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            <span style="font-size:0.9rem;">🔧</span>
+                            {% if LANGUAGE_CODE == 'ar' %}خدمات{% else %}Services{% endif %}
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'categories:category_list' %}"
+                           style="color:#6366f1;text-decoration:none;font-size:0.83rem;font-weight:700;display:flex;align-items:center;gap:0.5rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#6366f1';">
+                            <i class="fas fa-th-large" style="font-size:0.7rem;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}عرض الكل{% else %}View All{% endif %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- عمود 4: معلومات التواصل -->
+            <div class="col-lg-4 col-md-6">
+                <p style="color:white;font-weight:800;font-size:0.88rem;margin-bottom:1.25rem;letter-spacing:0.05em;text-transform:uppercase;">
+                    {% if LANGUAGE_CODE == 'ar' %}تواصل معنا{% else %}Contact Us{% endif %}
+                </p>
+                <ul style="list-style:none;padding:0;margin:0 0 1.5rem;display:flex;flex-direction:column;gap:0.875rem;">
+                    <li style="display:flex;align-items:flex-start;gap:0.75rem;">
+                        <div style="width:34px;height:34px;border-radius:9px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-map-marker-alt" style="color:#818cf8;font-size:0.85rem;"></i>
+                        </div>
+                        <span style="color:#475569;font-size:0.85rem;padding-top:0.4rem;">
+                            {% if LANGUAGE_CODE == 'ar' %}الرياض، المملكة العربية السعودية{% else %}Riyadh, Saudi Arabia{% endif %}
+                        </span>
+                    </li>
+                    <li style="display:flex;align-items:center;gap:0.75rem;">
+                        <div style="width:34px;height:34px;border-radius:9px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-phone" style="color:#818cf8;font-size:0.85rem;"></i>
+                        </div>
+                        <a href="tel:+966123456789" style="color:#475569;text-decoration:none;font-size:0.85rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            +966 12 345 6789
+                        </a>
+                    </li>
+                    <li style="display:flex;align-items:center;gap:0.75rem;">
+                        <div style="width:34px;height:34px;border-radius:9px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-envelope" style="color:#818cf8;font-size:0.85rem;"></i>
+                        </div>
+                        <a href="mailto:info@daliil.sa" style="color:#475569;text-decoration:none;font-size:0.85rem;transition:color 0.2s;"
+                           onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#475569';">
+                            info@daliil.sa
+                        </a>
+                    </li>
+                    <li style="display:flex;align-items:center;gap:0.75rem;">
+                        <div style="width:34px;height:34px;border-radius:9px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-circle" style="color:#10b981;font-size:0.45rem;"></i>
+                        </div>
+                        <span style="color:#475569;font-size:0.85rem;">
+                            {% if LANGUAGE_CODE == 'ar' %}متاح 24/7{% else %}Available 24/7{% endif %}
+                        </span>
+                    </li>
+                </ul>
+
+                <!-- CTA صغير -->
+                <a href="{% url 'core:support' %}"
+                   style="display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;padding:0.65rem 1.4rem;border-radius:10px;font-weight:700;font-size:0.85rem;text-decoration:none;transition:all 0.3s;"
+                   onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(99,102,241,0.4)';"
+                   onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none';">
+                    <i class="fas fa-headset"></i>
+                    {% if LANGUAGE_CODE == 'ar' %}الدعم الفني{% else %}Technical Support{% endif %}
+                </a>
+            </div>
+
+        </div>
+
+        <!-- Divider -->
+        <div style="height:1px;background:linear-gradient(90deg,transparent,#1e293b,transparent);margin:2.5rem 0;"></div>
+
+        <!-- Footer Bottom -->
+        <div class="row align-items-center pb-4 g-3">
+            <div class="col-md-5 text-center text-md-{% if LANGUAGE_CODE == 'ar' %}end{% else %}start{% endif %}">
+                <p style="margin:0;color:#334155;font-size:0.82rem;">
+                    <i class="fas fa-copyright" style="color:#6366f1;"></i>
+                    2026
+                    {% if LANGUAGE_CODE == 'ar' %}
+                        دليل أي خدمة. جميع الحقوق محفوظة.
+                    {% else %}
+                        Daliil Ay Khidma. All rights reserved.
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-md-7 text-center text-md-{% if LANGUAGE_CODE == 'ar' %}start{% else %}end{% endif %}">
+                <div class="d-flex flex-wrap justify-content-center justify-content-md-{% if LANGUAGE_CODE == 'ar' %}start{% else %}end{% endif %} gap-3">
+                    <a href="{% url 'core:privacy_policy' %}"
+                       style="color:#334155;text-decoration:none;font-size:0.82rem;font-weight:600;transition:color 0.2s;"
+                       onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#334155';">
+                        <i class="fas fa-shield-alt me-1" style="color:#6366f1;"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}سياسة الخصوصية{% else %}Privacy Policy{% endif %}
+                    </a>
+                    <span style="color:#1e293b;">|</span>
+                    <a href="{% url 'core:terms_of_service' %}"
+                       style="color:#334155;text-decoration:none;font-size:0.82rem;font-weight:600;transition:color 0.2s;"
+                       onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#334155';">
+                        <i class="fas fa-file-contract me-1" style="color:#6366f1;"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}شروط الخدمة{% else %}Terms of Service{% endif %}
+                    </a>
+                    <span style="color:#1e293b;">|</span>
+                    <a href="{% url 'core:support' %}"
+                       style="color:#334155;text-decoration:none;font-size:0.82rem;font-weight:600;transition:color 0.2s;"
+                       onmouseover="this.style.color='#818cf8';" onmouseout="this.style.color='#334155';">
+                        <i class="fas fa-headset me-1" style="color:#6366f1;"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}الدعم الفني{% else %}Support{% endif %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer> {% endcomment %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% comment %} {% load static i18n %}
+
+<footer class="main-footer">
+    <div class="container">
+        <div class="row">
+            {# عمود 1: عن الموقع #}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="footer-section">
+                    <h5>
+                        <i class="fas fa-store-alt"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            دليل أي خدمة
+                        {% else %}
+                            Daliil Ay Khidma
+                        {% endif %}
+                    </h5>
+                    <p class="text-white-50">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            دليلك الشامل للعثور على أفضل المحلات والخدمات في منطقتك.
+                            اكتشف آلاف الأنشطة التجارية والعروض المميزة.
+                        {% else %}
+                            Your complete guide to find the best businesses and services in your area.
+                            Discover thousands of listings and exclusive deals.
+                        {% endif %}
+                    </p>
+                    <div class="social-links mt-3">
+                        <a href="#" title="Facebook" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" title="Twitter" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" title="Instagram" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" title="LinkedIn" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#" title="WhatsApp" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            {# عمود 2: روابط سريعة #}
+            <div class="col-lg-2 col-md-6 mb-4">
+                <div class="footer-section">
+                    <h5>{% if LANGUAGE_CODE == 'ar' %}روابط سريعة{% else %}Quick links{% endif %}</h5>
+                    <ul class="footer-links">
+                        <li>
+                            <a href="{% url 'core:home' %}">
+                                <i class="fas fa-angle-left"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}الرئيسية{% else %}Home{% endif %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'directory:business_list' %}">
+                                <i class="fas fa-angle-left"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}المحلات{% else %}Businesses{% endif %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'categories:category_list' %}">
+                                <i class="fas fa-angle-left"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}الأقسام{% else %}Categories{% endif %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'core:about' %}">
+                                <i class="fas fa-angle-left"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}من نحن{% else %}About{% endif %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'core:contact' %}">
+                                <i class="fas fa-angle-left"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}اتصل بنا{% else %}Contact{% endif %}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            {# عمود 3: أقسام مميزة #}
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="footer-section">
+                    <h5>{% if LANGUAGE_CODE == 'ar' %}أقسام مميزة{% else %}Featured categories{% endif %}</h5>
+                    <ul class="footer-links">
+                        <li>
+                            <a href="{% url 'directory:business_list' %}?category=restaurants">
+                                <i class="fas fa-angle-left"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}مطاعم{% else %}Restaurants{% endif %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'directory:business_list' %}?category=cafes">
+                                <i class="fas fa-angle-left"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}كافيهات{% else %}Cafes{% endif %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'directory:business_list' %}?category=shopping">
+                                <i class="fas fa-angle-left"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}تسوّق{% else %}Shopping{% endif %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'directory:business_list' %}?category=services">
+                                <i class="fas fa-angle-left"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}خدمات{% else %}Services{% endif %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'categories:category_list' %}">
+                                <i class="fas fa-angle-left"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}عرض الكل{% else %}View all{% endif %}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            {# عمود 4: تواصل معنا #}
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="footer-section">
+                    <h5>{% if LANGUAGE_CODE == 'ar' %}تواصل معنا{% else %}Contact us{% endif %}</h5>
+                    <ul style="list-style: none; padding: 0;">
+                        <li class="mb-3 d-flex align-items-start">
+                            <i class="fas fa-map-marker-alt" style="color: #667eea; margin-left: 10px; margin-top: 3px;"></i>
+                            <span class="text-white-50">
+                                {% if LANGUAGE_CODE == 'ar' %}
+                                    الرياض، المملكة العربية السعودية
+                                {% else %}
+                                    Riyadh, Saudi Arabia
+                                {% endif %}
+                            </span>
+                        </li>
+                        <li class="mb-3 d-flex align-items-center">
+                            <i class="fas fa-phone" style="color: #667eea; margin-left: 10px;"></i>
+                            <a href="tel:+966123456789" class="text-white-50" style="text-decoration: none;">
+                                +966 12 345 6789
+                            </a>
+                        </li>
+                        <li class="mb-3 d-flex align-items-center">
+                            <i class="fas fa-envelope" style="color: #667eea; margin-left: 10px;"></i>
+                            <a href="mailto:info@daliil.sa" class="text-white-50" style="text-decoration: none;">
+                                info@daliil.sa
+                            </a>
+                        </li>
+                        <li class="mb-3 d-flex align-items-center">
+                            <i class="fas fa-clock" style="color: #667eea; margin-left: 10px;"></i>
+                            <span class="text-white-50">
+                                {% if LANGUAGE_CODE == 'ar' %}متاح 24/7{% else %}Available 24/7{% endif %}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        {# شريط الحقوق #}
+        <div class="footer-bottom">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-end mb-2 mb-md-0">
+                    <p class="mb-0 text-white-50">
+                        <i class="fas fa-copyright"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            2026 دليل أي خدمة. جميع الحقوق محفوظة.
+                        {% else %}
+                            2026 Daliil Ay Khidma. All rights reserved.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-6 text-center text-md-start">
+                    <a href="#" class="text-white-50">
+                        {% if LANGUAGE_CODE == 'ar' %}سياسة الخصوصية{% else %}Privacy policy{% endif %}
+                    </a>
+                    <span class="text-white-50 mx-2">|</span>
+                    <a href="#" class="text-white-50">
+                        {% if LANGUAGE_CODE == 'ar' %}شروط الخدمة{% else %}Terms of service{% endif %}
+                    </a>
+                    <span class="text-white-50 mx-2">|</span>
+                    <a href="{% url 'core:contact' %}" class="text-white-50">
+                        {% if LANGUAGE_CODE == 'ar' %}الدعم الفني{% else %}Support{% endif %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer> {% endcomment %}

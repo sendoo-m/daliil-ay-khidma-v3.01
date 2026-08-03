@@ -1,0 +1,28 @@
+name: dalil_admin
+description: Daliil Ay Khidma operations console.
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  dalil_core:
+    path: ../../packages/dalil_core
+  flutter_riverpod: ^2.6.1
+  go_router: ^14.6.2
+  google_fonts: ^6.2.1
+  intl: ^0.20.2
+  fl_chart: ^0.69.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

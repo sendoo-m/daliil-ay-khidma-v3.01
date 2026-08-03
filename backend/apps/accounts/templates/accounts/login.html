@@ -1,0 +1,397 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - دليل أي خدمة</title>
+    
+    <!-- Bootstrap RTL -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            font-family: 'Cairo', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            max-width: 1000px;
+            width: 100%;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .login-left {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 3rem;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 600px;
+        }
+        
+        .login-left h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+        }
+        
+        .login-left p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+        
+        .demo-accounts {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .demo-accounts h5 {
+            font-weight: 700;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .demo-account-item {
+            background: rgba(255,255,255,0.15);
+            padding: 0.8rem 1rem;
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .demo-account-item:hover {
+            background: rgba(255,255,255,0.25);
+            transform: translateX(-5px);
+        }
+        
+        .demo-account-item strong {
+            display: block;
+            font-size: 1rem;
+        }
+        
+        .demo-account-item small {
+            opacity: 0.9;
+            font-size: 0.85rem;
+        }
+        
+        .login-right {
+            padding: 3rem;
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .login-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+        
+        .login-header p {
+            color: #6b7280;
+            font-size: 1rem;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            padding: 0.9rem 1rem;
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+        
+        .input-group-text {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+            color: #6b7280;
+        }
+        
+        .input-group .form-control {
+            border-left: 2px solid #e5e7eb;
+        }
+        
+        .btn-login {
+            padding: 1rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .alert {
+            border-radius: 12px;
+            border: none;
+            padding: 1rem 1.25rem;
+        }
+        
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+        
+        .back-link {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        
+        .back-link a {
+            color: #6b7280;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .back-link a:hover {
+            color: #667eea;
+        }
+        
+        @media (max-width: 768px) {
+            .login-left {
+                min-height: auto;
+                padding: 2rem;
+            }
+            
+            .login-left h1 {
+                font-size: 1.8rem;
+            }
+            
+            .login-right {
+                padding: 2rem;
+            }
+            
+            .demo-accounts {
+                display: none;
+            }
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fade-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container animate-fade-in">
+        <div class="login-card">
+            <div class="row g-0">
+                <!-- Left Side - Branding & Demo Accounts -->
+                <div class="col-lg-5 d-none d-lg-block">
+                    <div class="login-left">
+                        <div>
+                            <div class="feature-icon">
+                                <i class="fas fa-map-marked-alt"></i>
+                            </div>
+                            <h1>دليل أي خدمة</h1>
+                            <p>الدليل الشامل للمحلات والخدمات في مصر</p>
+                        </div>
+                        
+                        <div class="demo-accounts">
+                            <h5>
+                                <i class="fas fa-user-friends me-2"></i>
+                                حسابات تجريبية
+                            </h5>
+                            <div class="demo-account-item">
+                                <strong>👤 ahmed_owner</strong>
+                                <small>أحمد محمد - 2 محلات</small>
+                            </div>
+                            <div class="demo-account-item">
+                                <strong>👤 fatima_owner</strong>
+                                <small>فاطمة علي - 2 محلات</small>
+                            </div>
+                            <div class="demo-account-item">
+                                <strong>👤 khaled_owner</strong>
+                                <small>خالد حسن - 2 محلات</small>
+                            </div>
+                            <div class="text-center mt-3 pt-2" style="border-top: 1px solid rgba(255,255,255,0.2);">
+                                <small>
+                                    <i class="fas fa-key me-1"></i>
+                                    كلمة المرور: <strong>test123</strong>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Side - Login Form -->
+                <div class="col-lg-7">
+                    <div class="login-right">
+                        <div class="login-header">
+                            <h2>
+                                <i class="fas fa-lock me-2" style="color: #667eea;"></i>
+                                تسجيل الدخول
+                            </h2>
+                            <p>أهلاً بعودتك! قم بتسجيل الدخول للوصول إلى لوحة التحكم</p>
+                        </div>
+                        
+                        <!-- Messages -->
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <!-- Login Form -->
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+                            
+                            <!-- Username -->
+                            <div class="mb-3">
+                                <label for="id_username" class="form-label">
+                                    <i class="fas fa-user me-1"></i>
+                                    اسم المستخدم
+                                </label>
+                                <input type="text" 
+                                       name="username" 
+                                       id="id_username"
+                                       class="form-control" 
+                                       placeholder="أدخل اسم المستخدم"
+                                       required
+                                       autofocus>
+                                {% if form.username.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ form.username.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Password -->
+                            <div class="mb-3">
+                                <label for="id_password" class="form-label">
+                                    <i class="fas fa-lock me-1"></i>
+                                    كلمة المرور
+                                </label>
+                                <input type="password" 
+                                       name="password" 
+                                       id="id_password"
+                                       class="form-control" 
+                                       placeholder="أدخل كلمة المرور"
+                                       required>
+                                {% if form.password.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ form.password.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Non-field Errors -->
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger" role="alert">
+                                    <i class="fas fa-exclamation-circle me-2"></i>
+                                    {{ form.non_field_errors.0 }}
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Remember Me & Forgot Password -->
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="remember" name="remember">
+                                    <label class="form-check-label" for="remember">
+                                        تذكرني
+                                    </label>
+                                </div>
+                                <a href="{% url 'accounts:password_reset' %}" class="text-decoration-none" style="color: #667eea;">
+                                    <i class="fas fa-question-circle me-1"></i>
+                                    نسيت كلمة المرور؟
+                                </a>
+                            </div>
+                            
+                            <!-- Submit Button -->
+                            <button type="submit" class="btn btn-primary btn-login w-100 mb-3">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                تسجيل الدخول
+                            </button>
+                            
+                            <!-- Register Link -->
+                            <div class="text-center p-3" style="background: #f9fafb; border-radius: 12px;">
+                                <span class="text-muted">ليس لديك حساب؟</span>
+                                <a href="{% url 'accounts:register' %}" class="text-decoration-none fw-bold" style="color: #667eea;">
+                                    سجّل الآن
+                                </a>
+                            </div>
+                        </form>
+                        
+                        <div class="back-link">
+                            <a href="/">
+                                <i class="fas fa-arrow-right me-1"></i>
+                                العودة للصفحة الرئيسية
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

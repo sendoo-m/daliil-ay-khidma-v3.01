@@ -1,0 +1,36 @@
+{% extends 'dashboard/admin/base.html' %}
+
+{% block title %}تفاصيل المنتج{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'dashboard:admin_products_list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right me-1"></i> عودة
+    </a>
+</div>
+
+<div class="table-card">
+    <h3>{{ product.name_ar }}</h3>
+    <p class="text-muted">{{ product.business.name_ar }}</p>
+    <hr>
+    <p>{{ product.description_ar }}</p>
+    
+    <div class="row g-3 mt-3">
+        <div class="col-md-6">
+            <strong>السعر:</strong> {{ product.price }} جنيه
+        </div>
+        <div class="col-md-6">
+            <strong>النوع:</strong> {{ product.get_product_type_display }}
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <a href="{% url 'dashboard:admin_product_toggle' product.id %}" class="btn btn-warning">
+            {% if product.is_available %}جعله غير متاح{% else %}جعله متاح{% endif %}
+        </a>
+        <a href="{% url 'dashboard:admin_product_feature' product.id %}" class="btn btn-success">
+            {% if product.is_featured %}إلغاء الإبراز{% else %}إبراز{% endif %}
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% load i18n %}
+<div class="admin-sidebar {% if sidebar_wrapper == 'desktop' %}desktop-sidebar{% endif %}">
+    <div class="admin-header">
+        <div class="admin-logo"><i class="fas fa-shield-alt"></i></div>
+        <h6 class="text-white fw-bold">{% if LANGUAGE_CODE == 'ar' %}الإدارة{% else %}Administration{% endif %}</h6>
+        <small class="text-white-50"><i class="fas fa-user me-1"></i>{{ user.username }}</small>
+    </div>
+    <nav class="nav flex-column mt-3 pb-4">
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin_home' %}active{% endif %}" href="{% url 'dashboard:admin_home' %}"><i class="fas fa-tachometer-alt"></i>{% if LANGUAGE_CODE == 'ar' %}الرئيسية{% else %}Home{% endif %}</a>
+        <hr class="text-white-50 mx-3 my-2"><span class="sidebar-section-label">{% if LANGUAGE_CODE == 'ar' %}المستخدمون{% else %}Users{% endif %}</span>
+        <a class="nav-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:admin_users_list' %}"><i class="fas fa-users"></i>{% if LANGUAGE_CODE == 'ar' %}المستخدمون{% else %}Users{% endif %}</a>
+        <hr class="text-white-50 mx-3 my-2"><span class="sidebar-section-label">{% if LANGUAGE_CODE == 'ar' %}المواقع الجغرافية{% else %}Locations{% endif %}</span>
+        <a class="nav-link {% if 'governorate' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:admin_governorates_list' %}"><i class="fas fa-map-marked-alt"></i>{% if LANGUAGE_CODE == 'ar' %}المحافظات{% else %}Governorates{% endif %}</a>
+        <a class="nav-link {% if 'city' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:admin_cities_list' %}"><i class="fas fa-city"></i>{% if LANGUAGE_CODE == 'ar' %}المدن{% else %}Cities{% endif %}</a>
+        <a class="nav-link {% if 'district' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:admin_districts_list' %}"><i class="fas fa-map-marker-alt"></i>{% if LANGUAGE_CODE == 'ar' %}الأحياء{% else %}Districts{% endif %}</a>
+        <hr class="text-white-50 mx-3 my-2"><span class="sidebar-section-label">{% if LANGUAGE_CODE == 'ar' %}إدارة المحتوى{% else %}Content Management{% endif %}</span>
+        <a class="nav-link {% if 'business' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:admin_businesses_list' %}"><i class="fas fa-store"></i>{% if LANGUAGE_CODE == 'ar' %}المحلات{% else %}Businesses{% endif %}</a>
+        <a class="nav-link {% if 'product' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:admin_products_list' %}"><i class="fas fa-box"></i>{% if LANGUAGE_CODE == 'ar' %}المنتجات{% else %}Products{% endif %}</a>
+        <a class="nav-link {% if 'deal' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:admin_deals_list' %}"><i class="fas fa-percent"></i>{% if LANGUAGE_CODE == 'ar' %}العروض{% else %}Deals{% endif %}</a>
+        <a class="nav-link {% if 'review' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:admin_reviews_list' %}"><i class="fas fa-star"></i>{% if LANGUAGE_CODE == 'ar' %}التقييمات{% else %}Reviews{% endif %}</a>
+        <a class="nav-link {% if 'categor' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:admin_categories_list' %}"><i class="fas fa-list"></i>{% if LANGUAGE_CODE == 'ar' %}التصنيفات{% else %}Categories{% endif %}</a>
+        <hr class="text-white-50 mx-3 my-2"><span class="sidebar-section-label">{% if LANGUAGE_CODE == 'ar' %}الاشتراكات{% else %}Subscriptions{% endif %}</span>
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin_subscriptions_home' %}active{% endif %}" href="{% url 'dashboard:admin_subscriptions_home' %}"><i class="fas fa-chart-pie"></i>{% if LANGUAGE_CODE == 'ar' %}لوحة الاشتراكات{% else %}Subscriptions Dashboard{% endif %}</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin_subscriptions_list' or request.resolver_match.url_name == 'admin_subscription_detail' %}active{% endif %}" href="{% url 'dashboard:admin_subscriptions_list' %}"><i class="fas fa-receipt"></i>{% if LANGUAGE_CODE == 'ar' %}إدارة الاشتراكات{% else %}Manage Subscriptions{% endif %}</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin_subscription_plans' %}active{% endif %}" href="{% url 'dashboard:admin_subscription_plans' %}"><i class="fas fa-layer-group"></i>{% if LANGUAGE_CODE == 'ar' %}إدارة الخطط{% else %}Manage Plans{% endif %}</a>
+        <a class="nav-link" href="{% url 'subscriptions:pricing_comparison' %}" target="_blank"><i class="fas fa-crown"></i>{% if LANGUAGE_CODE == 'ar' %}صفحة الأسعار{% else %}Pricing Page{% endif %}</a>
+        <hr class="text-white-50 mx-3 my-2"><span class="sidebar-section-label">{% if LANGUAGE_CODE == 'ar' %}النظام{% else %}System{% endif %}</span>
+        <a class="nav-link {% if 'analytics' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:admin_analytics' %}"><i class="fas fa-chart-line"></i>{% if LANGUAGE_CODE == 'ar' %}التحليلات{% else %}Analytics{% endif %}</a>
+        <a class="nav-link {% if 'settings' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:settings' %}"><i class="fas fa-cog"></i>{% if LANGUAGE_CODE == 'ar' %}الإعدادات{% else %}Settings{% endif %}</a>
+        <a class="nav-link" href="/admin/" target="_blank"><i class="fas fa-tools"></i>Django Admin</a>
+    </nav>
+</div>

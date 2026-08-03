@@ -1,0 +1,162 @@
+{% extends 'dashboard/admin/base.html' %}
+
+{% block title %}الأحياء{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fas fa-map-marker-alt text-danger me-2"></i> إدارة الأحياء</h4>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_home' %}">الرئيسية</a></li>
+            <li class="breadcrumb-item active">الأحياء</li>
+        </ol></nav>
+    </div>
+    <a href="{% url 'dashboard:admin_district_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i> إضافة حي
+    </a>
+</div>
+
+<!-- Filter -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small text-muted">المحافظة</label>
+                <select name="governorate" class="form-select" id="govFilter">
+                    <option value="">كل المحافظات</option>
+                    {% for gov in governorates %}
+                    <option value="{{ gov.id }}" {% if gov_filter == gov.id|stringformat:"s" %}selected{% endif %}>
+                        {{ gov.name_ar }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small text-muted">المدينة</label>
+                <select name="city" class="form-select">
+                    <option value="">كل المدن</option>
+                    {% for city in cities %}
+                    <option value="{{ city.id }}" {% if city_filter == city.id|stringformat:"s" %}selected{% endif %}>
+                        {{ city.name_ar }} - {{ city.governorate.name_ar }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-1"></i> تصفية
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'dashboard:admin_districts_list' %}" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-redo me-1"></i> إعادة تعيين
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3">
+        <h6 class="mb-0 fw-bold">
+            <i class="fas fa-list me-2 text-muted"></i> قائمة الأحياء
+            <span class="badge bg-primary ms-2">{{ districts.paginator.count }}</span>
+        </h6>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>الحي</th>
+                    <th>الاسم الإنجليزي</th>
+                    <th>المدينة</th>
+                    <th>المحافظة</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for district in districts %}
+                <tr>
+                    <td class="text-muted small">{{ district.id }}</td>
+                    <td><strong>{{ district.name_ar }}</strong></td>
+                    <td class="text-muted">{{ district.name_en|default:"-" }}</td>
+                    <td><span class="badge bg-light text-dark">{{ district.city.name_ar }}</span></td>
+                    <td><span class="badge bg-light text-dark">{{ district.city.governorate.name_ar }}</span></td>
+                    <td>
+                        {% if district.is_active %}
+                        <span class="badge bg-success">نشط</span>
+                        {% else %}
+                        <span class="badge bg-secondary">معطّل</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a href="{% url 'dashboard:admin_district_edit' district.id %}" class="btn btn-sm btn-outline-warning">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger"
+                                onclick="confirmDelete('{% url 'dashboard:admin_district_delete' district.id %}', '{{ district.name_ar }}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center py-5 text-muted">
+                    <i class="fas fa-map-marker-alt fa-3x mb-3 d-block opacity-25"></i>
+                    لا توجد أحياء
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if districts.has_other_pages %}
+    <div class="card-footer bg-white border-top">
+        <nav><ul class="pagination pagination-sm justify-content-center mb-0">
+            {% if districts.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ districts.previous_page_number }}&governorate={{ gov_filter }}&city={{ city_filter }}"><i class="fas fa-chevron-right"></i></a></li>
+            {% endif %}
+            {% for num in districts.paginator.page_range %}
+                {% if districts.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > districts.number|add:'-3' and num < districts.number|add:'3' %}
+                <li class="page-item"><a class="page-link" href="?page={{ num }}&governorate={{ gov_filter }}&city={{ city_filter }}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+            {% if districts.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ districts.next_page_number }}&governorate={{ gov_filter }}&city={{ city_filter }}"><i class="fas fa-chevron-left"></i></a></li>
+            {% endif %}
+        </ul></nav>
+    </div>
+    {% endif %}
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header border-0">
+            <h5 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i> تأكيد الحذف</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">هل أنت متأكد من حذف حي <strong id="deleteItemName"></strong>؟</div>
+        <div class="modal-footer border-0">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <form id="deleteForm" method="post">{% csrf_token %}
+                <button type="submit" class="btn btn-danger">حذف</button>
+            </form>
+        </div>
+    </div></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(url, name) {
+    document.getElementById('deleteForm').action = url;
+    document.getElementById('deleteItemName').textContent = name;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}

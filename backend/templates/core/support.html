@@ -1,0 +1,778 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+
+{% block title %}
+    {% if LANGUAGE_CODE == 'ar' %}
+        الدعم الفني - {{ site_settings.site_name_ar|default:"دليل أي خدمة" }}
+    {% else %}
+        Support - {{ site_settings.site_name_en|default:"Directory" }}
+    {% endif %}
+{% endblock %}
+
+
+{% block extra_css %}
+<style>
+:root { --p1:#6366f1; --p2:#8b5cf6; --accent:#10b981; --dark:#0f172a; --mid:#475569; --muted:#94a3b8; --bg:#f8fafc; --border:#e2e8f0; }
+
+.sup-hero {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    padding: 4.5rem 0 5rem; color: white; position: relative; overflow: hidden;
+}
+.sup-hero::before {
+    content:''; position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+.sup-hero::after {
+    content:''; position:absolute; inset:0;
+    background:
+        radial-gradient(ellipse at 10% 60%, rgba(99,102,241,0.22), transparent 50%),
+        radial-gradient(ellipse at 90% 40%, rgba(16,185,129,0.12), transparent 50%);
+}
+.sup-badge {
+    display:inline-flex; align-items:center; gap:0.5rem;
+    background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35);
+    color:#6ee7b7; padding:0.4rem 1rem; border-radius:50px;
+    font-size:0.82rem; font-weight:700; margin-bottom:1.25rem;
+}
+.sup-badge .dot {
+    width:8px; height:8px; border-radius:50%; background:var(--accent);
+    box-shadow:0 0 0 3px rgba(16,185,129,0.3);
+    animation:blink 2s infinite; display:inline-block;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.sup-title { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:900; margin-bottom:0.75rem; }
+.sup-sub { color:#64748b; font-size:0.95rem; }
+
+/* Channel Cards */
+.ch-card {
+    background: white; border-radius: 20px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    padding: 2rem 1.5rem; text-align: center;
+    transition: all 0.35s; text-decoration: none; display: block; height: 100%;
+}
+.ch-card:hover { transform: translateY(-8px); box-shadow: 0 18px 45px rgba(0,0,0,0.1); border-color: var(--p1); }
+.ch-ico {
+    width: 64px; height: 64px; border-radius: 18px;
+    margin: 0 auto 1.25rem;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; transition: transform 0.3s;
+}
+.ch-card:hover .ch-ico { transform: scale(1.12) rotate(5deg); }
+.ch-ico.blue   { background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; }
+.ch-ico.green  { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+.ch-ico.purple { background: linear-gradient(135deg, var(--p1), var(--p2)); color: white; }
+.ch-ico.orange { background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; }
+.ch-title  { font-weight: 800; font-size: 1rem; color: var(--dark); margin-bottom: 0.4rem; }
+.ch-desc   { font-size: 0.82rem; color: var(--muted); line-height: 1.65; margin-bottom: 1rem; }
+.ch-badge  {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.3rem 0.875rem; border-radius: 50px;
+    font-size: 0.75rem; font-weight: 700;
+}
+.ch-badge.on   { background: rgba(16,185,129,0.1); color: #065f46; }
+.ch-badge.fast { background: rgba(99,102,241,0.1); color: var(--p1); }
+
+/* FAQ */
+.faq-item {
+    background: white; border-radius: 14px;
+    border: 1.5px solid var(--border);
+    margin-bottom: 0.75rem; overflow: hidden;
+    transition: border-color 0.2s;
+}
+.faq-item:hover { border-color: rgba(99,102,241,0.3); }
+.faq-q {
+    width: 100%; display: flex; justify-content: space-between;
+    align-items: center; padding: 1.1rem 1.4rem;
+    background: none; border: none;
+    text-align: {% if LANGUAGE_CODE == 'ar' %}right{% else %}left{% endif %};
+    font-family: 'Cairo', sans-serif; font-weight: 700;
+    font-size: 0.9rem; color: var(--dark); cursor: pointer; gap: 1rem;
+}
+.faq-q:focus { outline: none; }
+.faq-q i { color: var(--p1); flex-shrink: 0; transition: transform 0.3s; }
+.faq-q[aria-expanded="true"] i { transform: rotate(180deg); }
+.faq-a { padding: 0 1.4rem 1.1rem; font-size: 0.87rem; color: var(--mid); line-height: 1.85; }
+
+/* Ticket Form */
+.ticket-card {
+    background: white; border-radius: 20px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    padding: 2.25rem;
+}
+.form-label2 { font-size: 0.85rem; font-weight: 700; color: var(--dark); margin-bottom: 0.4rem; }
+.form-inp {
+    border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 0.7rem 1rem; font-family: 'Cairo', sans-serif;
+    font-size: 0.9rem; width: 100%; background: #fafafa;
+    transition: border-color 0.2s, box-shadow 0.2s; color: var(--dark);
+}
+.form-inp:focus {
+    outline: none; border-color: var(--p1);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.1); background: white;
+}
+textarea.form-inp { resize: vertical; min-height: 130px; }
+.form-select2 {
+    border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 0.7rem 1rem; font-family: 'Cairo', sans-serif;
+    font-size: 0.9rem; width: 100%; background: #fafafa;
+    transition: border-color 0.2s; color: var(--dark); appearance: none;
+}
+.form-select2:focus { outline: none; border-color: var(--p1); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.btn-submit {
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    color: white; border: none; width: 100%; padding: 0.875rem;
+    border-radius: 12px; font-weight: 800; font-size: 0.95rem;
+    font-family: 'Cairo', sans-serif; transition: all 0.3s;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem; cursor: pointer;
+}
+.btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99,102,241,0.4); }
+
+.sh-pill {
+    display:inline-flex; align-items:center; gap:0.4rem;
+    background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.22);
+    color:var(--p1); padding:0.3rem 1rem; border-radius:50px;
+    font-size:0.72rem; font-weight:800; letter-spacing:0.06em;
+    text-transform:uppercase; margin-bottom:0.6rem;
+}
+.sh h2 { font-size:clamp(1.5rem,3vw,2rem); font-weight:900; color:var(--dark); margin:0; }
+.sh p  { color:var(--muted); font-size:0.92rem; margin:0.35rem 0 0; }
+
+/* Success */
+.success-msg {
+    background: rgba(16,185,129,0.08); border: 1.5px solid rgba(16,185,129,0.25);
+    border-radius: 12px; padding: 1rem 1.25rem;
+    display: flex; align-items: center; gap: 0.75rem;
+    font-size: 0.88rem; color: #065f46; font-weight: 600; margin-bottom: 1.5rem;
+}
+.success-msg i { color: #10b981; font-size: 1.1rem; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- Hero -->
+<section class="sup-hero">
+    <div class="container text-center position-relative" style="z-index:2;">
+        <div class="d-flex justify-content-center">
+            <div class="sup-badge">
+                <span class="dot"></span>
+                {% if LANGUAGE_CODE == 'ar' %}فريق الدعم متاح الآن{% else %}Support Team Online{% endif %}
+            </div>
+        </div>
+        <h1 class="sup-title">
+            {% if LANGUAGE_CODE == 'ar' %}كيف يمكننا مساعدتك؟ 🎧{% else %}How Can We Help You? 🎧{% endif %}
+        </h1>
+        <p class="sup-sub">
+            {% if LANGUAGE_CODE == 'ar' %}
+                فريقنا جاهز للمساعدة — اختر قناة التواصل المناسبة
+            {% else %}
+                Our team is ready to help — choose your preferred contact channel
+            {% endif %}
+        </p>
+    </div>
+</section>
+
+
+<!-- Channels -->
+<section class="py-5" style="background:var(--bg); margin-top:-2rem; position:relative; z-index:2;">
+    <div class="container">
+
+        <!-- Channel Cards -->
+        <div class="row g-4 mb-5">
+
+            <!-- البريد الإلكتروني -->
+            <div class="col-md-3 col-sm-6">
+                <a href="mailto:{{ site_settings.contact_email|default:'support@daliil.com' }}" class="ch-card">
+                    <div class="ch-ico blue"><i class="fas fa-envelope"></i></div>
+                    <div class="ch-title">{% if LANGUAGE_CODE == 'ar' %}البريد الإلكتروني{% else %}Email{% endif %}</div>
+                    <div class="ch-desc">
+                        {% if LANGUAGE_CODE == 'ar' %}أرسل لنا استفسارك وسنرد خلال 24 ساعة{% else %}Send us your query and we'll reply within 24 hours{% endif %}
+                    </div>
+                    <span class="ch-badge fast">
+                        <i class="fas fa-clock me-1"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}24 ساعة{% else %}24 hours{% endif %}
+                    </span>
+                </a>
+            </div>
+
+            <!-- واتساب -->
+            <div class="col-md-3 col-sm-6">
+                {% if site_settings.whatsapp %}
+                <a href="https://wa.me/{{ site_settings.whatsapp }}" target="_blank" rel="noopener" class="ch-card">
+                {% else %}
+                <a href="#ticket" class="ch-card">
+                {% endif %}
+                    <div class="ch-ico green"><i class="fab fa-whatsapp"></i></div>
+                    <div class="ch-title">{% if LANGUAGE_CODE == 'ar' %}واتساب{% else %}WhatsApp{% endif %}</div>
+                    <div class="ch-desc">
+                        {% if LANGUAGE_CODE == 'ar' %}تواصل معنا عبر واتساب للردود السريعة{% else %}Reach us via WhatsApp for quick responses{% endif %}
+                    </div>
+                    <span class="ch-badge on">
+                        <i class="fas fa-circle me-1" style="font-size:0.5rem;"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}متاح الآن{% else %}Available Now{% endif %}
+                    </span>
+                </a>
+            </div>
+
+            <!-- تذكرة دعم -->
+            <div class="col-md-3 col-sm-6">
+                <a href="#ticket" class="ch-card">
+                    <div class="ch-ico purple"><i class="fas fa-ticket-alt"></i></div>
+                    <div class="ch-title">{% if LANGUAGE_CODE == 'ar' %}تذكرة دعم{% else %}Support Ticket{% endif %}</div>
+                    <div class="ch-desc">
+                        {% if LANGUAGE_CODE == 'ar' %}أنشئ تذكرة لمشاكل تقنية معقدة{% else %}Create a ticket for complex technical issues{% endif %}
+                    </div>
+                    <span class="ch-badge fast">
+                        <i class="fas fa-headset me-1"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}دعم متخصص{% else %}Expert Support{% endif %}
+                    </span>
+                </a>
+            </div>
+
+            <!-- اتصل بنا -->
+            <div class="col-md-3 col-sm-6">
+                <a href="{% if site_settings.contact_phone %}tel:{{ site_settings.contact_phone }}{% else %}{% url 'core:contact' %}{% endif %}" class="ch-card">
+                    <div class="ch-ico orange"><i class="fas fa-phone-alt"></i></div>
+                    <div class="ch-title">
+                        {% if site_settings.contact_phone %}
+                            {{ site_settings.contact_phone }}
+                        {% else %}
+                            {% if LANGUAGE_CODE == 'ar' %}اتصل بنا{% else %}Call Us{% endif %}
+                        {% endif %}
+                    </div>
+                    <div class="ch-desc">
+                        {% if LANGUAGE_CODE == 'ar' %}تحدث مع أحد أعضاء فريقنا مباشرة{% else %}Speak directly with one of our team members{% endif %}
+                    </div>
+                    <span class="ch-badge on">
+                        <i class="fas fa-clock me-1"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}ش-خ 9ص-5م{% else %}Sun-Thu 9-5{% endif %}
+                    </span>
+                </a>
+            </div>
+
+        </div>
+
+
+        <div class="row g-5">
+
+            <!-- FAQ -->
+            <div class="col-lg-6">
+                <div class="sh mb-4">
+                    <div class="sh-pill"><i class="fas fa-question me-1"></i>FAQ</div>
+                    <h2>{% if LANGUAGE_CODE == 'ar' %}الأسئلة الشائعة{% else %}Frequently Asked Questions{% endif %}</h2>
+                    <p>{% if LANGUAGE_CODE == 'ar' %}إجابات على الأسئلة الأكثر شيوعًا{% else %}Answers to the most common questions{% endif %}</p>
+                </div>
+
+                <div>
+                    <!-- FAQ 1 -->
+                    <div class="faq-item">
+                        <button class="faq-q" type="button" data-bs-toggle="collapse" data-bs-target="#faq1" aria-expanded="false">
+                            <span>{% if LANGUAGE_CODE == 'ar' %}كيف أضيف محلي على الموقع؟{% else %}How do I add my business?{% endif %}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="faq1" class="collapse">
+                            <div class="faq-a">
+                                {% if LANGUAGE_CODE == 'ar' %}
+                                    سجّل حسابًا مجانيًا، ثم اذهب لـ "إضافة محل"، واملأ بيانات محلك. سيخضع للمراجعة خلال 24 ساعة ثم يُنشر تلقائيًا.
+                                {% else %}
+                                    Create a free account, go to "Add Business", and fill in your details. It will be reviewed within 24 hours and published automatically.
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FAQ 2 -->
+                    <div class="faq-item">
+                        <button class="faq-q" type="button" data-bs-toggle="collapse" data-bs-target="#faq2" aria-expanded="false">
+                            <span>{% if LANGUAGE_CODE == 'ar' %}كيف أنشر عرضًا أو خصمًا؟{% else %}How do I publish a deal or discount?{% endif %}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="faq2" class="collapse">
+                            <div class="faq-a">
+                                {% if LANGUAGE_CODE == 'ar' %}
+                                    من لوحة التحكم، اختر محلك ثم "إضافة عرض". حدد نسبة الخصم والمدة وأضف وصفًا جذابًا. ستظهر عروضك فورًا للمستخدمين.
+                                {% else %}
+                                    From your dashboard, select your business then "Add Deal". Set the discount percentage, duration, and add a description. Your deals appear immediately to users.
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FAQ 3 -->
+                    <div class="faq-item">
+                        <button class="faq-q" type="button" data-bs-toggle="collapse" data-bs-target="#faq3" aria-expanded="false">
+                            <span>{% if LANGUAGE_CODE == 'ar' %}هل الإضافة في الدليل مجانية؟{% else %}Is listing in the directory free?{% endif %}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="faq3" class="collapse">
+                            <div class="faq-a">
+                                {% if LANGUAGE_CODE == 'ar' %}
+                                    نعم! الإضافة الأساسية مجانية تمامًا. نوفر أيضًا باقات مدفوعة للظهور المميز وعروض إضافية.
+                                {% else %}
+                                    Yes! Basic listing is completely free. We also offer paid packages for featured visibility and additional deals.
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FAQ 4 -->
+                    <div class="faq-item">
+                        <button class="faq-q" type="button" data-bs-toggle="collapse" data-bs-target="#faq4" aria-expanded="false">
+                            <span>{% if LANGUAGE_CODE == 'ar' %}كيف أحذف أو أعدّل بيانات محلي؟{% else %}How do I edit or delete my listing?{% endif %}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="faq4" class="collapse">
+                            <div class="faq-a">
+                                {% if LANGUAGE_CODE == 'ar' %}
+                                    من لوحة التحكم، اختر المحل المطلوب وانقر على "تعديل". لحذف المحل بالكامل، تواصل مع فريق الدعم.
+                                {% else %}
+                                    From your dashboard, select the business and click "Edit". To completely delete a listing, contact the support team.
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FAQ 5 -->
+                    <div class="faq-item">
+                        <button class="faq-q" type="button" data-bs-toggle="collapse" data-bs-target="#faq5" aria-expanded="false">
+                            <span>{% if LANGUAGE_CODE == 'ar' %}كيف يعمل نظام التقييمات؟{% else %}How does the rating system work?{% endif %}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="faq5" class="collapse">
+                            <div class="faq-a">
+                                {% if LANGUAGE_CODE == 'ar' %}
+                                    يستطيع أي زائر تقييم المحل من 1 إلى 5 نجوم وكتابة تعليق. يمكن لصاحب المحل الرد على التعليقات من لوحة التحكم.
+                                {% else %}
+                                    Any visitor can rate a business from 1 to 5 stars and write a review. Business owners can reply to reviews from their dashboard.
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- Ticket Form -->
+            <div class="col-lg-6" id="ticket">
+                <div class="sh mb-4">
+                    <div class="sh-pill"><i class="fas fa-headset me-1"></i>{% if LANGUAGE_CODE == 'ar' %}تذكرة{% else %}TICKET{% endif %}</div>
+                    <h2>{% if LANGUAGE_CODE == 'ar' %}أرسل تذكرة دعم{% else %}Submit a Support Ticket{% endif %}</h2>
+                    <p>{% if LANGUAGE_CODE == 'ar' %}سنرد عليك خلال 24 ساعة{% else %}We'll respond within 24 hours{% endif %}</p>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="success-msg">
+                        <i class="fas fa-check-circle"></i>
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
+                <div class="ticket-card">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}الاسم الكامل{% else %}Full Name{% endif %} *</label>
+                                <input type="text" name="name" class="form-inp" required
+                                       placeholder="{% if LANGUAGE_CODE == 'ar' %}اسمك الكامل{% else %}Your full name{% endif %}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}البريد الإلكتروني{% else %}Email{% endif %} *</label>
+                                <input type="email" name="email" class="form-inp" required
+                                       placeholder="example@email.com">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}نوع المشكلة{% else %}Issue Type{% endif %} *</label>
+                                <select name="issue_type" class="form-select2" required>
+                                    <option value="">{% if LANGUAGE_CODE == 'ar' %}اختر نوع المشكلة{% else %}Select issue type{% endif %}</option>
+                                    <option value="account">{% if LANGUAGE_CODE == 'ar' %}مشكلة في الحساب{% else %}Account issue{% endif %}</option>
+                                    <option value="listing">{% if LANGUAGE_CODE == 'ar' %}مشكلة في المحل{% else %}Listing issue{% endif %}</option>
+                                    <option value="deal">{% if LANGUAGE_CODE == 'ar' %}مشكلة في العروض{% else %}Deal issue{% endif %}</option>
+                                    <option value="technical">{% if LANGUAGE_CODE == 'ar' %}مشكلة تقنية{% else %}Technical issue{% endif %}</option>
+                                    <option value="billing">{% if LANGUAGE_CODE == 'ar' %}مشكلة في الدفع{% else %}Billing issue{% endif %}</option>
+                                    <option value="other">{% if LANGUAGE_CODE == 'ar' %}أخرى{% else %}Other{% endif %}</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}وصف المشكلة{% else %}Issue Description{% endif %} *</label>
+                                <textarea name="message" class="form-inp" required
+                                          placeholder="{% if LANGUAGE_CODE == 'ar' %}اشرح مشكلتك بالتفصيل...{% else %}Describe your issue in detail...{% endif %}"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn-submit">
+                                    <i class="fas fa-paper-plane"></i>
+                                    {% if LANGUAGE_CODE == 'ar' %}إرسال التذكرة{% else %}Submit Ticket{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% comment %} {% extends 'base.html' %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block title %}
+    {% if LANGUAGE_CODE == 'ar' %}الدعم الفني - دليل أي خدمة{% else %}Support - Directory{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+:root { --p1:#6366f1; --p2:#8b5cf6; --accent:#10b981; --dark:#0f172a; --mid:#475569; --muted:#94a3b8; --bg:#f8fafc; --border:#e2e8f0; }
+
+.sup-hero {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    padding: 4.5rem 0 5rem; color: white; position: relative; overflow: hidden;
+}
+.sup-hero::before {
+    content:''; position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+.sup-hero::after {
+    content:''; position:absolute; inset:0;
+    background:
+        radial-gradient(ellipse at 10% 60%, rgba(99,102,241,0.22), transparent 50%),
+        radial-gradient(ellipse at 90% 40%, rgba(16,185,129,0.12), transparent 50%);
+}
+.sup-badge {
+    display:inline-flex; align-items:center; gap:0.5rem;
+    background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.35);
+    color:#6ee7b7; padding:0.4rem 1rem; border-radius:50px;
+    font-size:0.82rem; font-weight:700; margin-bottom:1.25rem;
+}
+.sup-badge .dot { width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 3px rgba(16,185,129,0.3); animation:blink 2s infinite; display:inline-block; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.sup-title { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:900; margin-bottom:0.75rem; }
+.sup-sub { color:#64748b; font-size:0.95rem; }
+
+/* Channel Cards */
+.ch-card {
+    background: white; border-radius: 20px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    padding: 2rem 1.5rem; text-align: center;
+    transition: all 0.35s; text-decoration: none; display: block; height: 100%;
+}
+.ch-card:hover { transform: translateY(-8px); box-shadow: 0 18px 45px rgba(0,0,0,0.1); border-color: var(--p1); }
+.ch-ico {
+    width: 64px; height: 64px; border-radius: 18px;
+    margin: 0 auto 1.25rem;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; transition: transform 0.3s;
+}
+.ch-card:hover .ch-ico { transform: scale(1.12) rotate(5deg); }
+.ch-ico.blue   { background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; }
+.ch-ico.green  { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+.ch-ico.purple { background: linear-gradient(135deg, var(--p1), var(--p2)); color: white; }
+.ch-ico.orange { background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; }
+.ch-title  { font-weight: 800; font-size: 1rem; color: var(--dark); margin-bottom: 0.4rem; }
+.ch-desc   { font-size: 0.82rem; color: var(--muted); line-height: 1.65; margin-bottom: 1rem; }
+.ch-badge  {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.3rem 0.875rem; border-radius: 50px;
+    font-size: 0.75rem; font-weight: 700;
+}
+.ch-badge.on   { background: rgba(16,185,129,0.1); color: #065f46; }
+.ch-badge.fast { background: rgba(99,102,241,0.1); color: var(--p1); }
+
+/* FAQ */
+.faq-item {
+    background: white; border-radius: 14px;
+    border: 1.5px solid var(--border);
+    margin-bottom: 0.75rem; overflow: hidden;
+    transition: border-color 0.2s;
+}
+.faq-item:hover { border-color: rgba(99,102,241,0.3); }
+.faq-q {
+    width: 100%; display: flex; justify-content: space-between;
+    align-items: center; padding: 1.1rem 1.4rem;
+    background: none; border: none; text-align: right;
+    font-family: 'Cairo', sans-serif; font-weight: 700;
+    font-size: 0.9rem; color: var(--dark); cursor: pointer;
+    gap: 1rem;
+}
+.faq-q:focus { outline: none; }
+.faq-q i { color: var(--p1); flex-shrink: 0; transition: transform 0.3s; }
+.faq-q[aria-expanded="true"] i { transform: rotate(180deg); }
+.faq-a {
+    padding: 0 1.4rem 1.1rem;
+    font-size: 0.87rem; color: var(--mid); line-height: 1.85;
+}
+
+/* Ticket Form */
+.ticket-card {
+    background: white; border-radius: 20px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    padding: 2.25rem;
+}
+.form-label2 { font-size: 0.85rem; font-weight: 700; color: var(--dark); margin-bottom: 0.4rem; }
+.form-inp {
+    border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 0.7rem 1rem; font-family: 'Cairo', sans-serif;
+    font-size: 0.9rem; width: 100%; background: #fafafa;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    color: var(--dark);
+}
+.form-inp:focus {
+    outline: none; border-color: var(--p1);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+    background: white;
+}
+textarea.form-inp { resize: vertical; min-height: 130px; }
+.form-select2 {
+    border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 0.7rem 1rem; font-family: 'Cairo', sans-serif;
+    font-size: 0.9rem; width: 100%; background: #fafafa;
+    transition: border-color 0.2s; color: var(--dark);
+    appearance: none;
+}
+.form-select2:focus { outline: none; border-color: var(--p1); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.btn-submit {
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    color: white; border: none; width: 100%; padding: 0.875rem;
+    border-radius: 12px; font-weight: 800; font-size: 0.95rem;
+    font-family: 'Cairo', sans-serif; transition: all 0.3s;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+}
+.btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99,102,241,0.4); }
+
+.sh-pill {
+    display:inline-flex; align-items:center; gap:0.4rem;
+    background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.22);
+    color:var(--p1); padding:0.3rem 1rem; border-radius:50px;
+    font-size:0.72rem; font-weight:800; letter-spacing:0.06em;
+    text-transform:uppercase; margin-bottom:0.6rem;
+}
+.sh h2 { font-size:clamp(1.5rem,3vw,2rem); font-weight:900; color:var(--dark); margin:0; }
+.sh p   { color:var(--muted); font-size:0.92rem; margin:0.35rem 0 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="sup-hero">
+    <div class="container text-center position-relative" style="z-index:2;">
+        <div class="d-flex justify-content-center">
+            <div class="sup-badge">
+                <span class="dot"></span>
+                {% if LANGUAGE_CODE == 'ar' %}فريق الدعم متاح الآن{% else %}Support Team Online{% endif %}
+            </div>
+        </div>
+        <h1 class="sup-title">
+            {% if LANGUAGE_CODE == 'ar' %}كيف يمكننا مساعدتك؟ 🎧{% else %}How Can We Help You? 🎧{% endif %}
+        </h1>
+        <p class="sup-sub">
+            {% if LANGUAGE_CODE == 'ar' %}
+                فريقنا جاهز للمساعدة — اختر قناة التواصل المناسبة
+            {% else %}
+                Our team is ready to help — choose your preferred contact channel
+            {% endif %}
+        </p>
+    </div>
+</section>
+
+<!-- Channels -->
+<section class="py-5" style="background:var(--bg); margin-top:-2rem; position:relative; z-index:2;">
+    <div class="container">
+        <div class="row g-4 mb-5">
+            <div class="col-md-3 col-sm-6">
+                <a href="mailto:support@daliil.com" class="ch-card">
+                    <div class="ch-ico blue"><i class="fas fa-envelope"></i></div>
+                    <div class="ch-title">{% if LANGUAGE_CODE == 'ar' %}البريد الإلكتروني{% else %}Email{% endif %}</div>
+                    <div class="ch-desc">{% if LANGUAGE_CODE == 'ar' %}أرسل لنا استفسارك وسنرد خلال 24 ساعة{% else %}Send us your query and we'll reply within 24 hours{% endif %}</div>
+                    <span class="ch-badge fast"><i class="fas fa-clock me-1"></i>{% if LANGUAGE_CODE == 'ar' %}24 ساعة{% else %}24 hours{% endif %}</span>
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <a href="https://wa.me/966500000000" target="_blank" class="ch-card">
+                    <div class="ch-ico green"><i class="fab fa-whatsapp"></i></div>
+                    <div class="ch-title">{% if LANGUAGE_CODE == 'ar' %}واتساب{% else %}WhatsApp{% endif %}</div>
+                    <div class="ch-desc">{% if LANGUAGE_CODE == 'ar' %}تواصل معنا عبر واتساب للردود السريعة{% else %}Reach us via WhatsApp for quick responses{% endif %}</div>
+                    <span class="ch-badge on"><i class="fas fa-circle me-1" style="font-size:0.5rem;"></i>{% if LANGUAGE_CODE == 'ar' %}متاح الآن{% else %}Available Now{% endif %}</span>
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <a href="#ticket" class="ch-card">
+                    <div class="ch-ico purple"><i class="fas fa-ticket-alt"></i></div>
+                    <div class="ch-title">{% if LANGUAGE_CODE == 'ar' %}تذكرة دعم{% else %}Support Ticket{% endif %}</div>
+                    <div class="ch-desc">{% if LANGUAGE_CODE == 'ar' %}أنشئ تذكرة لمشاكل تقنية معقدة{% else %}Create a ticket for complex technical issues{% endif %}</div>
+                    <span class="ch-badge fast"><i class="fas fa-headset me-1"></i>{% if LANGUAGE_CODE == 'ar' %}دعم متخصص{% else %}Expert Support{% endif %}</span>
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <a href="{% url 'core:contact' %}" class="ch-card">
+                    <div class="ch-ico orange"><i class="fas fa-phone-alt"></i></div>
+                    <div class="ch-title">{% if LANGUAGE_CODE == 'ar' %}اتصل بنا{% else %}Call Us{% endif %}</div>
+                    <div class="ch-desc">{% if LANGUAGE_CODE == 'ar' %}تحدث مع أحد أعضاء فريقنا مباشرة{% else %}Speak directly with one of our team members{% endif %}</div>
+                    <span class="ch-badge on"><i class="fas fa-clock me-1"></i>{% if LANGUAGE_CODE == 'ar' %}ش-خ 9ص-5م{% else %}Sun-Thu 9-5{% endif %}</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="row g-5">
+            <!-- FAQ -->
+            <div class="col-lg-6">
+                <div class="sh mb-4">
+                    <div class="sh-pill"><i class="fas fa-question me-1"></i>FAQ</div>
+                    <h2>{% if LANGUAGE_CODE == 'ar' %}الأسئلة الشائعة{% else %}Frequently Asked Questions{% endif %}</h2>
+                    <p>{% if LANGUAGE_CODE == 'ar' %}إجابات على الأسئلة الأكثر شيوعًا{% else %}Answers to the most common questions{% endif %}</p>
+                </div>
+
+                {% with faqs_ar=True %}
+                <div>
+
+                    <div class="faq-item">
+                        <button class="faq-q" type="button" data-bs-toggle="collapse" data-bs-target="#faq1" aria-expanded="false">
+                            <span>{% if LANGUAGE_CODE == 'ar' %}كيف أضيف محلي على الموقع؟{% else %}How do I add my business?{% endif %}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="faq1" class="collapse">
+                            <div class="faq-a">
+                                {% if LANGUAGE_CODE == 'ar' %}
+                                    سجّل حسابًا مجانيًا، ثم اذهب لـ "إضافة محل"، واملأ بيانات محلك. سيخضع للمراجعة خلال 24 ساعة ثم يُنشر تلقائيًا.
+                                {% else %}
+                                    Create a free account, go to "Add Business", and fill in your details. It will be reviewed within 24 hours and published automatically.
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <button class="faq-q" type="button" data-bs-toggle="collapse" data-bs-target="#faq2" aria-expanded="false">
+                            <span>{% if LANGUAGE_CODE == 'ar' %}كيف أنشر عرضًا أو خصمًا؟{% else %}How do I publish a deal or discount?{% endif %}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="faq2" class="collapse">
+                            <div class="faq-a">
+                                {% if LANGUAGE_CODE == 'ar' %}
+                                    من لوحة التحكم، اختر محلك ثم "إضافة عرض". حدد نسبة الخصم والمدة وأضف وصفًا جذابًا. ستظهر عروضك فورًا للمستخدمين.
+                                {% else %}
+                                    From your dashboard, select your business then "Add Deal". Set the discount percentage, duration, and add a description. Your deals appear immediately to users.
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <button class="faq-q" type="button" data-bs-toggle="collapse" data-bs-target="#faq3" aria-expanded="false">
+                            <span>{% if LANGUAGE_CODE == 'ar' %}هل الإضافة في الدليل مجانية؟{% else %}Is listing in the directory free?{% endif %}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="faq3" class="collapse">
+                            <div class="faq-a">
+                                {% if LANGUAGE_CODE == 'ar' %}
+                                    نعم! الإضافة الأساسية مجانية تمامًا. نوفر أيضًا باقات مدفوعة للظهور المميز وعروض إضافية.
+                                {% else %}
+                                    Yes! Basic listing is completely free. We also offer paid packages for featured visibility and additional deals.
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <button class="faq-q" type="button" data-bs-toggle="collapse" data-bs-target="#faq4" aria-expanded="false">
+                            <span>{% if LANGUAGE_CODE == 'ar' %}كيف أحذف أو أعدّل بيانات محلي؟{% else %}How do I edit or delete my listing?{% endif %}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="faq4" class="collapse">
+                            <div class="faq-a">
+                                {% if LANGUAGE_CODE == 'ar' %}
+                                    من لوحة التحكم، اختر المحل المطلوب وانقر على "تعديل". لحذف المحل بالكامل، تواصل مع فريق الدعم.
+                                {% else %}
+                                    From your dashboard, select the business and click "Edit". To completely delete a listing, contact the support team.
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <button class="faq-q" type="button" data-bs-toggle="collapse" data-bs-target="#faq5" aria-expanded="false">
+                            <span>{% if LANGUAGE_CODE == 'ar' %}كيف يعمل نظام التقييمات؟{% else %}How does the rating system work?{% endif %}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="faq5" class="collapse">
+                            <div class="faq-a">
+                                {% if LANGUAGE_CODE == 'ar' %}
+                                    يستطيع أي زائر تقييم المحل من 1 إلى 5 نجوم وكتابة تعليق. يمكن لصاحب المحل الرد على التعليقات من لوحة التحكم.
+                                {% else %}
+                                    Any visitor can rate a business from 1 to 5 stars and write a review. Business owners can reply to reviews from their dashboard.
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                {% endwith %}
+            </div>
+
+            <!-- Ticket Form -->
+            <div class="col-lg-6" id="ticket">
+                <div class="sh mb-4">
+                    <div class="sh-pill"><i class="fas fa-headset me-1"></i>{% if LANGUAGE_CODE == 'ar' %}تذكرة{% else %}TICKET{% endif %}</div>
+                    <h2>{% if LANGUAGE_CODE == 'ar' %}أرسل تذكرة دعم{% else %}Submit a Support Ticket{% endif %}</h2>
+                    <p>{% if LANGUAGE_CODE == 'ar' %}سنرد عليك خلال 24 ساعة{% else %}We'll respond within 24 hours{% endif %}</p>
+                </div>
+
+                <div class="ticket-card">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}الاسم الكامل{% else %}Full Name{% endif %} *</label>
+                                <input type="text" name="name" class="form-inp" required
+                                       placeholder="{% if LANGUAGE_CODE == 'ar' %}اسمك الكامل{% else %}Your full name{% endif %}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}البريد الإلكتروني{% else %}Email{% endif %} *</label>
+                                <input type="email" name="email" class="form-inp" required
+                                       placeholder="{% if LANGUAGE_CODE == 'ar' %}example@email.com{% else %}example@email.com{% endif %}">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}نوع المشكلة{% else %}Issue Type{% endif %} *</label>
+                                <select name="issue_type" class="form-select2" required>
+                                    <option value="">{% if LANGUAGE_CODE == 'ar' %}اختر نوع المشكلة{% else %}Select issue type{% endif %}</option>
+                                    <option value="account">{% if LANGUAGE_CODE == 'ar' %}مشكلة في الحساب{% else %}Account issue{% endif %}</option>
+                                    <option value="listing">{% if LANGUAGE_CODE == 'ar' %}مشكلة في المحل{% else %}Listing issue{% endif %}</option>
+                                    <option value="deal">{% if LANGUAGE_CODE == 'ar' %}مشكلة في العروض{% else %}Deal issue{% endif %}</option>
+                                    <option value="technical">{% if LANGUAGE_CODE == 'ar' %}مشكلة تقنية{% else %}Technical issue{% endif %}</option>
+                                    <option value="billing">{% if LANGUAGE_CODE == 'ar' %}مشكلة في الدفع{% else %}Billing issue{% endif %}</option>
+                                    <option value="other">{% if LANGUAGE_CODE == 'ar' %}أخرى{% else %}Other{% endif %}</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}وصف المشكلة{% else %}Issue Description{% endif %} *</label>
+                                <textarea name="message" class="form-inp" required
+                                          placeholder="{% if LANGUAGE_CODE == 'ar' %}اشرح مشكلتك بالتفصيل...{% else %}Describe your issue in detail...{% endif %}"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn-submit">
+                                    <i class="fas fa-paper-plane"></i>
+                                    {% if LANGUAGE_CODE == 'ar' %}إرسال التذكرة{% else %}Submit Ticket{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %} {% endcomment %}

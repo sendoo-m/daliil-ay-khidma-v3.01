@@ -1,0 +1,149 @@
+{% extends 'dashboard/admin/base.html' %}
+{% load humanize %}
+
+{% block title %}{{ deal.title_ar }}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1"><i class="fas fa-percent text-warning me-2"></i> {{ deal.title_ar }}</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_home' %}">الرئيسية</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_deals_list' %}">العروض</a></li>
+                <li class="breadcrumb-item active">{{ deal.title_ar }}</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'dashboard:admin_deal_edit' deal.id %}" class="btn btn-warning">
+            <i class="fas fa-edit me-1"></i> تعديل
+        </a>
+        <form method="post" action="{% url 'dashboard:admin_deal_approve' deal.id %}" class="d-inline">
+            {% csrf_token %}
+            <button class="btn {% if deal.is_active %}btn-secondary{% else %}btn-success{% endif %}">
+                <i class="fas fa-{% if deal.is_active %}pause{% else %}play{% endif %} me-1"></i>
+                {% if deal.is_active %}إيقاف{% else %}تفعيل{% endif %}
+            </button>
+        </form>
+        <form method="post" action="{% url 'dashboard:admin_deal_feature' deal.id %}" class="d-inline">
+            {% csrf_token %}
+            <button class="btn {% if deal.is_featured %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                <i class="fas fa-star me-1"></i>
+                {% if deal.is_featured %}إلغاء الإبراز{% else %}إبراز{% endif %}
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-warning text-dark border-0">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-info-circle me-2"></i> تفاصيل العرض</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless table-sm mb-0">
+                    <tr>
+                        <td class="text-muted">العنوان (AR)</td>
+                        <td><strong>{{ deal.title_ar }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">العنوان (EN)</td>
+                        <td>{{ deal.title_en|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">النوع</td>
+                        <td><span class="badge bg-light text-dark">{{ deal.get_deal_type_display }}</span></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">الخصم</td>
+                        <td>
+                            {% if deal.discount_percentage %}
+                            <strong class="text-success">{{ deal.discount_percentage }}%</strong>
+                            {% elif deal.discount_amount %}
+                            <strong class="text-success">{{ deal.discount_amount }} ر.س</strong>
+                            {% else %}-{% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">من</td>
+                        <td>{{ deal.start_date|date:"Y/m/d" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">إلى</td>
+                        <td>{{ deal.end_date|date:"Y/m/d" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">الاستخدامات</td>
+                        <td>{{ deal.current_uses }} / {{ deal.max_uses|default:"غير محدود" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">المحل</td>
+                        <td>
+                            <a href="{% url 'dashboard:admin_business_detail' deal.business.id %}" class="text-decoration-none">
+                                {{ deal.business.name_ar }}
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">الحالة</td>
+                        <td>
+                            {% if deal.is_active %}
+                            <span class="badge bg-success">نشط</span>
+                            {% else %}
+                            <span class="badge bg-secondary">معطّل</span>
+                            {% endif %}
+                            {% if deal.is_featured %}
+                            <span class="badge bg-warning text-dark ms-1"><i class="fas fa-star"></i></span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-align-right me-2 text-muted"></i> الوصف</h6>
+            </div>
+            <div class="card-body">
+                <h6 class="text-muted small">بالعربية</h6>
+                <p>{{ deal.description_ar|default:"لا يوجد وصف" }}</p>
+                <hr>
+                <h6 class="text-muted small">بالإنجليزية</h6>
+                <p>{{ deal.description_en|default:"No description" }}</p>
+            </div>
+        </div>
+
+        {% if deal.image %}
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-body text-center">
+                <img src="{{ deal.image.url }}" class="img-fluid rounded" style="max-height:300px;">
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% comment %} {% extends 'dashboard/admin/base.html' %}
+
+{% block title %}تفاصيل العرض{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'dashboard:admin_deals_list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right me-1"></i> عودة
+    </a>
+</div>
+
+<div class="table-card">
+    <h3>{{ deal.title_ar }}</h3>
+    <p>{{ deal.description_ar }}</p>
+</div>
+{% endblock %} {% endcomment %}

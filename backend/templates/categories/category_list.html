@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% load static i18n %}
+
+{% block title %}
+    {% if LANGUAGE_CODE == 'ar' %}
+        جميع الفئات - دليل أي خدمة
+    {% else %}
+        All categories - Daliil Ay Khidma
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 4rem 0;
+    margin-bottom: 4rem;
+    border-radius: 0 0 40px 40px;
+    color: white;
+}
+
+.category-card {
+    border: none;
+    border-radius: 20px;
+    padding: 2rem;
+    transition: all 0.3s ease;
+    background: white;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    height: 100%;
+    text-decoration: none;
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+
+.category-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 0;
+}
+
+.category-card:hover::before {
+    opacity: 1;
+}
+
+.category-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 40px rgba(102,126,234,0.3);
+}
+
+.category-card:hover * {
+    color: white !important;
+}
+
+.category-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 2.5rem;
+    color: white;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.category-card:hover .category-icon {
+    background: white;
+    color: #667eea !important;
+    transform: scale(1.1) rotate(360deg);
+}
+
+.category-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: #1e293b;
+    transition: color 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.category-description {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 1rem;
+    transition: color 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.category-count {
+    display: inline-block;
+    padding: 0.5rem 1.25rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+}
+
+.category-card:hover .category-count {
+    background: white;
+    color: #667eea !important;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 5rem 2rem;
+}
+
+.empty-state i {
+    font-size: 5rem;
+    color: #e2e8f0;
+    margin-bottom: 2rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="container text-center">
+        <h1 class="display-4 fw-bold mb-3">
+            <i class="fas fa-th-large me-3"></i>
+            {% if LANGUAGE_CODE == 'ar' %}
+                جميع الفئات
+            {% else %}
+                All categories
+            {% endif %}
+        </h1>
+        <p class="lead mb-0">
+            {% if LANGUAGE_CODE == 'ar' %}
+                تصفح المحلات حسب الفئة لتجد ما تبحث عنه
+            {% else %}
+                Browse businesses by category to find what you need
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="container mb-5">
+    {% if categories %}
+    <div class="row g-4">
+        {% for category in categories %}
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <a href="{% url 'categories:category_detail' category.slug %}" class="category-card">
+                <!-- Icon -->
+                <div class="category-icon">
+                    {% if category.icon %}
+                        <i class="{{ category.icon }}"></i>
+                    {% else %}
+                        <i class="fas fa-folder"></i>
+                    {% endif %}
+                </div>
+
+                <!-- Name -->
+                <h5 class="category-name text-center">
+                    {% if LANGUAGE_CODE == 'ar' %}
+                        {{ category.name_ar }}
+                    {% else %}
+                        {{ category.name_en }}
+                    {% endif %}
+                </h5>
+
+                <!-- Description -->
+                {% if LANGUAGE_CODE == 'ar' and category.description_ar %}
+                    <p class="category-description text-center">
+                        {{ category.description_ar|truncatewords:10 }}
+                    </p>
+                {% elif LANGUAGE_CODE == 'en' and category.description_en %}
+                    <p class="category-description text-center">
+                        {{ category.description_en|truncatewords:10 }}
+                    </p>
+                {% endif %}
+
+                <!-- Business Count -->
+                <div class="text-center">
+                    <span class="category-count">
+                        {{ category.businesses_count|default:0 }}
+                        {% if LANGUAGE_CODE == 'ar' %}محل{% else %}businesses{% endif %}
+                    </span>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <i class="fas fa-th-large"></i>
+        <h3 class="text-muted mb-3">
+            {% if LANGUAGE_CODE == 'ar' %}
+                لا توجد فئات حالياً
+            {% else %}
+                No categories available
+            {% endif %}
+        </h3>
+        <p class="text-muted">
+            {% if LANGUAGE_CODE == 'ar' %}
+                الفئات ستكون متاحة قريباً
+            {% else %}
+                Categories will be available soon
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

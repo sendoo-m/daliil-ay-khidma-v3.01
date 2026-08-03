@@ -1,0 +1,196 @@
+{% extends 'dashboard/admin/base.html' %}
+
+{% block title %}{{ action }} منتج{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_home' %}">لوحة التحكم</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_products_list' %}">المنتجات</a></li>
+        <li class="breadcrumb-item active">{{ action }} منتج</li>
+    </ol>
+</nav>
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">
+            <i class="fas fa-box" style="color: #e74c3c;"></i> {{ action }} منتج / خدمة
+        </h2>
+        <p class="text-muted mb-0">إضافة منتج أو خدمة جديدة للمحل</p>
+    </div>
+    <a href="{% url 'dashboard:admin_products_list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right me-1"></i> رجوع
+    </a>
+</div>
+
+<!-- Form -->
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    {% if form.errors %}
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        <strong>خطأ!</strong> يرجى تصحيح الأخطاء
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+    
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <!-- معلومات المنتج -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> معلومات المنتج</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-tag text-primary me-1"></i>
+                                الاسم بالعربي <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name_ar }}
+                            <div class="form-text">اسم واضح ومختصر للمنتج</div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-tag text-primary me-1"></i>
+                                الاسم بالإنجليزي <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name_en }}
+                            <div class="form-text">Product name in English</div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-align-right text-secondary me-1"></i>
+                                الوصف بالعربي
+                            </label>
+                            {{ form.description_ar }}
+                            <div class="form-text">وصف تفصيلي عن المنتج ومميزاته</div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-align-left text-secondary me-1"></i>
+                                الوصف بالإنجليزي
+                            </label>
+                            {{ form.description_en }}
+                            <div class="form-text">Detailed product description</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- التصنيف والسعر -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0"><i class="fas fa-cog text-success me-2"></i> التفاصيل</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-layer-group text-info me-1"></i>
+                            النوع <span class="text-danger">*</span>
+                        </label>
+                        {{ form.product_type }}
+                        <div class="form-text">منتج أم خدمة</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-money-bill-wave text-success me-1"></i>
+                            السعر <span class="text-danger">*</span>
+                        </label>
+                        {{ form.price }}
+                        <div class="form-text">السعر بالريال</div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <div class="form-check form-switch">
+                                {{ form.is_available }}
+                                <label class="form-check-label fw-bold" for="{{ form.is_available.id_for_label }}">
+                                    <i class="fas fa-check-circle text-success me-1"></i>
+                                    متاح
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-2">المنتج متاح للشراء</small>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="p-3 bg-light rounded">
+                            <div class="form-check form-switch">
+                                {{ form.is_featured }}
+                                <label class="form-check-label fw-bold" for="{{ form.is_featured.id_for_label }}">
+                                    <i class="fas fa-star text-warning me-1"></i>
+                                    مميّز
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-2">يظهر في القائمة المميزة</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- صورة المنتج -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0"><i class="fas fa-image text-primary me-2"></i> الصورة</h5>
+                </div>
+                <div class="card-body p-4 text-center">
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" class="img-fluid rounded mb-3" style="max-height: 200px;">
+                    {% else %}
+                    <div class="bg-light rounded p-4 mb-3">
+                        <i class="fas fa-image fa-3x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    {{ form.image }}
+                    <div class="form-text text-start mt-2">صورة واضحة للمنتج (800x800 موصى به)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Buttons -->
+    <div class="d-flex gap-2 justify-content-center mt-4">
+        <button type="submit" class="btn btn-admin btn-lg px-5">
+            <i class="fas fa-save me-2"></i> {{ action }}
+        </button>
+        <a href="{% url 'dashboard:admin_products_list' %}" class="btn btn-secondary btn-lg px-5">
+            <i class="fas fa-times me-2"></i> إلغاء
+        </a>
+    </div>
+</form>
+
+<style>
+.form-control, .form-select, textarea.form-control {
+    border: 1.5px solid #e0e0e0;
+    padding: 0.65rem 1rem;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+}
+
+.card {
+    border-radius: 12px;
+}
+
+textarea.form-control {
+    min-height: 100px;
+}
+</style>
+{% endblock %}

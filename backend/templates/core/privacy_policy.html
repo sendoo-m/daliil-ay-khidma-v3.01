@@ -1,0 +1,379 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block title %}
+    {% if LANGUAGE_CODE == 'ar' %}سياسة الخصوصية - دليل أي خدمة{% else %}Privacy Policy - Directory{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --p1: #6366f1; --p2: #8b5cf6;
+    --dark: #0f172a; --mid: #475569;
+    --muted: #94a3b8; --bg: #f8fafc;
+    --border: #e2e8f0;
+}
+.legal-hero {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    padding: 4rem 0 3rem; color: white; position: relative; overflow: hidden;
+}
+.legal-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+.legal-hero::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.2), transparent 55%);
+}
+.legal-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(99,102,241,0.15);
+    border: 1px solid rgba(99,102,241,0.35);
+    color: #a5b4fc; padding: 0.4rem 1rem;
+    border-radius: 50px; font-size: 0.82rem; font-weight: 700;
+    margin-bottom: 1.25rem;
+}
+.legal-title {
+    font-size: clamp(1.8rem,4vw,2.8rem);
+    font-weight: 900; margin-bottom: 0.75rem;
+}
+.legal-subtitle { color: #64748b; font-size: 0.95rem; }
+
+.legal-wrap {
+    max-width: 820px; margin: 0 auto;
+}
+.toc-card {
+    background: white; border-radius: 18px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    padding: 1.75rem; margin-bottom: 2rem;
+    position: sticky; top: 80px;
+}
+.toc-title {
+    font-weight: 800; font-size: 0.9rem; color: var(--dark);
+    margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+}
+.toc-title i { color: var(--p1); }
+.toc-link {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.45rem 0.6rem; border-radius: 8px;
+    font-size: 0.83rem; color: var(--mid); font-weight: 600;
+    text-decoration: none; transition: all 0.2s;
+}
+.toc-link:hover { background: rgba(99,102,241,0.07); color: var(--p1); }
+.toc-link i { color: var(--p1); width: 16px; text-align: center; font-size: 0.75rem; }
+
+.legal-section {
+    background: white; border-radius: 18px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.04);
+    padding: 2rem; margin-bottom: 1.25rem;
+    scroll-margin-top: 90px;
+}
+.sec-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    color: white; font-weight: 900; font-size: 0.85rem;
+    flex-shrink: 0;
+}
+.sec-heading {
+    font-size: 1.05rem; font-weight: 800; color: var(--dark);
+    display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.1rem;
+}
+.legal-text { color: var(--mid); font-size: 0.9rem; line-height: 1.95; }
+.legal-text ul { padding-right: 1.2rem; margin-bottom: 0; }
+.legal-text ul li { margin-bottom: 0.5rem; }
+.legal-text strong { color: var(--dark); }
+.highlight-box {
+    background: rgba(99,102,241,0.05);
+    border: 1px solid rgba(99,102,241,0.18);
+    border-radius: 12px; padding: 1rem 1.25rem;
+    margin-top: 1rem;
+    font-size: 0.87rem; color: var(--mid);
+    display: flex; gap: 0.75rem;
+}
+.highlight-box i { color: var(--p1); margin-top: 2px; flex-shrink: 0; }
+.update-bar {
+    background: rgba(16,185,129,0.07);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 12px; padding: 0.875rem 1.25rem;
+    display: flex; align-items: center; gap: 0.75rem;
+    font-size: 0.83rem; color: #065f46; font-weight: 600;
+    margin-bottom: 2rem;
+}
+.update-bar i { color: #10b981; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="legal-hero">
+    <div class="container text-center position-relative" style="z-index:2;">
+        <div class="d-flex justify-content-center">
+            <div class="legal-badge">
+                <i class="fas fa-shield-alt"></i>
+                {% if LANGUAGE_CODE == 'ar' %}سياسة الخصوصية{% else %}Privacy Policy{% endif %}
+            </div>
+        </div>
+        <h1 class="legal-title">
+            {% if LANGUAGE_CODE == 'ar' %}نحن نحمي خصوصيتك 🔒{% else %}We Protect Your Privacy 🔒{% endif %}
+        </h1>
+        <p class="legal-subtitle">
+            {% if LANGUAGE_CODE == 'ar' %}
+                تعرّف على كيفية جمع معلوماتك، واستخدامها، وحمايتها
+            {% else %}
+                Learn how we collect, use, and protect your information
+            {% endif %}
+        </p>
+    </div>
+</section>
+
+<!-- Content -->
+<section class="py-5" style="background:var(--bg);">
+    <div class="container">
+        <div class="row g-4">
+
+            <!-- TOC — Desktop -->
+            <div class="col-lg-3 d-none d-lg-block">
+                <div class="toc-card">
+                    <div class="toc-title">
+                        <i class="fas fa-list-ul"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}المحتويات{% else %}Contents{% endif %}
+                    </div>
+                    <a href="#sec1" class="toc-link"><i class="fas fa-circle"></i>{% if LANGUAGE_CODE == 'ar' %}جمع المعلومات{% else %}Data Collection{% endif %}</a>
+                    <a href="#sec2" class="toc-link"><i class="fas fa-circle"></i>{% if LANGUAGE_CODE == 'ar' %}استخدام المعلومات{% else %}Use of Data{% endif %}</a>
+                    <a href="#sec3" class="toc-link"><i class="fas fa-circle"></i>{% if LANGUAGE_CODE == 'ar' %}مشاركة البيانات{% else %}Data Sharing{% endif %}</a>
+                    <a href="#sec4" class="toc-link"><i class="fas fa-circle"></i>{% if LANGUAGE_CODE == 'ar' %}ملفات تعريف الارتباط{% else %}Cookies{% endif %}</a>
+                    <a href="#sec5" class="toc-link"><i class="fas fa-circle"></i>{% if LANGUAGE_CODE == 'ar' %}حماية البيانات{% else %}Data Security{% endif %}</a>
+                    <a href="#sec6" class="toc-link"><i class="fas fa-circle"></i>{% if LANGUAGE_CODE == 'ar' %}حقوقك{% else %}Your Rights{% endif %}</a>
+                    <a href="#sec7" class="toc-link"><i class="fas fa-circle"></i>{% if LANGUAGE_CODE == 'ar' %}التواصل معنا{% else %}Contact Us{% endif %}</a>
+                </div>
+            </div>
+
+            <!-- Sections -->
+            <div class="col-lg-9">
+                <div class="legal-wrap" style="max-width:100%;">
+
+                    <div class="update-bar">
+                        <i class="fas fa-calendar-check"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            آخر تحديث: مارس 2026 — يُرجى قراءة هذه السياسة بعناية قبل استخدام الموقع.
+                        {% else %}
+                            Last updated: March 2026 — Please read this policy carefully before using the site.
+                        {% endif %}
+                    </div>
+
+                    <!-- 1 -->
+                    <div class="legal-section" id="sec1">
+                        <div class="sec-heading">
+                            <span class="sec-num">1</span>
+                            {% if LANGUAGE_CODE == 'ar' %}جمع المعلومات{% else %}Data Collection{% endif %}
+                        </div>
+                        <div class="legal-text">
+                            {% if LANGUAGE_CODE == 'ar' %}
+                                <p>نقوم بجمع المعلومات التي تقدمها لنا عند تسجيل حساب، أو إضافة محل، أو التواصل مع فريقنا. تشمل هذه المعلومات:</p>
+                                <ul>
+                                    <li><strong>معلومات الحساب:</strong> الاسم، البريد الإلكتروني، رقم الهاتف</li>
+                                    <li><strong>معلومات المحل:</strong> الاسم، العنوان، الفئة، الصور</li>
+                                    <li><strong>بيانات الاستخدام:</strong> الصفحات المُزارة، مدة الجلسة، عناوين IP</li>
+                                    <li><strong>ملفات الارتباط:</strong> لتحسين تجربة التصفح</li>
+                                </ul>
+                            {% else %}
+                                <p>We collect information you provide when registering, adding a business, or contacting our team. This includes:</p>
+                                <ul>
+                                    <li><strong>Account info:</strong> Name, email address, phone number</li>
+                                    <li><strong>Business info:</strong> Name, address, category, images</li>
+                                    <li><strong>Usage data:</strong> Pages visited, session duration, IP addresses</li>
+                                    <li><strong>Cookies:</strong> To enhance your browsing experience</li>
+                                </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 2 -->
+                    <div class="legal-section" id="sec2">
+                        <div class="sec-heading">
+                            <span class="sec-num">2</span>
+                            {% if LANGUAGE_CODE == 'ar' %}استخدام المعلومات{% else %}Use of Data{% endif %}
+                        </div>
+                        <div class="legal-text">
+                            {% if LANGUAGE_CODE == 'ar' %}
+                                <p>نستخدم معلوماتك للأغراض التالية:</p>
+                                <ul>
+                                    <li>تشغيل الخدمات وتقديم الدعم الفني</li>
+                                    <li>إرسال تنبيهات مهمة عن حسابك أو محلك</li>
+                                    <li>تحسين تجربة المستخدم وتطوير الموقع</li>
+                                    <li>منع الاحتيال وضمان أمان المنصة</li>
+                                    <li>تحليل الإحصائيات بشكل مجمّع وغير شخصي</li>
+                                </ul>
+                            {% else %}
+                                <p>We use your information for the following purposes:</p>
+                                <ul>
+                                    <li>Operating services and providing technical support</li>
+                                    <li>Sending important notifications about your account or business</li>
+                                    <li>Improving user experience and developing the platform</li>
+                                    <li>Preventing fraud and ensuring platform security</li>
+                                    <li>Analyzing aggregated, non-personal statistics</li>
+                                </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 3 -->
+                    <div class="legal-section" id="sec3">
+                        <div class="sec-heading">
+                            <span class="sec-num">3</span>
+                            {% if LANGUAGE_CODE == 'ar' %}مشاركة البيانات{% else %}Data Sharing{% endif %}
+                        </div>
+                        <div class="legal-text">
+                            {% if LANGUAGE_CODE == 'ar' %}
+                                <p><strong>لا نبيع بياناتك الشخصية لأي طرف ثالث.</strong> قد نشاركها فقط في الحالات التالية:</p>
+                                <ul>
+                                    <li>مع مزودي الخدمات التقنية (استضافة، تحليلات) الملتزمين بسرية البيانات</li>
+                                    <li>إذا طُلب ذلك قانونياً من جهة قضائية مختصة</li>
+                                    <li>لحماية حقوق الموقع أو المستخدمين في حالات الإساءة</li>
+                                </ul>
+                            {% else %}
+                                <p><strong>We never sell your personal data to any third party.</strong> We may share it only in the following cases:</p>
+                                <ul>
+                                    <li>With technical service providers (hosting, analytics) bound by confidentiality</li>
+                                    <li>When legally required by a competent judicial authority</li>
+                                    <li>To protect the platform's or users' rights in cases of abuse</li>
+                                </ul>
+                            {% endif %}
+                            <div class="highlight-box">
+                                <i class="fas fa-info-circle"></i>
+                                <span>
+                                    {% if LANGUAGE_CODE == 'ar' %}
+                                        بياناتك آمنة ولن تُستخدم إلا للأغراض المذكورة في هذه السياسة.
+                                    {% else %}
+                                        Your data is safe and will only be used for the purposes stated in this policy.
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4 -->
+                    <div class="legal-section" id="sec4">
+                        <div class="sec-heading">
+                            <span class="sec-num">4</span>
+                            {% if LANGUAGE_CODE == 'ar' %}ملفات تعريف الارتباط (Cookies){% else %}Cookies{% endif %}
+                        </div>
+                        <div class="legal-text">
+                            {% if LANGUAGE_CODE == 'ar' %}
+                                <p>نستخدم ملفات تعريف الارتباط لـ:</p>
+                                <ul>
+                                    <li>الحفاظ على جلسة تسجيل الدخول</li>
+                                    <li>تذكّر تفضيلات اللغة والعرض</li>
+                                    <li>تحليل حركة المرور عبر أدوات مثل Google Analytics</li>
+                                </ul>
+                                <p>يمكنك التحكم في ملفات الارتباط من إعدادات متصفحك في أي وقت.</p>
+                            {% else %}
+                                <p>We use cookies to:</p>
+                                <ul>
+                                    <li>Maintain your login session</li>
+                                    <li>Remember language and display preferences</li>
+                                    <li>Analyze traffic via tools such as Google Analytics</li>
+                                </ul>
+                                <p>You can control cookies from your browser settings at any time.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 5 -->
+                    <div class="legal-section" id="sec5">
+                        <div class="sec-heading">
+                            <span class="sec-num">5</span>
+                            {% if LANGUAGE_CODE == 'ar' %}حماية البيانات{% else %}Data Security{% endif %}
+                        </div>
+                        <div class="legal-text">
+                            {% if LANGUAGE_CODE == 'ar' %}
+                                <p>نتخذ إجراءات تقنية وتنظيمية مناسبة لحماية بياناتك، تشمل:</p>
+                                <ul>
+                                    <li>تشفير البيانات أثناء النقل عبر بروتوكول HTTPS</li>
+                                    <li>تخزين كلمات المرور بشكل مشفّر (Hashed)</li>
+                                    <li>تقييد الوصول للبيانات على الموظفين المصرح لهم فقط</li>
+                                    <li>مراجعات أمنية دورية للبنية التحتية</li>
+                                </ul>
+                            {% else %}
+                                <p>We take appropriate technical and organizational measures to protect your data, including:</p>
+                                <ul>
+                                    <li>Encrypting data in transit via HTTPS</li>
+                                    <li>Storing passwords in hashed form</li>
+                                    <li>Restricting data access to authorized staff only</li>
+                                    <li>Periodic security reviews of infrastructure</li>
+                                </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 6 -->
+                    <div class="legal-section" id="sec6">
+                        <div class="sec-heading">
+                            <span class="sec-num">6</span>
+                            {% if LANGUAGE_CODE == 'ar' %}حقوقك{% else %}Your Rights{% endif %}
+                        </div>
+                        <div class="legal-text">
+                            {% if LANGUAGE_CODE == 'ar' %}
+                                <p>لديك الحق في:</p>
+                                <ul>
+                                    <li><strong>الوصول:</strong> طلب نسخة من بياناتك الشخصية</li>
+                                    <li><strong>التصحيح:</strong> تعديل معلومات غير دقيقة</li>
+                                    <li><strong>الحذف:</strong> طلب مسح حسابك وبياناتك</li>
+                                    <li><strong>الاعتراض:</strong> رفض معالجة بياناتك لأغراض معيّنة</li>
+                                </ul>
+                            {% else %}
+                                <p>You have the right to:</p>
+                                <ul>
+                                    <li><strong>Access:</strong> Request a copy of your personal data</li>
+                                    <li><strong>Correction:</strong> Update inaccurate information</li>
+                                    <li><strong>Deletion:</strong> Request deletion of your account and data</li>
+                                    <li><strong>Objection:</strong> Refuse processing of your data for certain purposes</li>
+                                </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 7 -->
+                    <div class="legal-section" id="sec7">
+                        <div class="sec-heading">
+                            <span class="sec-num">7</span>
+                            {% if LANGUAGE_CODE == 'ar' %}التواصل معنا{% else %}Contact Us{% endif %}
+                        </div>
+                        <div class="legal-text">
+                            {% if LANGUAGE_CODE == 'ar' %}
+                                <p>لأي استفسار يتعلق بهذه السياسة أو بياناتك، يمكنك التواصل معنا عبر:</p>
+                            {% else %}
+                                <p>For any inquiries about this policy or your data, you can contact us via:</p>
+                            {% endif %}
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                <a href="{% url 'core:support' %}"
+                                   class="btn btn-sm rounded-pill px-4"
+                                   style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;font-weight:700;">
+                                    <i class="fas fa-headset me-1"></i>
+                                    {% if LANGUAGE_CODE == 'ar' %}الدعم الفني{% else %}Technical Support{% endif %}
+                                </a>
+                                <a href="{% url 'core:contact' %}"
+                                   class="btn btn-sm btn-outline-secondary rounded-pill px-4"
+                                   style="font-weight:700;">
+                                    <i class="fas fa-envelope me-1"></i>
+                                    {% if LANGUAGE_CODE == 'ar' %}اتصل بنا{% else %}Contact Us{% endif %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,627 @@
+{% extends "dashboard/admin/base.html" %}
+{% load static %}
+
+{% block title %}إعدادات الموقع{% endblock %}
+
+{% block extra_css %}
+<style>
+    .settings-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.75rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    .settings-card .card-section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #2c3e50;
+        padding-bottom: 0.75rem;
+        margin-bottom: 1.25rem;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    .settings-card .card-section-title i {
+        margin-left: 8px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: white;
+    }
+    .icon-purple { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .icon-blue   { background: linear-gradient(135deg, #3498db, #2980b9); }
+    .icon-pink   { background: linear-gradient(135deg, #e91e8c, #c2185b); }
+    .icon-green  { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+    .icon-orange { background: linear-gradient(135deg, #f39c12, #e67e22); }
+
+    .form-label { font-weight: 600; font-size: 0.875rem; color: #495057; }
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 1.5px solid #e0e0e0;
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+        transition: border-color 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
+    }
+
+    /* Logo Preview */
+    .img-preview-box {
+        width: 120px;
+        height: 120px;
+        border-radius: 14px;
+        border: 2px dashed #d0d0d0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background: #f9f9f9;
+        cursor: pointer;
+        transition: border-color 0.2s;
+        position: relative;
+    }
+    .img-preview-box:hover { border-color: #667eea; }
+    .img-preview-box img { width: 100%; height: 100%; object-fit: contain; }
+    .img-preview-box .placeholder-icon { font-size: 2.5rem; color: #ccc; }
+    .img-delete-btn {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        background: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        width: 24px;
+        height: 24px;
+        font-size: 0.7rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Toggle Switch */
+    .form-switch .form-check-input {
+        width: 3rem;
+        height: 1.5rem;
+        cursor: pointer;
+    }
+    .form-switch .form-check-input:checked { background-color: #667eea; border-color: #667eea; }
+
+    .save-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 0.75rem 2.5rem;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1rem;
+        color: white;
+        box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+        transition: all 0.3s;
+    }
+    .save-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102,126,234,0.5);
+        color: white;
+    }
+
+    /* Tabs */
+    .settings-tabs .nav-link {
+        color: #6c757d;
+        font-weight: 600;
+        border-radius: 10px 10px 0 0;
+        padding: 0.6rem 1.2rem;
+    }
+    .settings-tabs .nav-link.active {
+        color: #667eea;
+        border-bottom: 3px solid #667eea;
+        background: white;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h4 class="fw-bold mb-1" style="color:#2c3e50;">
+            <i class="fas fa-cog me-2" style="color:#667eea;"></i> إعدادات الموقع
+        </h4>
+        <small class="text-muted">تحكم في جميع إعدادات الموقع من مكان واحد</small>
+    </div>
+    <button form="settingsForm" type="submit" class="btn save-btn">
+        <i class="fas fa-save me-2"></i> حفظ التغييرات
+    </button>
+</div>
+
+<!-- Tabs -->
+<ul class="nav settings-tabs border-bottom mb-4" id="settingsTabs">
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#general">
+            <i class="fas fa-globe me-1"></i> عام
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#social">
+            <i class="fas fa-share-alt me-1"></i> سوشيال ميديا
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#technical">
+            <i class="fas fa-sliders-h me-1"></i> تقني
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#seo">
+            <i class="fas fa-search me-1"></i> SEO
+        </a>
+    </li>
+</ul>
+
+
+<form method="post" enctype="multipart/form-data" id="settingsForm">
+    {% csrf_token %}
+
+    <div class="tab-content">
+
+        <!-- ==============================
+             TAB 1 — عام
+        =============================== -->
+        <div class="tab-pane fade show active" id="general">
+
+            <!-- اللوجو والفافيكون -->
+            <div class="settings-card">
+                <div class="card-section-title">
+                    <i class="fas fa-image icon-purple"></i> الهوية البصرية
+                </div>
+                <div class="row g-4">
+
+                    <!-- لوجو -->
+                    <div class="col-md-6">
+                        <label class="form-label">لوجو الموقع</label>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="img-preview-box" id="logoPreviewBox"
+                                 onclick="document.getElementById('id_logo').click()">
+                                {% if settings.logo %}
+                                    <img src="{{ settings.logo.url }}" id="logoPreviewImg" alt="logo">
+                                    <button type="button" class="img-delete-btn"
+                                            onclick="event.stopPropagation(); deleteLogo()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                {% else %}
+                                    <i class="fas fa-image placeholder-icon" id="logoPlaceholder"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <input type="file" name="logo" id="id_logo"
+                                       accept="image/*" class="d-none"
+                                       onchange="previewImage(this,'logoPreviewBox','logoPreviewImg','logoPlaceholder')">
+                                <input type="hidden" name="delete_logo" id="delete_logo" value="">
+                                <button type="button" class="btn btn-outline-primary btn-sm"
+                                        onclick="document.getElementById('id_logo').click()">
+                                    <i class="fas fa-upload me-1"></i> رفع لوجو
+                                </button>
+                                <p class="text-muted mt-1 mb-0" style="font-size:0.75rem;">
+                                    PNG أو SVG — يُفضّل 200×200
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- فافيكون -->
+                    <div class="col-md-6">
+                        <label class="form-label">الفافيكون (Favicon)</label>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="img-preview-box" id="faviconPreviewBox"
+                                 onclick="document.getElementById('id_favicon').click()">
+                                {% if settings.favicon %}
+                                    <img src="{{ settings.favicon.url }}" id="faviconPreviewImg" alt="favicon">
+                                    <button type="button" class="img-delete-btn"
+                                            onclick="event.stopPropagation(); deleteFavicon()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                {% else %}
+                                    <i class="fas fa-star placeholder-icon" id="faviconPlaceholder"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <input type="file" name="favicon" id="id_favicon"
+                                       accept="image/*" class="d-none"
+                                       onchange="previewImage(this,'faviconPreviewBox','faviconPreviewImg','faviconPlaceholder')">
+                                <input type="hidden" name="delete_favicon" id="delete_favicon" value="">
+                                <button type="button" class="btn btn-outline-primary btn-sm"
+                                        onclick="document.getElementById('id_favicon').click()">
+                                    <i class="fas fa-upload me-1"></i> رفع فافيكون
+                                </button>
+                                <p class="text-muted mt-1 mb-0" style="font-size:0.75rem;">
+                                    ICO أو PNG — 32×32
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- اسم ووصف الموقع -->
+            <div class="settings-card">
+                <div class="card-section-title">
+                    <i class="fas fa-pen icon-blue"></i> اسم ووصف الموقع
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">اسم الموقع (عربي)</label>
+                        <input type="text" name="site_name_ar" class="form-control"
+                               value="{{ settings.site_name_ar }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">اسم الموقع (إنجليزي)</label>
+                        <input type="text" name="site_name_en" class="form-control"
+                               value="{{ settings.site_name_en }}" dir="ltr">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">وصف الموقع (عربي)</label>
+                        <textarea name="site_description_ar" class="form-control" rows="3">{{ settings.site_description_ar }}</textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">وصف الموقع (إنجليزي)</label>
+                        <textarea name="site_description_en" class="form-control" rows="3"
+                                  dir="ltr">{{ settings.site_description_en }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- بيانات التواصل -->
+            <div class="settings-card">
+                <div class="card-section-title">
+                    <i class="fas fa-address-book icon-green"></i> بيانات التواصل
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">البريد الإلكتروني</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                            <input type="email" name="contact_email" class="form-control"
+                                   value="{{ settings.contact_email }}" dir="ltr">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">رقم الهاتف</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                            <input type="text" name="contact_phone" class="form-control"
+                                   value="{{ settings.contact_phone }}" dir="ltr">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">العنوان</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                            <input type="text" name="address" class="form-control"
+                                   value="{{ settings.address }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- end #general -->
+
+
+       <!-- ==============================
+            TAB 2 — سوشيال ميديا
+        =============================== -->
+        <div class="tab-pane fade" id="social">
+            <div class="settings-card">
+                <div class="card-section-title">
+                    <i class="fas fa-share-alt icon-pink"></i> روابط السوشيال ميديا
+                </div>
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            <i class="fab fa-facebook" style="color:#1877f2;"></i> Facebook
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fab fa-facebook" style="color:#1877f2;"></i></span>
+                            <input type="text" name="facebook" class="form-control"
+                                value="{{ settings.facebook }}" dir="ltr" placeholder="https://facebook.com/...">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            <i class="fab fa-instagram" style="color:#e1306c;"></i> Instagram
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fab fa-instagram" style="color:#e1306c;"></i></span>
+                            <input type="text" name="instagram" class="form-control"
+                                value="{{ settings.instagram }}" dir="ltr" placeholder="https://instagram.com/...">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            <i class="fab fa-twitter" style="color:#1da1f2;"></i> Twitter / X
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fab fa-twitter" style="color:#1da1f2;"></i></span>
+                            <input type="text" name="twitter" class="form-control"
+                                value="{{ settings.twitter }}" dir="ltr" placeholder="https://twitter.com/...">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            <i class="fab fa-whatsapp" style="color:#25d366;"></i> واتساب
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fab fa-whatsapp" style="color:#25d366;"></i></span>
+                            <input type="text" name="whatsapp" class="form-control"
+                                value="{{ settings.whatsapp }}" dir="ltr" placeholder="+20 1xx xxx xxxx">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            <i class="fab fa-youtube" style="color:#ff0000;"></i> يوتيوب
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fab fa-youtube" style="color:#ff0000;"></i></span>
+                            <input type="text" name="youtube" class="form-control"
+                                value="{{ settings.youtube }}" dir="ltr" placeholder="https://youtube.com/...">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            <i class="fab fa-tiktok" style="color:#000;"></i> تيك توك
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fab fa-tiktok"></i></span>
+                            <input type="text" name="tiktok" class="form-control"
+                                value="{{ settings.tiktok|default:'' }}" dir="ltr" placeholder="https://tiktok.com/...">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- ==============================
+             TAB 3 — تقني
+        =============================== -->
+        <div class="tab-pane fade" id="technical">
+            <div class="settings-card">
+                <div class="card-section-title">
+                    <i class="fas fa-sliders-h icon-orange"></i> الإعدادات التقنية
+                </div>
+
+                <div class="row g-4">
+
+                    <!-- وضع الصيانة -->
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start gap-3 p-3 rounded-3"
+                             style="background:#fff8f0; border: 1px solid #ffe0b2;">
+                            <div class="form-check form-switch mt-1">
+                                <input class="form-check-input" type="checkbox"
+                                       name="maintenance_mode" id="maintenance_mode"
+                                       {% if settings.maintenance_mode %}checked{% endif %}>
+                            </div>
+                            <div>
+                                <label class="form-label mb-0" for="maintenance_mode">
+                                    <i class="fas fa-tools text-warning me-1"></i>
+                                    وضع الصيانة
+                                </label>
+                                <p class="text-muted mb-0" style="font-size:0.8rem;">
+                                    إيقاف الموقع مؤقتاً وعرض رسالة صيانة للزوار
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- تسجيل مستخدمين جدد -->
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start gap-3 p-3 rounded-3"
+                             style="background:#f0f9ff; border: 1px solid #b3e5fc;">
+                            <div class="form-check form-switch mt-1">
+                                <input class="form-check-input" type="checkbox"
+                                       name="allow_registration" id="allow_registration"
+                                       {% if settings.allow_registration %}checked{% endif %}>
+                            </div>
+                            <div>
+                                <label class="form-label mb-0" for="allow_registration">
+                                    <i class="fas fa-user-plus text-info me-1"></i>
+                                    السماح بتسجيل مستخدمين جدد
+                                </label>
+                                <p class="text-muted mb-0" style="font-size:0.8rem;">
+                                    تفعيل أو إيقاف صفحة التسجيل
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- السماح بالتقييمات -->
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start gap-3 p-3 rounded-3"
+                             style="background:#f0fff4; border: 1px solid #b2dfdb;">
+                            <div class="form-check form-switch mt-1">
+                                <input class="form-check-input" type="checkbox"
+                                       name="allow_reviews" id="allow_reviews"
+                                       {% if settings.allow_reviews %}checked{% endif %}>
+                            </div>
+                            <div>
+                                <label class="form-label mb-0" for="allow_reviews">
+                                    <i class="fas fa-star text-success me-1"></i>
+                                    السماح بالتقييمات
+                                </label>
+                                <p class="text-muted mb-0" style="font-size:0.8rem;">
+                                    تفعيل أو إيقاف نظام التقييم
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- موافقة التقييمات -->
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start gap-3 p-3 rounded-3"
+                             style="background:#f9f0ff; border: 1px solid #e1bee7;">
+                            <div class="form-check form-switch mt-1">
+                                <input class="form-check-input" type="checkbox"
+                                       name="require_review_approval" id="require_review_approval"
+                                       {% if settings.require_review_approval %}checked{% endif %}>
+                            </div>
+                            <div>
+                                <label class="form-label mb-0" for="require_review_approval">
+                                    <i class="fas fa-check-circle text-purple me-1"></i>
+                                    موافقة الأدمن على التقييمات
+                                </label>
+                                <p class="text-muted mb-0" style="font-size:0.8rem;">
+                                    التقييمات لا تظهر قبل مراجعتها
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- عدد النتائج -->
+                    <div class="col-md-4">
+                        <label class="form-label">
+                            <i class="fas fa-list-ol me-1 text-secondary"></i>
+                            عدد النتائج في الصفحة
+                        </label>
+                        <input type="number" name="results_per_page" class="form-control"
+                               value="{{ settings.results_per_page }}" min="4" max="100" dir="ltr">
+                    </div>
+
+                </div>
+            </div>
+        </div><!-- end #technical -->
+
+
+        <!-- ==============================
+             TAB 4 — SEO
+        =============================== -->
+        <div class="tab-pane fade" id="seo">
+            <div class="settings-card">
+                <div class="card-section-title">
+                    <i class="fas fa-search icon-green"></i> إعدادات SEO
+                </div>
+                <div class="row g-3">
+
+                    <div class="col-12">
+                        <label class="form-label">Meta Description</label>
+                        <textarea name="meta_description" class="form-control" rows="3"
+                                  dir="ltr" placeholder="وصف الموقع لمحركات البحث...">{{ settings.meta_description }}</textarea>
+                        <small class="text-muted">يُفضّل أقل من 160 حرف</small>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Meta Keywords</label>
+                        <input type="text" name="meta_keywords" class="form-control"
+                               value="{{ settings.meta_keywords }}" dir="ltr"
+                               placeholder="keyword1, keyword2, keyword3">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            <i class="fab fa-google me-1 text-danger"></i>
+                            Google Analytics ID
+                        </label>
+                        <input type="text" name="google_analytics_id" class="form-control"
+                               value="{{ settings.google_analytics_id }}" dir="ltr"
+                               placeholder="G-XXXXXXXXXX">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">
+                            <i class="fas fa-map me-1 text-success"></i>
+                            Google Maps API Key
+                        </label>
+                        <input type="text" name="google_maps_key" class="form-control"
+                               value="{{ settings.google_maps_key }}" dir="ltr"
+                               placeholder="AIzaSy...">
+                    </div>
+
+                </div>
+            </div>
+        </div><!-- end #seo -->
+
+    </div><!-- end tab-content -->
+
+    <!-- Save Footer -->
+    <div class="d-flex justify-content-end mt-2 mb-4">
+        <button type="submit" class="btn save-btn">
+            <i class="fas fa-save me-2"></i> حفظ جميع الإعدادات
+        </button>
+    </div>
+
+</form>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+// Preview uploaded image
+function previewImage(input, boxId, imgId, placeholderId) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const box = document.getElementById(boxId);
+        let img = document.getElementById(imgId);
+        if (!img) {
+            img = document.createElement('img');
+            img.id = imgId;
+            box.innerHTML = '';
+            box.appendChild(img);
+        }
+        img.src = e.target.result;
+        // إضافة زر الحذف
+        let delBtn = box.querySelector('.img-delete-btn');
+        if (!delBtn) {
+            delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'img-delete-btn';
+            delBtn.innerHTML = '<i class="fas fa-times"></i>';
+            delBtn.onclick = function(ev) {
+                ev.stopPropagation();
+                box.innerHTML = `<i class="fas fa-image placeholder-icon" id="${placeholderId}"></i>`;
+                input.value = '';
+            };
+            box.appendChild(delBtn);
+        }
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+// حذف اللوجو المحفوظ
+function deleteLogo() {
+    document.getElementById('delete_logo').value = '1';
+    const box = document.getElementById('logoPreviewBox');
+    box.innerHTML = '<i class="fas fa-image placeholder-icon" id="logoPlaceholder"></i>';
+}
+
+// حذف الفافيكون المحفوظ
+function deleteFavicon() {
+    document.getElementById('delete_favicon').value = '1';
+    const box = document.getElementById('faviconPreviewBox');
+    box.innerHTML = '<i class="fas fa-star placeholder-icon" id="faviconPlaceholder"></i>';
+}
+
+// الحفاظ على الـ Tab النشط بعد الحفظ
+const activeTab = localStorage.getItem('settingsActiveTab');
+if (activeTab) {
+    const tabEl = document.querySelector(`[href="${activeTab}"]`);
+    if (tabEl) new bootstrap.Tab(tabEl).show();
+}
+document.querySelectorAll('#settingsTabs .nav-link').forEach(tab => {
+    tab.addEventListener('shown.bs.tab', function(e) {
+        localStorage.setItem('settingsActiveTab', e.target.getAttribute('href'));
+    });
+});
+</script>
+{% endblock %}

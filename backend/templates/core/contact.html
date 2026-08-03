@@ -1,0 +1,849 @@
+{% extends 'base.html' %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+
+{% block title %}
+    {% if LANGUAGE_CODE == 'ar' %}اتصل بنا - {{ site_settings.site_name_ar|default:"دليل أي خدمة" }}{% else %}Contact Us - {{ site_settings.site_name_en|default:"Directory" }}{% endif %}
+{% endblock %}
+
+
+{% block extra_css %}
+<style>
+:root { --p1:#6366f1; --p2:#8b5cf6; --accent:#10b981; --dark:#0f172a; --mid:#475569; --muted:#94a3b8; --bg:#f8fafc; --border:#e2e8f0; }
+
+.contact-hero {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    padding: 4.5rem 0 5rem; color: white;
+    position: relative; overflow: hidden;
+}
+.contact-hero::before {
+    content:''; position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+.contact-hero::after {
+    content:''; position:absolute; inset:0;
+    background:
+        radial-gradient(ellipse at 20% 60%, rgba(99,102,241,0.2), transparent 50%),
+        radial-gradient(ellipse at 80% 40%, rgba(139,92,246,0.15), transparent 50%);
+}
+.hero-badge {
+    display:inline-flex; align-items:center; gap:0.5rem;
+    background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.35);
+    color:#a5b4fc; padding:0.4rem 1rem; border-radius:50px;
+    font-size:0.82rem; font-weight:700; margin-bottom:1.25rem;
+}
+.hero-title { font-size:clamp(2rem,5vw,3rem); font-weight:900; margin-bottom:0.75rem; }
+.hero-sub   { color:#64748b; font-size:0.95rem; line-height:1.85; }
+
+/* Info Cards */
+.info-card {
+    background: white; border-radius: 18px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    padding: 1.5rem; display: flex;
+    align-items: flex-start; gap: 1rem;
+    transition: all 0.3s;
+}
+.info-card:hover { transform: translateY(-4px); box-shadow: 0 14px 35px rgba(0,0,0,0.1); border-color: var(--p1); }
+.info-ico {
+    width: 48px; height: 48px; border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+}
+.info-ico.i1 { background: linear-gradient(135deg, var(--p1), var(--p2)); color: white; }
+.info-ico.i2 { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+.info-ico.i3 { background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; }
+.info-ico.i4 { background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; }
+.info-lbl  { font-size: 0.72rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+.info-val  { font-size: 0.92rem; font-weight: 700; color: var(--dark); text-decoration: none; transition: color 0.2s; }
+.info-val:hover { color: var(--p1); }
+
+/* Form */
+.contact-card {
+    background: white; border-radius: 22px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.07);
+    padding: 2.5rem;
+}
+.form-label2 { font-size: 0.85rem; font-weight: 700; color: var(--dark); margin-bottom: 0.4rem; display: block; }
+.form-inp {
+    border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 0.75rem 1rem; font-family: 'Cairo', sans-serif;
+    font-size: 0.9rem; width: 100%; background: #fafafa;
+    transition: border-color 0.2s, box-shadow 0.2s; color: var(--dark);
+}
+.form-inp:focus {
+    outline: none; border-color: var(--p1);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.1); background: white;
+}
+textarea.form-inp { resize: vertical; min-height: 145px; }
+.form-select2 {
+    border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 0.75rem 1rem; font-family: 'Cairo', sans-serif;
+    font-size: 0.9rem; width: 100%; background: #fafafa;
+    transition: border-color 0.2s; color: var(--dark); appearance: none;
+}
+.form-select2:focus { outline: none; border-color: var(--p1); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.btn-send {
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    color: white; border: none; width: 100%; padding: 0.9rem;
+    border-radius: 12px; font-weight: 800; font-size: 0.95rem;
+    font-family: 'Cairo', sans-serif; transition: all 0.3s;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    cursor: pointer;
+}
+.btn-send:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99,102,241,0.4); }
+
+/* Map */
+.map-ph {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-radius: 18px; height: 220px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 0.75rem;
+    border: 1.5px solid #1e293b;
+    overflow: hidden; padding: 0;
+}
+.map-ph i { font-size: 2.5rem; color: #6366f1; }
+.map-ph p { color: #475569; font-size: 0.85rem; font-weight: 600; margin: 0; }
+
+.sh-pill {
+    display:inline-flex; align-items:center; gap:0.4rem;
+    background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.22);
+    color:var(--p1); padding:0.3rem 1rem; border-radius:50px;
+    font-size:0.72rem; font-weight:800; letter-spacing:0.06em;
+    text-transform:uppercase; margin-bottom:0.6rem;
+}
+
+/* Success alert */
+.success-msg {
+    background: rgba(16,185,129,0.08); border: 1.5px solid rgba(16,185,129,0.25);
+    border-radius: 12px; padding: 1rem 1.25rem;
+    display: flex; align-items: center; gap: 0.75rem;
+    font-size: 0.88rem; color: #065f46; font-weight: 600;
+}
+.success-msg i { color: #10b981; font-size: 1.1rem; }
+
+/* Leaflet fix داخل div محدود الارتفاع */
+#contact-map { width: 100%; height: 220px; border-radius: 18px; z-index: 1; }
+#map-status {
+    position: absolute; bottom: 8px;
+    {% if LANGUAGE_CODE == 'ar' %}right{% else %}left{% endif %}: 12px;
+    background: rgba(15,23,42,0.75); color: #94a3b8;
+    font-size: 0.72rem; font-weight: 600; padding: 3px 10px;
+    border-radius: 20px; z-index: 10; margin: 0;
+}
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- Hero -->
+<section class="contact-hero">
+    <div class="container text-center position-relative" style="z-index:2;">
+        <div class="d-flex justify-content-center">
+            <div class="hero-badge">
+                <i class="fas fa-envelope"></i>
+                {% if LANGUAGE_CODE == 'ar' %}اتصل بنا{% else %}Contact Us{% endif %}
+            </div>
+        </div>
+        <h1 class="hero-title">
+            {% if LANGUAGE_CODE == 'ar' %}نحن هنا للمساعدة 💬{% else %}We're Here to Help 💬{% endif %}
+        </h1>
+        <p class="hero-sub">
+            {% if LANGUAGE_CODE == 'ar' %}
+                تواصل معنا لأي استفسار — سنرد عليك في أقرب وقت ممكن
+            {% else %}
+                Reach out for any inquiry — we'll get back to you as soon as possible
+            {% endif %}
+        </p>
+    </div>
+</section>
+
+
+<!-- Content -->
+<section class="py-5" style="background:var(--bg);">
+    <div class="container">
+
+        <!-- Info Cards Row -->
+        <div class="row g-3 mb-5">
+
+            <!-- العنوان -->
+            <div class="col-md-3 col-sm-6">
+                <div class="info-card">
+                    <div class="info-ico i1"><i class="fas fa-map-marker-alt"></i></div>
+                    <div>
+                        <div class="info-lbl">{% if LANGUAGE_CODE == 'ar' %}العنوان{% else %}Address{% endif %}</div>
+                        <div class="info-val">
+                            {{ site_settings.address|default:"-" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- الهاتف -->
+            <div class="col-md-3 col-sm-6">
+                <div class="info-card">
+                    <div class="info-ico i2"><i class="fas fa-phone"></i></div>
+                    <div>
+                        <div class="info-lbl">{% if LANGUAGE_CODE == 'ar' %}الهاتف{% else %}Phone{% endif %}</div>
+                        {% if site_settings.contact_phone %}
+                            <a href="tel:{{ site_settings.contact_phone }}" class="info-val">
+                                {{ site_settings.contact_phone }}
+                            </a>
+                        {% else %}
+                            <span class="info-val">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- البريد -->
+            <div class="col-md-3 col-sm-6">
+                <div class="info-card">
+                    <div class="info-ico i3"><i class="fas fa-envelope"></i></div>
+                    <div>
+                        <div class="info-lbl">{% if LANGUAGE_CODE == 'ar' %}البريد{% else %}Email{% endif %}</div>
+                        {% if site_settings.contact_email %}
+                            <a href="mailto:{{ site_settings.contact_email }}" class="info-val">
+                                {{ site_settings.contact_email }}
+                            </a>
+                        {% else %}
+                            <span class="info-val">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- أوقات العمل -->
+            <div class="col-md-3 col-sm-6">
+                <div class="info-card">
+                    <div class="info-ico i4"><i class="fas fa-clock"></i></div>
+                    <div>
+                        <div class="info-lbl">{% if LANGUAGE_CODE == 'ar' %}أوقات العمل{% else %}Working Hours{% endif %}</div>
+                        <div class="info-val">{% if LANGUAGE_CODE == 'ar' %}متاح 24/7{% else %}Available 24/7{% endif %}</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="row g-5">
+
+            <!-- Form -->
+            <div class="col-lg-7">
+                <div class="sh-pill mb-2">
+                    <i class="fas fa-paper-plane me-1"></i>
+                    {% if LANGUAGE_CODE == 'ar' %}راسلنا{% else %}SEND MESSAGE{% endif %}
+                </div>
+                <h2 style="font-size:1.7rem;font-weight:900;color:var(--dark);margin-bottom:1.5rem;">
+                    {% if LANGUAGE_CODE == 'ar' %}أرسل رسالتك{% else %}Send Your Message{% endif %}
+                </h2>
+
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="success-msg mb-4">
+                        <i class="fas fa-check-circle"></i>
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
+                <div class="contact-card">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}الاسم الكامل{% else %}Full Name{% endif %} *</label>
+                                <input type="text" name="name" class="form-inp" required
+                                       placeholder="{% if LANGUAGE_CODE == 'ar' %}اسمك الكامل{% else %}Your full name{% endif %}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}البريد الإلكتروني{% else %}Email{% endif %} *</label>
+                                <input type="email" name="email" class="form-inp" required
+                                       placeholder="example@email.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}رقم الهاتف{% else %}Phone Number{% endif %}</label>
+                                <input type="tel" name="phone" class="form-inp"
+                                       placeholder="{% if LANGUAGE_CODE == 'ar' %}اختياري{% else %}Optional{% endif %}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}موضوع الرسالة{% else %}Subject{% endif %} *</label>
+                                <select name="subject" class="form-select2" required>
+                                    <option value="">{% if LANGUAGE_CODE == 'ar' %}اختر الموضوع{% else %}Select subject{% endif %}</option>
+                                    <option value="general">{% if LANGUAGE_CODE == 'ar' %}استفسار عام{% else %}General Inquiry{% endif %}</option>
+                                    <option value="listing">{% if LANGUAGE_CODE == 'ar' %}إضافة محل{% else %}Add Business{% endif %}</option>
+                                    <option value="deal">{% if LANGUAGE_CODE == 'ar' %}عروض وخصومات{% else %}Deals & Offers{% endif %}</option>
+                                    <option value="technical">{% if LANGUAGE_CODE == 'ar' %}مشكلة تقنية{% else %}Technical Issue{% endif %}</option>
+                                    <option value="partnership">{% if LANGUAGE_CODE == 'ar' %}شراكة{% else %}Partnership{% endif %}</option>
+                                    <option value="other">{% if LANGUAGE_CODE == 'ar' %}أخرى{% else %}Other{% endif %}</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}الرسالة{% else %}Message{% endif %} *</label>
+                                <textarea name="message" class="form-inp" required
+                                          placeholder="{% if LANGUAGE_CODE == 'ar' %}اكتب رسالتك هنا...{% else %}Write your message here...{% endif %}"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn-send">
+                                    <i class="fas fa-paper-plane"></i>
+                                    {% if LANGUAGE_CODE == 'ar' %}إرسال الرسالة{% else %}Send Message{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+
+            <!-- Sidebar -->
+            <div class="col-lg-5">
+                <div class="sh-pill mb-2">
+                    <i class="fas fa-headset me-1"></i>
+                    {% if LANGUAGE_CODE == 'ar' %}دعم سريع{% else %}QUICK SUPPORT{% endif %}
+                </div>
+                <h2 style="font-size:1.7rem;font-weight:900;color:var(--dark);margin-bottom:1.5rem;">
+                    {% if LANGUAGE_CODE == 'ar' %}تواصل مباشر{% else %}Direct Contact{% endif %}
+                </h2>
+
+                <!-- WhatsApp CTA -->
+                {% if site_settings.whatsapp %}
+                <a href="https://wa.me/{{ site_settings.whatsapp }}"
+                   target="_blank" rel="noopener"
+                   style="display:flex;align-items:center;gap:1rem;background:linear-gradient(135deg,#25d366,#128c7e);color:white;padding:1.25rem 1.5rem;border-radius:16px;text-decoration:none;margin-bottom:1rem;transition:all 0.3s;"
+                   onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 30px rgba(37,211,102,0.3)';"
+                   onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none';">
+                    <div style="width:48px;height:48px;border-radius:13px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:800;font-size:0.95rem;">{% if LANGUAGE_CODE == 'ar' %}تواصل عبر واتساب{% else %}Chat on WhatsApp{% endif %}</div>
+                        <div style="font-size:0.78rem;opacity:0.85;">{% if LANGUAGE_CODE == 'ar' %}رد فوري — متاح 24/7{% else %}Instant reply — Available 24/7{% endif %}</div>
+                    </div>
+                </a>
+                {% endif %}
+
+                <!-- Support Ticket -->
+                <a href="{% url 'core:support' %}"
+                   style="display:flex;align-items:center;gap:1rem;background:white;border:1.5px solid var(--border);color:var(--dark);padding:1.25rem 1.5rem;border-radius:16px;text-decoration:none;margin-bottom:1.5rem;transition:all 0.3s;"
+                   onmouseover="this.style.borderColor='#6366f1';this.style.transform='translateY(-3px)';"
+                   onmouseout="this.style.borderColor='var(--border)';this.style.transform='translateY(0)';">
+                    <div style="width:48px;height:48px;border-radius:13px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:white;flex-shrink:0;">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:800;font-size:0.95rem;color:var(--dark);">{% if LANGUAGE_CODE == 'ar' %}أنشئ تذكرة دعم{% else %}Open Support Ticket{% endif %}</div>
+                        <div style="font-size:0.78rem;color:var(--muted);">{% if LANGUAGE_CODE == 'ar' %}للمشاكل التقنية المعقدة{% else %}For complex technical issues{% endif %}</div>
+                    </div>
+                </a>
+
+                <!-- Interactive Map -->
+                <div style="position:relative; border-radius:18px; overflow:hidden; height:220px; border:1.5px solid #1e293b;">
+                    <div id="contact-map" style="width:100%; height:100%;"></div>
+                    <p id="map-status"
+                       style="position:absolute; bottom:8px; {% if LANGUAGE_CODE == 'ar' %}right{% else %}left{% endif %}:12px;
+                              background:rgba(15,23,42,0.75); color:#94a3b8;
+                              font-size:0.72rem; font-weight:600; padding:3px 10px;
+                              border-radius:20px; z-index:10; margin:0; pointer-events:none;">
+                        {% if LANGUAGE_CODE == 'ar' %}جار تحديد موقعك...{% else %}Detecting your location...{% endif %}
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+
+{% block extra_js %}
+{{ block.super }}
+
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var mapDiv    = document.getElementById('contact-map');
+    var statusEl  = document.getElementById('map-status');
+    if (!mapDiv) return;
+
+    var defaultLat  = 30.6043;
+    var defaultLng  = 32.2723;
+    var defaultZoom = 13;
+
+    var map = L.map('contact-map').setView([defaultLat, defaultLng], defaultZoom);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    var marker = L.marker([defaultLat, defaultLng]).addTo(map);
+
+    function setStatus(text) {
+        if (statusEl) statusEl.textContent = text;
+    }
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function (pos) {
+                var lat = pos.coords.latitude;
+                var lng = pos.coords.longitude;
+                map.setView([lat, lng], 16);
+                marker.setLatLng([lat, lng]);
+                setStatus(
+                    '{% if LANGUAGE_CODE == "ar" %}تم تحديد موقعك الحالي ✓{% else %}Your location is set ✓{% endif %}'
+                );
+            },
+            function () {
+                setStatus(
+                    '{% if LANGUAGE_CODE == "ar" %}يُعرض موقع الاسماعيلية كافتراضي{% else %}Showing Ismailia as default{% endif %}'
+                );
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    } else {
+        setStatus(
+            '{% if LANGUAGE_CODE == "ar" %}المتصفح لا يدعم تحديد الموقع{% else %}Geolocation not supported{% endif %}'
+        );
+    }
+});
+</script>
+{% endblock %}
+
+{% comment %} {% extends 'base.html' %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+
+{% block title %}
+    {% if LANGUAGE_CODE == 'ar' %}اتصل بنا - دليل أي خدمة{% else %}Contact Us - Directory{% endif %}
+{% endblock %}
+
+
+{% block extra_css %}
+<style>
+:root { --p1:#6366f1; --p2:#8b5cf6; --accent:#10b981; --dark:#0f172a; --mid:#475569; --muted:#94a3b8; --bg:#f8fafc; --border:#e2e8f0; }
+
+
+.contact-hero {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    padding: 4.5rem 0 5rem; color: white;
+    position: relative; overflow: hidden;
+}
+.contact-hero::before {
+    content:''; position:absolute; inset:0;
+    background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+.contact-hero::after {
+    content:''; position:absolute; inset:0;
+    background:
+        radial-gradient(ellipse at 20% 60%, rgba(99,102,241,0.2), transparent 50%),
+        radial-gradient(ellipse at 80% 40%, rgba(139,92,246,0.15), transparent 50%);
+}
+.hero-badge {
+    display:inline-flex; align-items:center; gap:0.5rem;
+    background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.35);
+    color:#a5b4fc; padding:0.4rem 1rem; border-radius:50px;
+    font-size:0.82rem; font-weight:700; margin-bottom:1.25rem;
+}
+.hero-title { font-size:clamp(2rem,5vw,3rem); font-weight:900; margin-bottom:0.75rem; }
+.hero-sub   { color:#64748b; font-size:0.95rem; line-height:1.85; }
+
+
+/* Info Cards */
+.info-card {
+    background: white; border-radius: 18px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    padding: 1.5rem; display: flex;
+    align-items: flex-start; gap: 1rem;
+    transition: all 0.3s;
+}
+.info-card:hover { transform: translateY(-4px); box-shadow: 0 14px 35px rgba(0,0,0,0.1); border-color: var(--p1); }
+.info-ico {
+    width: 48px; height: 48px; border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+}
+.info-ico.i1 { background: linear-gradient(135deg, var(--p1), var(--p2)); color: white; }
+.info-ico.i2 { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+.info-ico.i3 { background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; }
+.info-ico.i4 { background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; }
+.info-lbl  { font-size: 0.72rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+.info-val  { font-size: 0.92rem; font-weight: 700; color: var(--dark); text-decoration: none; transition: color 0.2s; }
+.info-val:hover { color: var(--p1); }
+
+
+/* Form */
+.contact-card {
+    background: white; border-radius: 22px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 6px 28px rgba(0,0,0,0.07);
+    padding: 2.5rem;
+}
+.form-label2 { font-size: 0.85rem; font-weight: 700; color: var(--dark); margin-bottom: 0.4rem; display: block; }
+.form-inp {
+    border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 0.75rem 1rem; font-family: 'Cairo', sans-serif;
+    font-size: 0.9rem; width: 100%; background: #fafafa;
+    transition: border-color 0.2s, box-shadow 0.2s; color: var(--dark);
+}
+.form-inp:focus {
+    outline: none; border-color: var(--p1);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.1); background: white;
+}
+textarea.form-inp { resize: vertical; min-height: 145px; }
+.form-select2 {
+    border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 0.75rem 1rem; font-family: 'Cairo', sans-serif;
+    font-size: 0.9rem; width: 100%; background: #fafafa;
+    transition: border-color 0.2s; color: var(--dark); appearance: none;
+}
+.form-select2:focus { outline: none; border-color: var(--p1); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.btn-send {
+    background: linear-gradient(135deg, var(--p1), var(--p2));
+    color: white; border: none; width: 100%; padding: 0.9rem;
+    border-radius: 12px; font-weight: 800; font-size: 0.95rem;
+    font-family: 'Cairo', sans-serif; transition: all 0.3s;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    cursor: pointer;
+}
+.btn-send:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99,102,241,0.4); }
+
+
+/* Map Placeholder */
+.map-ph {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-radius: 18px; height: 220px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 0.75rem;
+    border: 1.5px solid #1e293b;
+}
+.map-ph i { font-size: 2.5rem; color: #6366f1; }
+.map-ph p { color: #475569; font-size: 0.85rem; font-weight: 600; margin: 0; }
+
+
+.sh-pill {
+    display:inline-flex; align-items:center; gap:0.4rem;
+    background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.22);
+    color:var(--p1); padding:0.3rem 1rem; border-radius:50px;
+    font-size:0.72rem; font-weight:800; letter-spacing:0.06em;
+    text-transform:uppercase; margin-bottom:0.6rem;
+}
+
+
+/* Success alert */
+.success-msg {
+    background: rgba(16,185,129,0.08); border: 1.5px solid rgba(16,185,129,0.25);
+    border-radius: 12px; padding: 1rem 1.25rem;
+    display: flex; align-items: center; gap: 0.75rem;
+    font-size: 0.88rem; color: #065f46; font-weight: 600;
+}
+.success-msg i { color: #10b981; font-size: 1.1rem; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+
+<!-- Hero -->
+<section class="contact-hero">
+    <div class="container text-center position-relative" style="z-index:2;">
+        <div class="d-flex justify-content-center">
+            <div class="hero-badge">
+                <i class="fas fa-envelope"></i>
+                {% if LANGUAGE_CODE == 'ar' %}اتصل بنا{% else %}Contact Us{% endif %}
+            </div>
+        </div>
+        <h1 class="hero-title">
+            {% if LANGUAGE_CODE == 'ar' %}نحن هنا للمساعدة 💬{% else %}We're Here to Help 💬{% endif %}
+        </h1>
+        <p class="hero-sub">
+            {% if LANGUAGE_CODE == 'ar' %}
+                تواصل معنا لأي استفسار — سنرد عليك في أقرب وقت ممكن
+            {% else %}
+                Reach out for any inquiry — we'll get back to you as soon as possible
+            {% endif %}
+        </p>
+    </div>
+</section>
+
+
+<!-- Content -->
+<section class="py-5" style="background:var(--bg);">
+    <div class="container">
+
+
+        <!-- Info Cards Row -->
+        <div class="row g-3 mb-5">
+            <div class="col-md-3 col-sm-6">
+                <div class="info-card">
+                    <div class="info-ico i1"><i class="fas fa-map-marker-alt"></i></div>
+                    <div>
+                        <div class="info-lbl">{% if LANGUAGE_CODE == 'ar' %}العنوان{% else %}Address{% endif %}</div>
+                        <div class="info-val">
+                            {% if LANGUAGE_CODE == 'ar' %}
+                                الاسماعيلية، مصر
+                            {% else %}
+                                Ismailia, Egypt
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="info-card">
+                    <div class="info-ico i2"><i class="fas fa-phone"></i></div>
+                    <div>
+                        <div class="info-lbl">{% if LANGUAGE_CODE == 'ar' %}الهاتف{% else %}Phone{% endif %}</div>
+                        <a href="tel:+201234567890" class="info-val">+20 123 456 7890</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="info-card">
+                    <div class="info-ico i3"><i class="fas fa-envelope"></i></div>
+                    <div>
+                        <div class="info-lbl">{% if LANGUAGE_CODE == 'ar' %}البريد{% else %}Email{% endif %}</div>
+                        <a href="mailto:info@daliil.sa" class="info-val">info@daliil.sa</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="info-card">
+                    <div class="info-ico i4"><i class="fas fa-clock"></i></div>
+                    <div>
+                        <div class="info-lbl">{% if LANGUAGE_CODE == 'ar' %}أوقات العمل{% else %}Working Hours{% endif %}</div>
+                        <div class="info-val">{% if LANGUAGE_CODE == 'ar' %}متاح 24/7{% else %}Available 24/7{% endif %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="row g-5">
+            <!-- Form -->
+            <div class="col-lg-7">
+                <div class="sh-pill mb-2"><i class="fas fa-paper-plane me-1"></i>{% if LANGUAGE_CODE == 'ar' %}راسلنا{% else %}SEND MESSAGE{% endif %}</div>
+                <h2 style="font-size:1.7rem;font-weight:900;color:var(--dark);margin-bottom:1.5rem;">
+                    {% if LANGUAGE_CODE == 'ar' %}أرسل رسالتك{% else %}Send Your Message{% endif %}
+                </h2>
+
+
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="success-msg mb-4">
+                        <i class="fas fa-check-circle"></i>
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
+
+                <div class="contact-card">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}الاسم الكامل{% else %}Full Name{% endif %} *</label>
+                                <input type="text" name="name" class="form-inp" required
+                                       placeholder="{% if LANGUAGE_CODE == 'ar' %}اسمك الكامل{% else %}Your full name{% endif %}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}البريد الإلكتروني{% else %}Email{% endif %} *</label>
+                                <input type="email" name="email" class="form-inp" required
+                                       placeholder="example@email.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}رقم الهاتف{% else %}Phone Number{% endif %}</label>
+                                <input type="tel" name="phone" class="form-inp"
+                                       placeholder="{% if LANGUAGE_CODE == 'ar' %}اختياري{% else %}Optional{% endif %}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}موضوع الرسالة{% else %}Subject{% endif %} *</label>
+                                <select name="subject" class="form-select2" required>
+                                    <option value="">{% if LANGUAGE_CODE == 'ar' %}اختر الموضوع{% else %}Select subject{% endif %}</option>
+                                    <option value="general">{% if LANGUAGE_CODE == 'ar' %}استفسار عام{% else %}General Inquiry{% endif %}</option>
+                                    <option value="listing">{% if LANGUAGE_CODE == 'ar' %}إضافة محل{% else %}Add Business{% endif %}</option>
+                                    <option value="deal">{% if LANGUAGE_CODE == 'ar' %}عروض وخصومات{% else %}Deals & Offers{% endif %}</option>
+                                    <option value="technical">{% if LANGUAGE_CODE == 'ar' %}مشكلة تقنية{% else %}Technical Issue{% endif %}</option>
+                                    <option value="partnership">{% if LANGUAGE_CODE == 'ar' %}شراكة{% else %}Partnership{% endif %}</option>
+                                    <option value="other">{% if LANGUAGE_CODE == 'ar' %}أخرى{% else %}Other{% endif %}</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label2">{% if LANGUAGE_CODE == 'ar' %}الرسالة{% else %}Message{% endif %} *</label>
+                                <textarea name="message" class="form-inp" required
+                                          placeholder="{% if LANGUAGE_CODE == 'ar' %}اكتب رسالتك هنا...{% else %}Write your message here...{% endif %}"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn-send">
+                                    <i class="fas fa-paper-plane"></i>
+                                    {% if LANGUAGE_CODE == 'ar' %}إرسال الرسالة{% else %}Send Message{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+
+            <!-- Sidebar -->
+            <div class="col-lg-5">
+                <div class="sh-pill mb-2"><i class="fas fa-headset me-1"></i>{% if LANGUAGE_CODE == 'ar' %}دعم سريع{% else %}QUICK SUPPORT{% endif %}</div>
+                <h2 style="font-size:1.7rem;font-weight:900;color:var(--dark);margin-bottom:1.5rem;">
+                    {% if LANGUAGE_CODE == 'ar' %}تواصل مباشر{% else %}Direct Contact{% endif %}
+                </h2>
+
+
+                <!-- WhatsApp CTA -->
+                <a href="https://wa.me/201234567890"
+                   target="_blank"
+                   style="display:flex;align-items:center;gap:1rem;background:linear-gradient(135deg,#25d366,#128c7e);color:white;padding:1.25rem 1.5rem;border-radius:16px;text-decoration:none;margin-bottom:1rem;transition:all 0.3s;"
+                   onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 30px rgba(37,211,102,0.3)';"
+                   onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='none';">
+                    <div style="width:48px;height:48px;border-radius:13px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:800;font-size:0.95rem;">{% if LANGUAGE_CODE == 'ar' %}تواصل عبر واتساب{% else %}Chat on WhatsApp{% endif %}</div>
+                        <div style="font-size:0.78rem;opacity:0.85;">{% if LANGUAGE_CODE == 'ar' %}رد فوري — متاح 24/7{% else %}Instant reply — Available 24/7{% endif %}</div>
+                    </div>
+                </a>
+
+
+                <!-- Support Ticket -->
+                <a href="{% url 'core:support' %}"
+                   style="display:flex;align-items:center;gap:1rem;background:white;border:1.5px solid var(--border);color:var(--dark);padding:1.25rem 1.5rem;border-radius:16px;text-decoration:none;margin-bottom:1.5rem;transition:all 0.3s;"
+                   onmouseover="this.style.borderColor='#6366f1';this.style.transform='translateY(-3px)';"
+                   onmouseout="this.style.borderColor='var(--border)';this.style.transform='translateY(0)';">
+                    <div style="width:48px;height:48px;border-radius:13px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:white;flex-shrink:0;">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:800;font-size:0.95rem;color:var(--dark);">{% if LANGUAGE_CODE == 'ar' %}أنشئ تذكرة دعم{% else %}Open Support Ticket{% endif %}</div>
+                        <div style="font-size:0.78rem;color:var(--muted);">{% if LANGUAGE_CODE == 'ar' %}للمشاكل التقنية المعقدة{% else %}For complex technical issues{% endif %}</div>
+                    </div>
+                </a>
+
+
+                <!-- Map Placeholder -->
+                <!-- Interactive Map -->
+                <div class="map-ph" style="padding:0; overflow:hidden;">
+
+                    <div id="contact-map" style="width:100%; height:100%; border-radius:18px;"></div>
+
+                    <p id="map-status" style="margin-top:0.4rem; font-size:0.8rem;">
+                        {% if LANGUAGE_CODE == 'ar' %}
+                            جار تحديد موقعك الحالي...
+                        {% else %}
+                            Detecting your current location...
+                        {% endif %}
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var mapDiv = document.getElementById('contact-map');
+            var statusEl = document.getElementById('map-status');
+
+            if (!mapDiv) return;
+
+            // خريطة احتياطية على الاسماعيلية لو الجيو لوكيشن فشل
+            var defaultLat = 30.6043;
+            var defaultLng = 32.2723;
+            var defaultZoom = 13;
+
+            var map = L.map('contact-map').setView([defaultLat, defaultLng], defaultZoom);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            var marker = L.marker([defaultLat, defaultLng]).addTo(map);
+
+            function setStatus(text) {
+                if (statusEl) statusEl.textContent = text;
+            }
+
+            // استخدام HTML5 Geolocation
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        var lat = position.coords.latitude;
+                        var lng = position.coords.longitude;
+
+                        map.setView([lat, lng], 16);
+                        marker.setLatLng([lat, lng]);
+
+                        setStatus(
+                            {% if LANGUAGE_CODE == 'ar' %}
+                                'تم تحديد موقعك الحالي على الخريطة.'
+                            {% else %}
+                                'Your current location has been set on the map.'
+                            {% endif %}
+                        );
+                    },
+                    function (error) {
+                        console.warn('Geolocation error:', error);
+                        setStatus(
+                            {% if LANGUAGE_CODE == 'ar' %}
+                                'تعذر تحديد موقعك. تم عرض خريطة الاسماعيلية كموقع افتراضي.'
+                            {% else %}
+                                'Could not detect your location. Showing Ismailia as default.'
+                            {% endif %}
+                        );
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+            } else {
+                setStatus(
+                    {% if LANGUAGE_CODE == 'ar' %}
+                        'متصفحك لا يدعم تحديد الموقع. تم عرض خريطة الاسماعيلية كموقع افتراضي.'
+                    {% else %}
+                        'Your browser does not support geolocation. Showing Ismailia as default.'
+                    {% endif %}
+                );
+            }
+        });
+    </script>
+{% endblock %} {% endcomment %}

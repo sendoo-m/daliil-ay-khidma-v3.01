@@ -1,0 +1,218 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% load i18n %}
+{% load humanize %}
+
+{% block title %}{% trans 'My Products' %}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="page-title">
+        <i class="fas fa-box me-2"></i>
+        {% trans 'My Products & Services' %}
+    </h2>
+    <a href="{% url 'dashboard:product_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>
+        {% trans 'Add New Product' %}
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <select name="business" class="form-select">
+                    <option value="">{% trans 'All Businesses' %}</option>
+                    {% for business in businesses %}
+                        <option value="{{ business.id }}" {% if request.GET.business == business.id|stringformat:"s" %}selected{% endif %}>
+                            {{ business.name_ar }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="type" class="form-select">
+                    <option value="">{% trans 'All Types' %}</option>
+                    <option value="product" {% if request.GET.type == 'product' %}selected{% endif %}>{% trans 'Product' %}</option>
+                    <option value="service" {% if request.GET.type == 'service' %}selected{% endif %}>{% trans 'Service' %}</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">{% trans 'All Status' %}</option>
+                    <option value="available" {% if request.GET.status == 'available' %}selected{% endif %}>{% trans 'Available' %}</option>
+                    <option value="unavailable" {% if request.GET.status == 'unavailable' %}selected{% endif %}>{% trans 'Unavailable' %}</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="search" class="form-control" placeholder="{% trans 'Search...' %}" value="{{ request.GET.search }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> {% trans 'Filter' %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body text-center text-white">
+                <i class="fas fa-box fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ total_count }}</h3>
+                <p class="mb-0">{% trans 'Total Products' %}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card success">
+            <div class="card-body text-center text-white">
+                <i class="fas fa-check-circle fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ available_count }}</h3>
+                <p class="mb-0">{% trans 'Available' %}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card warning">
+            <div class="card-body text-center text-white">
+                <i class="fas fa-cubes fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ products_count }}</h3>
+                <p class="mb-0">{% trans 'Products' %}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card info">
+            <div class="card-body text-center text-white">
+                <i class="fas fa-tools fa-2x mb-2"></i>
+                <h3 class="mb-0">{{ services_count }}</h3>
+                <p class="mb-0">{% trans 'Services' %}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Products List -->
+{% if products %}
+<div class="row g-4">
+    {% for product in products %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            {% if product.image %}
+            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name_ar }}" style="height: 200px; object-fit: cover;">
+            {% else %}
+            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                <i class="fas fa-{% if product.product_type == 'service' %}tools{% else %}box{% endif %} fa-3x text-muted"></i>
+            </div>
+            {% endif %}
+            
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="card-title mb-0">{{ product.name_ar }}</h5>
+                    {% if product.is_featured %}
+                        <span class="badge bg-warning"><i class="fas fa-star"></i></span>
+                    {% endif %}
+                </div>
+                
+                <p class="text-muted small mb-2">
+                    <i class="fas fa-store me-1"></i>
+                    {{ product.business.name_ar }}
+                </p>
+                
+                {% if product.description_ar %}
+                <p class="card-text small">{{ product.description_ar|truncatewords:15 }}</p>
+                {% endif %}
+                
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        {% if product.price %}
+                        <strong class="text-primary">{{ product.price|floatformat:2 }} {% trans 'EGP' %}</strong>
+                        {% endif %}
+                    </div>
+                    <div>
+                        {% if product.is_available %}
+                            <span class="badge bg-success">{% trans 'Available' %}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{% trans 'Unavailable' %}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="badge-type-{{ product.product_type }} badge mt-2">
+                    {% if product.product_type == 'product' %}
+                        <i class="fas fa-box me-1"></i> {% trans 'Product' %}
+                    {% else %}
+                        <i class="fas fa-tools me-1"></i> {% trans 'Service' %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-footer bg-white">
+                <div class="btn-group w-100" role="group">
+                    <a href="{% url 'dashboard:product_update' product.slug %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-edit"></i> {% trans 'Edit' %}
+                    </a>
+                    <a href="{% url 'dashboard:product_delete' product.slug %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('{% trans 'Are you sure?' %}')">
+                        <i class="fas fa-trash"></i> {% trans 'Delete' %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if products.has_other_pages %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if products.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ products.previous_page_number }}{% if request.GET.business %}&business={{ request.GET.business }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+        {% endif %}
+        
+        {% for num in products.paginator.page_range %}
+            {% if products.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ num }}{% if request.GET.business %}&business={{ request.GET.business }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ num }}</a>
+            </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if products.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ products.next_page_number }}{% if request.GET.business %}&business={{ request.GET.business }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-box fa-4x text-muted mb-3"></i>
+        <h4>{% trans 'No products found' %}</h4>
+        <p class="text-muted">{% trans 'Start by adding your first product or service' %}</p>
+        <a href="{% url 'dashboard:product_create' %}" class="btn btn-primary mt-3">
+            <i class="fas fa-plus me-2"></i>
+            {% trans 'Add New Product' %}
+        </a>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

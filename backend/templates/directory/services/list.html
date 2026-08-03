@@ -1,0 +1,657 @@
+{% extends "base.html" %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+
+{% block title %}
+    {% if LANGUAGE_CODE == 'ar' %}الخدمات العامة - دليل أي خدمة{% else %}Public Services - Directory{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== Hero ===== */
+    .services-hero {
+        background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+        padding: 4rem 0 3rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+    .services-hero::before {
+        content: '';
+        position: absolute;
+        top: -30%; right: -5%;
+        width: 400px; height: 400px;
+        background: rgba(255,255,255,0.03);
+        border-radius: 50%;
+    }
+    .services-hero::after {
+        content: '';
+        position: absolute;
+        bottom: -20%; left: -5%;
+        width: 300px; height: 300px;
+        background: rgba(100,200,255,0.05);
+        border-radius: 50%;
+    }
+    .hero-search {
+        background: white;
+        border-radius: 50px;
+        padding: 0.5rem 0.5rem 0.5rem 1.5rem;
+        display: flex; align-items: center; gap: 0.5rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        max-width: 580px; margin: 1.5rem auto 0;
+    }
+    .hero-search input {
+        border: none; outline: none; flex: 1;
+        font-size: 1rem; background: transparent;
+        font-family: 'Cairo', sans-serif;
+    }
+    .hero-search button {
+        background: linear-gradient(135deg, #203a43, #2c5364);
+        border: none; border-radius: 40px; color: white;
+        padding: 0.6rem 1.8rem; font-weight: 700;
+        font-family: 'Cairo', sans-serif;
+    }
+
+    /* ===== Service Type Tabs ===== */
+    .service-types {
+        background: white;
+        border-bottom: 2px solid #eef2f7;
+        padding: 0.8rem 0;
+        position: sticky; top: 0; z-index: 100;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+    .type-tab {
+        display: flex; flex-direction: column;
+        align-items: center; gap: 4px;
+        padding: 0.5rem 1.2rem;
+        border-radius: 12px;
+        color: #666; font-size: 0.78rem;
+        font-weight: 700; cursor: pointer;
+        transition: all 0.2s; text-decoration: none;
+        border: 1.5px solid transparent;
+        white-space: nowrap;
+    }
+    .type-tab:hover { background: #f0f4ff; color: #2c5364; }
+    .type-tab.active {
+        background: linear-gradient(135deg,#203a4315,#2c536420);
+        border-color: #2c5364;
+        color: #2c5364;
+    }
+    .type-tab .tab-icon { font-size: 1.4rem; }
+
+    /* ===== Filters Bar ===== */
+    .filters-bar {
+        background: #f8fafc;
+        border-bottom: 1px solid #eef2f7;
+        padding: 0.8rem 0;
+    }
+    .filter-select {
+        border: 1.5px solid #dde3ea;
+        border-radius: 10px; padding: 0.42rem 0.9rem;
+        font-family: 'Cairo', sans-serif;
+        font-size: 0.88rem; color: #444;
+        background: white; min-width: 140px;
+        transition: border-color 0.2s;
+    }
+    .filter-select:focus { border-color: #2c5364; outline: none; }
+
+    /* ===== View Toggle ===== */
+    .view-toggle .btn {
+        border-radius: 8px; padding: 0.4rem 0.75rem;
+        border: 1.5px solid #dee2e6; color: #6c757d;
+    }
+    .view-toggle .btn.active {
+        background: linear-gradient(135deg, #203a43, #2c5364);
+        border-color: transparent; color: white;
+    }
+
+    /* ===== Service Card (Grid) ===== */
+    .service-card {
+        border: none; border-radius: 18px; overflow: hidden;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+        transition: all 0.3s; background: white; height: 100%;
+        position: relative;
+    }
+    .service-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 14px 40px rgba(44,83,100,0.18);
+    }
+    .service-card-img {
+        height: 210px; overflow: hidden; position: relative;
+    }
+    .service-card-img img {
+        width: 100%; height: 100%;
+        object-fit: cover; transition: transform 0.4s;
+    }
+    .service-card:hover .service-card-img img { transform: scale(1.06); }
+    .service-card-img::after {
+        content: '';
+        position: absolute; inset: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%);
+    }
+    .service-card-overlay {
+        position: absolute; bottom: 0; right: 0; left: 0;
+        padding: 1rem 1.2rem; z-index: 2; color: white;
+    }
+    .service-card-overlay .service-name { font-size: 1rem; font-weight: 700; margin-bottom: 2px; }
+    .service-card-overlay .service-category { font-size: 0.75rem; opacity: 0.85; }
+    .service-type-badge {
+        position: absolute; top: 12px; right: 12px; z-index: 3;
+        font-size: 0.72rem; padding: 5px 12px;
+        border-radius: 20px; font-weight: 700;
+        backdrop-filter: blur(6px);
+    }
+    .badge-hospital  { background: rgba(231,76,60,0.85);  color:white; }
+    .badge-park      { background: rgba(39,174,96,0.85);  color:white; }
+    .badge-police    { background: rgba(41,128,185,0.85); color:white; }
+    .badge-fire      { background: rgba(230,126,34,0.85); color:white; }
+    .badge-default   { background: rgba(44,83,100,0.85);  color:white; }
+    .status-badge {
+        position: absolute; top: 12px; left: 12px; z-index: 3;
+        font-size: 0.7rem; padding: 4px 10px;
+        border-radius: 20px; font-weight: 700;
+    }
+    .status-open   { background: rgba(46,204,113,0.9); color:white; }
+    .status-closed { background: rgba(231,76,60,0.9);  color:white; }
+    .service-card-body { padding: 1rem 1.2rem; }
+    .service-info-row {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 0.8rem; color: #666; margin-bottom: 0.4rem;
+    }
+    .service-info-row i { color: #2c5364; width: 16px; text-align:center; }
+    .service-rating { font-size: 0.82rem; color: #f39c12; }
+    .service-rating span { color: #888; }
+    .service-card-footer {
+        padding: 0.8rem 1.2rem;
+        border-top: 1px solid #f0f4f8;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+
+    /* ===== Service Card (List) ===== */
+    .service-list-card {
+        background: white; border-radius: 14px;
+        box-shadow: 0 3px 14px rgba(0,0,0,0.07);
+        overflow: hidden; transition: all 0.3s;
+        display: flex; margin-bottom: 1rem;
+    }
+    .service-list-card:hover {
+        box-shadow: 0 8px 28px rgba(44,83,100,0.15);
+        transform: translateX(-4px);
+    }
+    .service-list-img {
+        width: 180px; min-width: 180px; overflow: hidden;
+        position: relative;
+    }
+    .service-list-img img { width: 100%; height: 100%; object-fit: cover; }
+    .service-list-img::after {
+        content: '';
+        position: absolute; inset: 0;
+        background: linear-gradient(to left, rgba(0,0,0,0.3), transparent);
+    }
+    .service-list-body { padding: 1.1rem; flex: 1; }
+    .service-list-actions {
+        padding: 1rem; display: flex; flex-direction: column;
+        justify-content: center; gap: 0.5rem; min-width: 130px;
+        background: #f8fafc;
+    }
+
+    /* ===== Empty ===== */
+    .empty-state { text-align:center; padding:4rem 2rem; }
+    .empty-state i { font-size:4rem; color:#cdd; margin-bottom:1rem; display:block; }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 576px) {
+        .service-list-img { width: 110px; min-width: 110px; }
+        .type-tab { padding: 0.4rem 0.7rem; font-size: 0.72rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ===== Hero ===== -->
+<section class="services-hero">
+    <div class="container text-center position-relative" style="z-index:1;">
+        <div class="mb-3">
+            <span style="background:rgba(255,255,255,0.1); padding:6px 20px; border-radius:20px; font-size:0.85rem; border:1px solid rgba(255,255,255,0.2);">
+                🏛️ {% if LANGUAGE_CODE == 'ar' %}الخدمات العامة{% else %}Public Services{% endif %}
+            </span>
+        </div>
+        <h1 class="fw-bold fs-2 mb-2">
+            {% if LANGUAGE_CODE == 'ar' %}دليل الخدمات العامة{% else %}Public Services Directory{% endif %}
+        </h1>
+        <p class="opacity-75 mb-0">
+            {{ total_count|default:0 }}
+            {% if LANGUAGE_CODE == 'ar' %}
+                خدمة عامة — مستشفيات • حدائق • شرطة • إطفاء • وأكثر
+            {% else %}
+                public services — Hospitals • Parks • Police • Fire • and more
+            {% endif %}
+        </p>
+        <form method="get">
+            <div class="hero-search">
+                <i class="fas fa-search text-muted"></i>
+                <input type="text" name="q" value="{{ request.GET.q }}"
+                       placeholder="{% if LANGUAGE_CODE == 'ar' %}ابحث عن مستشفى، حديقة، نقطة شرطة...{% else %}Search for hospital, park, police station...{% endif %}">
+                <button type="submit">
+                    {% if LANGUAGE_CODE == 'ar' %}بحث{% else %}Search{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<!-- ===== Service Type Tabs ===== -->
+<div class="service-types">
+    <div class="container">
+        <div class="d-flex overflow-auto gap-2 pb-1" style="scrollbar-width:none;">
+            <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}"
+               class="type-tab {% if not request.GET.service_type %}active{% endif %}">
+                <span class="tab-icon">🏛️</span>
+                {% if LANGUAGE_CODE == 'ar' %}الكل{% else %}All{% endif %}
+            </a>
+            <a href="?service_type=hospital{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+               class="type-tab {% if request.GET.service_type == 'hospital' %}active{% endif %}">
+                <span class="tab-icon">🏥</span>
+                {% if LANGUAGE_CODE == 'ar' %}مستشفيات{% else %}Hospitals{% endif %}
+            </a>
+            <a href="?service_type=park{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+               class="type-tab {% if request.GET.service_type == 'park' %}active{% endif %}">
+                <span class="tab-icon">🌳</span>
+                {% if LANGUAGE_CODE == 'ar' %}حدائق{% else %}Parks{% endif %}
+            </a>
+            <a href="?service_type=police{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+               class="type-tab {% if request.GET.service_type == 'police' %}active{% endif %}">
+                <span class="tab-icon">👮</span>
+                {% if LANGUAGE_CODE == 'ar' %}شرطة{% else %}Police{% endif %}
+            </a>
+            <a href="?service_type=fire{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+               class="type-tab {% if request.GET.service_type == 'fire' %}active{% endif %}">
+                <span class="tab-icon">🚒</span>
+                {% if LANGUAGE_CODE == 'ar' %}إطفاء{% else %}Fire{% endif %}
+            </a>
+            <a href="?service_type=school{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+               class="type-tab {% if request.GET.service_type == 'school' %}active{% endif %}">
+                <span class="tab-icon">🏫</span>
+                {% if LANGUAGE_CODE == 'ar' %}مدارس{% else %}Schools{% endif %}
+            </a>
+            <a href="?service_type=mosque{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+               class="type-tab {% if request.GET.service_type == 'mosque' %}active{% endif %}">
+                <span class="tab-icon">🕌</span>
+                {% if LANGUAGE_CODE == 'ar' %}مساجد{% else %}Mosques{% endif %}
+            </a>
+            <a href="?service_type=government{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+               class="type-tab {% if request.GET.service_type == 'government' %}active{% endif %}">
+                <span class="tab-icon">🏢</span>
+                {% if LANGUAGE_CODE == 'ar' %}حكومية{% else %}Government{% endif %}
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Filters Bar ===== -->
+<div class="filters-bar">
+    <div class="container">
+        <form method="get" id="filterForm">
+            {% if request.GET.q %}<input type="hidden" name="q" value="{{ request.GET.q }}">{% endif %}
+            {% if request.GET.service_type %}<input type="hidden" name="service_type" value="{{ request.GET.service_type }}">{% endif %}
+            <div class="d-flex flex-wrap align-items-center gap-2">
+
+                <!-- المحافظة -->
+                <select name="governorate" class="filter-select"
+                        id="govFilter" onchange="loadCities(this.value)">
+                    <option value="">📍 {% if LANGUAGE_CODE == 'ar' %}كل المحافظات{% else %}All Governorates{% endif %}</option>
+                    {% for gov in governorates %}
+                    <option value="{{ gov.slug }}"
+                            {% if request.GET.governorate == gov.slug %}selected{% endif %}>
+                        {% if LANGUAGE_CODE == 'ar' %}{{ gov.name_ar }}{% else %}{{ gov.name_en|default:gov.name_ar }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <!-- المدينة -->
+                <select name="city" class="filter-select" id="cityFilter"
+                        onchange="document.getElementById('filterForm').submit()">
+                    <option value="">🏙 {% if LANGUAGE_CODE == 'ar' %}كل المدن{% else %}All Cities{% endif %}</option>
+                    {% for city in cities %}
+                    <option value="{{ city.slug }}"
+                            {% if request.GET.city == city.slug %}selected{% endif %}>
+                        {% if LANGUAGE_CODE == 'ar' %}{{ city.name_ar }}{% else %}{{ city.name_en|default:city.name_ar }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <!-- الترتيب -->
+                <select name="sort" class="filter-select"
+                        onchange="document.getElementById('filterForm').submit()">
+                    <option value="-created_at"    {% if request.GET.sort == '-created_at'    %}selected{% endif %}>
+                        🕒 {% if LANGUAGE_CODE == 'ar' %}الأحدث إضافةً{% else %}Latest{% endif %}
+                    </option>
+                    <option value="-view_count"     {% if request.GET.sort == '-view_count'     %}selected{% endif %}>
+                        🔥 {% if LANGUAGE_CODE == 'ar' %}الأكثر زيارة{% else %}Most Visited{% endif %}
+                    </option>
+                    <option value="-average_rating" {% if request.GET.sort == '-average_rating' %}selected{% endif %}>
+                        ⭐ {% if LANGUAGE_CODE == 'ar' %}الأعلى تقييماً{% else %}Top Rated{% endif %}
+                    </option>
+                    <option value="name_ar"         {% if request.GET.sort == 'name_ar'         %}selected{% endif %}>
+                        🔤 {% if LANGUAGE_CODE == 'ar' %}أبجدي{% else %}Alphabetical{% endif %}
+                    </option>
+                </select>
+
+                <span class="text-muted small ms-auto">
+                    <strong>{{ total_count|default:0 }}</strong>
+                    {% if LANGUAGE_CODE == 'ar' %}خدمة{% else %}services{% endif %}
+                </span>
+
+                <!-- View Toggle -->
+                <div class="view-toggle d-flex gap-1">
+                    <button type="button" class="btn btn-sm active"
+                            id="gridViewBtn" onclick="setView('grid')">
+                        <i class="fas fa-th"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm"
+                            id="listViewBtn" onclick="setView('list')">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ===== Results ===== -->
+<section class="py-4" style="background:#f0f4f8; min-height:60vh;">
+    <div class="container">
+
+        {% if page_obj.object_list %}
+
+        <!-- Grid View -->
+        <div id="gridView" class="row g-4">
+            {% for business in page_obj %}
+            <div class="col-sm-6 col-lg-4">
+                <div class="service-card">
+
+                    <div class="service-card-img">
+                        {% if business.cover_image %}
+                            <img src="{{ business.cover_image.url }}"
+                                 alt="{% if LANGUAGE_CODE == 'ar' %}{{ business.name_ar }}{% else %}{{ business.name_en|default:business.name_ar }}{% endif %}">
+                        {% else %}
+                            <img src="{% static 'images/service-placeholder.jpg' %}" alt="">
+                        {% endif %}
+
+                        <span class="service-type-badge badge-default">
+                            {% if business.category.icon %}
+                                <i class="{{ business.category.icon }} me-1"></i>
+                            {% endif %}
+                            {% if LANGUAGE_CODE == 'ar' %}{{ business.category.name_ar }}{% else %}{{ business.category.name_en|default:business.category.name_ar }}{% endif %}
+                        </span>
+
+                        {% if business.working_hours_ar %}
+                        <span class="status-badge status-open">
+                            <i class="fas fa-circle me-1" style="font-size:0.5rem;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}مفتوح{% else %}Open{% endif %}
+                        </span>
+                        {% endif %}
+
+                        <div class="service-card-overlay">
+                            <div class="service-name">
+                                {% if LANGUAGE_CODE == 'ar' %}{{ business.name_ar }}{% else %}{{ business.name_en|default:business.name_ar }}{% endif %}
+                            </div>
+                            <div class="service-category">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                {% if LANGUAGE_CODE == 'ar' %}{{ business.district.city.name_ar }}{% else %}{{ business.district.city.name_en|default:business.district.city.name_ar }}{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="service-card-body">
+                        {% if business.phone %}
+                        <div class="service-info-row">
+                            <i class="fas fa-phone"></i>
+                            <span>{{ business.phone }}</span>
+                        </div>
+                        {% endif %}
+
+                        {% if LANGUAGE_CODE == 'ar' and business.working_hours_ar or LANGUAGE_CODE != 'ar' and business.working_hours_en %}
+                        <div class="service-info-row">
+                            <i class="fas fa-clock"></i>
+                            <span>{% if LANGUAGE_CODE == 'ar' %}{{ business.working_hours_ar|truncatechars:35 }}{% else %}{{ business.working_hours_en|truncatechars:35 }}{% endif %}</span>
+                        </div>
+                        {% endif %}
+
+                        {% if LANGUAGE_CODE == 'ar' and business.address_ar or LANGUAGE_CODE != 'ar' and business.address_en %}
+                        <div class="service-info-row">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>{% if LANGUAGE_CODE == 'ar' %}{{ business.address_ar|truncatechars:40 }}{% else %}{{ business.address_en|truncatechars:40 }}{% endif %}</span>
+                        </div>
+                        {% endif %}
+
+                        {% if business.average_rating > 0 %}
+                        <div class="service-rating mt-2">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= business.rating_stars_full %}
+                                    <i class="fas fa-star"></i>
+                                {% elif forloop.counter == business.rating_stars_full|add:1 and business.rating_stars_half %}
+                                    <i class="fas fa-star-half-alt"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                            <span>({{ business.total_reviews }}
+                            {% if LANGUAGE_CODE == 'ar' %}تقييم{% else %}reviews{% endif %})</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="service-card-footer">
+                        {% if business.phone %}
+                        <a href="tel:{{ business.phone }}"
+                           class="btn btn-sm btn-outline-secondary rounded-pill"
+                           style="font-size:0.78rem;">
+                            <i class="fas fa-phone me-1"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}اتصال{% else %}Call{% endif %}
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'directory:service_detail' business.slug %}"
+                           class="btn btn-sm rounded-pill px-3"
+                           style="background:linear-gradient(135deg,#203a43,#2c5364); color:white; border:none; font-size:0.78rem;">
+                            {% if LANGUAGE_CODE == 'ar' %}التفاصيل والخريطة{% else %}Details & Map{% endif %}
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- List View -->
+        <div id="listView" style="display:none;">
+            {% for business in page_obj %}
+            <div class="service-list-card">
+
+                <div class="service-list-img">
+                    {% if business.cover_image %}
+                        <img src="{{ business.cover_image.url }}"
+                             alt="{% if LANGUAGE_CODE == 'ar' %}{{ business.name_ar }}{% else %}{{ business.name_en|default:business.name_ar }}{% endif %}">
+                    {% else %}
+                        <img src="{% static 'images/service-placeholder.jpg' %}" alt="">
+                    {% endif %}
+                </div>
+
+                <div class="service-list-body">
+                    <div class="d-flex align-items-start gap-2 mb-1 flex-wrap">
+                        <div>
+                            <div class="fw-bold fs-6">
+                                {% if LANGUAGE_CODE == 'ar' %}{{ business.name_ar }}{% else %}{{ business.name_en|default:business.name_ar }}{% endif %}
+                            </div>
+                            <div class="small fw-semibold" style="color:#2c5364;">
+                                {% if business.category.icon %}
+                                    <i class="{{ business.category.icon }} me-1"></i>
+                                {% endif %}
+                                {% if LANGUAGE_CODE == 'ar' %}{{ business.category.name_ar }}{% else %}{{ business.category.name_en|default:business.category.name_ar }}{% endif %}
+                            </div>
+                        </div>
+                        {% if business.is_verified %}
+                        <span class="badge ms-auto"
+                              style="background:linear-gradient(135deg,#203a43,#2c5364);">
+                            <i class="fas fa-check me-1"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}موثق{% else %}Verified{% endif %}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-3 small text-muted mt-2">
+                        <span>
+                            <i class="fas fa-map-marker-alt me-1 text-danger"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}
+                                {{ business.district.city.name_ar }} — {{ business.district.name_ar }}
+                            {% else %}
+                                {{ business.district.city.name_en|default:business.district.city.name_ar }}
+                                — {{ business.district.name_en|default:business.district.name_ar }}
+                            {% endif %}
+                        </span>
+                        {% if business.phone %}
+                        <span>
+                            <i class="fas fa-phone me-1" style="color:#2c5364;"></i>
+                            {{ business.phone }}
+                        </span>
+                        {% endif %}
+                        {% if LANGUAGE_CODE == 'ar' and business.working_hours_ar or LANGUAGE_CODE != 'ar' and business.working_hours_en %}
+                        <span>
+                            <i class="fas fa-clock me-1" style="color:#2c5364;"></i>
+                            {% if LANGUAGE_CODE == 'ar' %}{{ business.working_hours_ar|truncatechars:30 }}{% else %}{{ business.working_hours_en|truncatechars:30 }}{% endif %}
+                        </span>
+                        {% endif %}
+                        {% if business.average_rating > 0 %}
+                        <span>
+                            <i class="fas fa-star text-warning me-1"></i>
+                            {{ business.average_rating }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="service-list-actions">
+                    <a href="{% url 'directory:service_detail' business.slug %}"
+                       class="btn btn-sm text-center"
+                       style="background:linear-gradient(135deg,#203a43,#2c5364); color:white; border:none; border-radius:10px; font-size:0.8rem;">
+                        <i class="fas fa-map-marked-alt me-1"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}التفاصيل{% else %}Details{% endif %}
+                    </a>
+                    {% if business.phone %}
+                    <a href="tel:{{ business.phone }}"
+                       class="btn btn-sm btn-outline-secondary text-center"
+                       style="border-radius:10px; font-size:0.8rem;">
+                        <i class="fas fa-phone me-1"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}اتصال{% else %}Call{% endif %}
+                    </a>
+                    {% endif %}
+                    {% if business.has_location %}
+                    <a href="{{ business.get_map_url }}" target="_blank"
+                       class="btn btn-sm btn-outline-success text-center"
+                       style="border-radius:10px; font-size:0.8rem;">
+                        <i class="fas fa-map me-1"></i>
+                        {% if LANGUAGE_CODE == 'ar' %}خريطة{% else %}Map{% endif %}
+                    </a>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <nav class="mt-5 d-flex justify-content-center">
+            <ul class="pagination gap-1">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link rounded-3"
+                       href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link rounded-3"
+                              style="background:linear-gradient(135deg,#203a43,#2c5364); border:none;">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link rounded-3"
+                           href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link rounded-3"
+                       href="?{% if request.GET.urlencode %}{{ request.GET.urlencode }}&{% endif %}page={{ page_obj.next_page_number }}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-building"></i>
+            <h5 class="text-muted">
+                {% if LANGUAGE_CODE == 'ar' %}لا توجد خدمات مطابقة{% else %}No services found{% endif %}
+            </h5>
+            <p class="small text-muted">
+                {% if LANGUAGE_CODE == 'ar' %}جرب تغيير الفلاتر أو اختيار منطقة أخرى{% else %}Try changing filters or selecting a different area{% endif %}
+            </p>
+            <a href="{% url 'directory:services_list' %}"
+               class="btn rounded-pill mt-2"
+               style="background:linear-gradient(135deg,#203a43,#2c5364); color:white; border:none;">
+                {% if LANGUAGE_CODE == 'ar' %}عرض كل الخدمات{% else %}Show All Services{% endif %}
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function setView(type) {
+    if (type === 'grid') {
+        document.getElementById('gridView').style.display  = 'flex';
+        document.getElementById('listView').style.display  = 'none';
+        document.getElementById('gridViewBtn').classList.add('active');
+        document.getElementById('listViewBtn').classList.remove('active');
+        localStorage.setItem('serviceView', 'grid');
+    } else {
+        document.getElementById('gridView').style.display  = 'none';
+        document.getElementById('listView').style.display  = 'block';
+        document.getElementById('gridViewBtn').classList.remove('active');
+        document.getElementById('listViewBtn').classList.add('active');
+        localStorage.setItem('serviceView', 'list');
+    }
+}
+const savedView = localStorage.getItem('serviceView');
+if (savedView === 'list') setView('list');
+
+function loadCities(govSlug) {
+    const citySelect = document.getElementById('cityFilter');
+    citySelect.innerHTML = '<option value="">🏙 {% if LANGUAGE_CODE == "ar" %}كل المدن{% else %}All Cities{% endif %}</option>';
+    if (!govSlug) { document.getElementById('filterForm').submit(); return; }
+    fetch(`/dashboard/ajax/get-cities/?governorate_slug=${govSlug}`)
+        .then(r => r.json())
+        .then(data => {
+            data.cities.forEach(c => {
+                const name = '{{ LANGUAGE_CODE }}' === 'ar' ? c.name_ar : (c.name_en || c.name_ar);
+                citySelect.innerHTML += `<option value="${c.slug}">${name}</option>`;
+            });
+            document.getElementById('filterForm').submit();
+        });
+}
+</script>
+{% endblock %}

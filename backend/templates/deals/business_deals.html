@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "My Business Deals" %}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="fas fa-tags me-2"></i>
+            {% trans "My Deals" %}
+        </h2>
+        <a href="{% url 'deals:deal_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>
+            {% trans "Create Deal" %}
+        </a>
+    </div>
+    
+    <p class="text-muted">{% trans "Manage your business deals here" %}</p>
+</div>
+{% endblock %}

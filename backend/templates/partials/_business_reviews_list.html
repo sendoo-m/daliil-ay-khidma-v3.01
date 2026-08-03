@@ -1,0 +1,10 @@
+{% load translation_tags %}
+
+{% if page_obj %}
+  {% with items=page_obj.object_list %}
+    {% include "partials/_business_reviews_items.html" with items=items %}
+    {% include "partials/_pagination.html" with page_obj=page_obj param_name="reviews_page" %}
+  {% endwith %}
+{% else %}
+  {% include "partials/_business_reviews_items.html" with items=reviews %}
+{% endif %}

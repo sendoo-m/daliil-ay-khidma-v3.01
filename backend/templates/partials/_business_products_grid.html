@@ -1,0 +1,11 @@
+{% load translation_tags %}
+
+{# page_obj ممكن يكون Paginator Page أو None #}
+{% if page_obj %}
+  {% with items=page_obj.object_list %}
+    {% include "partials/_business_products_items.html" with items=items %}
+    {% include "partials/_pagination.html" with page_obj=page_obj param_name="products_page" %}
+  {% endwith %}
+{% else %}
+  {% include "partials/_business_products_items.html" with items=products %}
+{% endif %}
