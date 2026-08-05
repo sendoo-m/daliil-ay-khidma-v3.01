@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 
 import '../auth/token_store.dart';
@@ -94,6 +96,56 @@ class ApiClient {
   Future<Map<String, dynamic>> patch(String path, {Object? body}) async {
     try {
       final res = await dio.patch<dynamic>(path, data: body);
+      final data = res.data;
+      return data is Map<String, dynamic> ? data : <String, dynamic>{};
+    } catch (e) {
+      throw ApiFailure.from(e);
+    }
+  }
+
+  /// رفع صورة مع حقول نصية في طلب واحد.
+  ///
+  /// نمرّر البايتات لا مسار الملف: على الويب لا يوجد مسار أصلًا، وعلى
+  /// الموبايل يبقى الكود واحدًا. [onProgress] تُظهر شريط تقدم — رفع
+  /// صورة على شبكة ضعيفة قد يستغرق عشرات الثواني، وشاشة صامتة تبدو
+  /// معطّلة فيضغط المستخدم مرة أخرى ويرفع نسختين.
+  Future<Map<String, dynamic>> sendMultipart(
+    String path, {
+    required String method,
+    required String fileField,
+    required Uint8List bytes,
+    required String filename,
+    Map<String, dynamic> fields = const {},
+    void Function(int sent, int total)? onProgress,
+  }) async {
+    try {
+      final form = FormData();
+
+      fields.forEach((key, value) {
+        if (value == null) return;
+        form.fields.add(MapEntry(key, '$value'));
+      });
+
+      form.files.add(
+        MapEntry(
+          fileField,
+          MultipartFile.fromBytes(bytes, filename: filename),
+        ),
+      );
+
+      final res = await dio.request<dynamic>(
+        path,
+        data: form,
+        options: Options(
+          method: method,
+          contentType: 'multipart/form-data',
+          // الرفع أبطأ من طلب عادي — مهلة أطول تمنع فشلًا زائفًا.
+          sendTimeout: const Duration(minutes: 2),
+          receiveTimeout: const Duration(minutes: 2),
+        ),
+        onSendProgress: onProgress,
+      );
+
       final data = res.data;
       return data is Map<String, dynamic> ? data : <String, dynamic>{};
     } catch (e) {

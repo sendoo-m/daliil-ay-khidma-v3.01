@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
+import '../../shared/image_field.dart';
 import '../../shared/models.dart';
 import '../../shared/providers.dart';
 import '../../shared/widgets.dart';
@@ -37,6 +38,9 @@ class _ProductEditorPageState extends ConsumerState<ProductEditorPage> {
   bool _available = true;
   bool _hasDelivery = false;
   bool _busy = false;
+
+  PickedImage? _image;
+  double? _uploadProgress;
 
   bool get _isNew => widget.product == null;
 
@@ -111,11 +115,18 @@ class _ProductEditorPageState extends ConsumerState<ProductEditorPage> {
 
     try {
       final actions = ref.read(merchantActionsProvider);
-      if (_isNew) {
-        await actions.createProduct(body);
-      } else {
-        await actions.updateProduct(widget.product!.id, body);
-      }
+
+      if (_image != null) setState(() => _uploadProgress = 0);
+      await actions.saveProductThenImage(
+        id: _isNew ? null : widget.product!.id,
+        fields: body,
+        image: _image,
+        onProgress: (sent, total) {
+          if (mounted && total > 0) {
+            setState(() => _uploadProgress = sent / total);
+          }
+        },
+      );
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -127,7 +138,12 @@ class _ProductEditorPageState extends ConsumerState<ProductEditorPage> {
         _showFailure(failure);
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _uploadProgress = null;
+        });
+      }
     }
   }
 
@@ -217,6 +233,18 @@ class _ProductEditorPageState extends ConsumerState<ProductEditorPage> {
         child: ListView(
           padding: const EdgeInsets.all(Gap.lg),
           children: [
+            const SectionTitle('الصورة'),
+            ImageField(
+              label: 'ضيف صورة',
+              hint: 'المنتج بصورة بيتفتح أضعاف اللي من غيرها. '
+                  'صوّره في ضوء كويس ومن غير خلفية مزحومة.\n'
+                  'تقدر تضيف صور تانية بعد الحفظ.',
+              currentUrl: widget.product?.primaryImage,
+              picked: _image,
+              onPicked: (img) => setState(() => _image = img),
+            ),
+
+            const SizedBox(height: Gap.xl),
             const SectionTitle('نوعه'),
             _TypePicker(
               value: _type,
@@ -367,6 +395,10 @@ class _ProductEditorPageState extends ConsumerState<ProductEditorPage> {
             ),
 
             const SizedBox(height: Gap.xl),
+            if (_uploadProgress != null) ...[
+              UploadProgress(value: _uploadProgress),
+              const SizedBox(height: Gap.md),
+            ],
             FilledButton(
               onPressed: _busy ? null : _save,
               child: _busy

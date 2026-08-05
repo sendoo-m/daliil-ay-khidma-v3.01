@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
+import '../../shared/image_field.dart';
 import '../../shared/models.dart';
 import '../../shared/providers.dart';
 import '../../shared/widgets.dart';
@@ -191,6 +192,8 @@ class _DealEditorPageState extends ConsumerState<DealEditorPage> {
   DateTime _end = DateTime.now().add(const Duration(days: 14));
   bool _active = true;
   bool _busy = false;
+  PickedImage? _image;
+  double? _uploadProgress;
 
   bool get _isNew => widget.deal == null;
 
@@ -275,7 +278,20 @@ class _DealEditorPageState extends ConsumerState<DealEditorPage> {
 
     try {
       final actions = ref.read(merchantActionsProvider);
-      if (_isNew) {
+
+      if (_image != null) {
+        setState(() => _uploadProgress = 0);
+        await actions.saveDealWithImage(
+          id: _isNew ? null : widget.deal!.id,
+          fields: body,
+          image: _image!,
+          onProgress: (sent, total) {
+            if (mounted && total > 0) {
+              setState(() => _uploadProgress = sent / total);
+            }
+          },
+        );
+      } else if (_isNew) {
         await actions.createDeal(body);
       } else {
         await actions.updateDeal(widget.deal!.id, body);
@@ -289,7 +305,12 @@ class _DealEditorPageState extends ConsumerState<DealEditorPage> {
     } on ApiFailure catch (failure) {
       if (mounted) _toast(failure);
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _uploadProgress = null;
+        });
+      }
     }
   }
 
@@ -365,6 +386,17 @@ class _DealEditorPageState extends ConsumerState<DealEditorPage> {
         child: ListView(
           padding: const EdgeInsets.all(Gap.lg),
           children: [
+            const SectionTitle('صورة العرض'),
+            ImageField(
+              label: 'ضيف صورة',
+              hint: 'العروض بصور بتاخد مساحة أكبر في صفحة العروض.',
+              currentUrl: widget.deal?.imageUrl,
+              picked: _image,
+              height: 150,
+              onPicked: (img) => setState(() => _image = img),
+            ),
+
+            const SizedBox(height: Gap.xl),
             const SectionTitle('نوع العرض'),
             for (final entry in _types.entries)
               RadioListTile<String>(
@@ -465,6 +497,10 @@ class _DealEditorPageState extends ConsumerState<DealEditorPage> {
             ),
 
             const SizedBox(height: Gap.lg),
+            if (_uploadProgress != null) ...[
+              UploadProgress(value: _uploadProgress),
+              const SizedBox(height: Gap.md),
+            ],
             FilledButton(
               onPressed: _busy ? null : _save,
               child: _busy

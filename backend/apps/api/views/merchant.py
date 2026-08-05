@@ -26,6 +26,7 @@ from apps.api.merchant_base import (
 from apps.api.pagination import StandardResultsSetPagination
 from apps.api.serializers.merchant import (
     MerchantBusinessSerializer,
+    MerchantProductImageSerializer,
     MerchantDealSerializer,
     MerchantProductSerializer,
     MerchantReplySerializer,
@@ -33,7 +34,7 @@ from apps.api.serializers.merchant import (
 )
 from apps.deals.models import Deal
 from apps.directory.models import Business
-from apps.products.models import Product
+from apps.products.models import Product, ProductImage
 from apps.reviews.models import Review, ReviewReply
 
 
@@ -186,6 +187,77 @@ class MerchantProductViewSet(MerchantScopedWriteMixin, MerchantViewSet):
     audited_fields = [
         'name_ar', 'price', 'old_price', 'is_available', 'stock_quantity',
     ]
+
+
+class MerchantProductImageViewSet(viewsets.ModelViewSet):
+    """
+    صور المنتج — معرض لا صورة واحدة.
+
+    /merchant/products/{product_pk}/images/
+
+    الملكية تُفرض عبر المنتج: القائمة مقصورة على منتجات المستخدم،
+    فصورة منتج غيره ترجع 404 لا 403.
+    """
+
+    serializer_class = MerchantProductImageSerializer
+    permission_classes = [IsBusinessOwner]
+
+    def _owned_products(self):
+        return Product.objects.filter(business__owner=self.request.user)
+
+    def get_queryset(self):
+        return ProductImage.objects.filter(
+            product__in=self._owned_products(),
+            product_id=self.kwargs.get('product_pk'),
+        ).order_by('-is_primary', 'id')
+
+    def perform_create(self, serializer):
+        product = self._owned_products().filter(
+            pk=self.kwargs.get('product_pk')
+        ).first()
+        if product is None:
+            from rest_framework.exceptions import NotFound
+            raise NotFound('المنتج ده مش من منتجاتك.')
+
+        image = serializer.save(product=product)
+
+        # ملاحظة: في multipart يعامل DRF أي بوليان غائب كـ False، فلا
+        # يصلح الاعتماد على validated_data لمعرفة ما إذا طلب المستخدم
+        # جعلها رئيسية. نقرأ الطلب الخام.
+        raw = str(self.request.data.get('is_primary', '')).strip().lower()
+        asked_primary = raw in {'true', '1', 'on', 'yes'}
+
+        # ثم القاعدة الأهم: لا يبقى منتج بلا صورة رئيسية أبدًا، وإلا
+        # ظهر بلا صورة في الدليل رغم امتلاكه صورًا.
+        has_primary = product.images.exclude(pk=image.pk).filter(
+            is_primary=True
+        ).exists()
+
+        if asked_primary or not has_primary:
+            product.images.exclude(pk=image.pk).update(is_primary=False)
+            image.is_primary = True
+            image.save(update_fields=['is_primary'])
+
+        from apps.administration import services
+        from apps.administration.models import AuditLog
+        services.record(
+            actor=self.request.user,
+            action=AuditLog.Action.CREATE,
+            target=image,
+            target_label=f'صورة لـ{product.name_ar}',
+            request=self.request,
+        )
+
+    @action(detail=True, methods=['post'], url_path='make-primary')
+    def make_primary(self, request, pk=None, product_pk=None):
+        """تعيين هذه الصورة رئيسية وإلغاء الباقي."""
+        image = self.get_object()
+        ProductImage.objects.filter(product_id=image.product_id).update(
+            is_primary=False
+        )
+        image.is_primary = True
+        image.save(update_fields=['is_primary'])
+        return Response({'status': 'success', 'id': image.id})
 
 
 class MerchantDealViewSet(MerchantScopedWriteMixin, MerchantViewSet):

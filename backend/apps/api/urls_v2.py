@@ -25,7 +25,7 @@ from apps.api.views.home import MobileHomeView
 from apps.api.views.merchant import (
     MerchantSessionView, MerchantDashboardView,
     MerchantBusinessViewSet, MerchantProductViewSet,
-    MerchantDealViewSet, MerchantReviewViewSet,
+    MerchantDealViewSet, MerchantReviewViewSet, MerchantProductImageViewSet,
 )
 from apps.administration.views import (
     AdminSessionView, PermissionCatalogView,
@@ -59,6 +59,11 @@ router.register(r'merchant/businesses', MerchantBusinessViewSet, basename='merch
 router.register(r'merchant/products',   MerchantProductViewSet,  basename='merchant-products')
 router.register(r'merchant/deals',      MerchantDealViewSet,     basename='merchant-deals')
 router.register(r'merchant/reviews',    MerchantReviewViewSet,   basename='merchant-reviews')
+router.register(
+    r'merchant/products/(?P<product_pk>[0-9]+)/images',
+    MerchantProductImageViewSet,
+    basename='merchant-product-images',
+)
 
 # Business Owner
 router.register(r'business-owner/dashboard',  BusinessOwnerDashboardViewSet, basename='business-owner-dashboard')

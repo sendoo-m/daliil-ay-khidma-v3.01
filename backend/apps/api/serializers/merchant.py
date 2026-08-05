@@ -13,9 +13,39 @@ Merchant API — Serializers
 
 from rest_framework import serializers
 
+#: أقصى حجم للصورة المرفوعة. الحد أقل من DATA_UPLOAD_MAX_MEMORY_SIZE
+#: عمدًا: نريد رسالة عربية واضحة، لا خطأ 500 من الطبقة الأدنى.
+MAX_IMAGE_BYTES = 4 * 1024 * 1024
+ALLOWED_IMAGE_TYPES = {'image/jpeg', 'image/png', 'image/webp'}
+
+
+def validate_uploaded_image(value):
+    """يُستخدم على كل حقول الصور في هذا الملف.
+
+    صور الموبايل اليوم تتجاوز 8 ميجابايت بسهولة. بدون هذا التحقق يرى
+    التاجر خطأ خادم غامضًا بدل رسالة تقول له ماذا يفعل.
+    """
+    if value in (None, ''):
+        return value
+
+    size = getattr(value, 'size', 0)
+    if size > MAX_IMAGE_BYTES:
+        mb = size / (1024 * 1024)
+        raise serializers.ValidationError(
+            f'الصورة كبيرة ({mb:.1f} ميجا). الحد الأقصى 4 ميجا — '
+            'صغّرها أو اختار صورة تانية.'
+        )
+
+    content_type = getattr(value, 'content_type', None)
+    if content_type and content_type not in ALLOWED_IMAGE_TYPES:
+        raise serializers.ValidationError(
+            'نوع الصورة مش مدعوم. استعمل JPG أو PNG أو WebP.'
+        )
+    return value
+
 from apps.deals.models import Deal
 from apps.directory.models import Business
-from apps.products.models import Product
+from apps.products.models import Product, ProductImage
 from apps.reviews.models import Review, ReviewReply
 
 
@@ -58,6 +88,12 @@ class MerchantBusinessSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
 
+    def validate_logo(self, value):
+        return validate_uploaded_image(value)
+
+    def validate_cover_image(self, value):
+        return validate_uploaded_image(value)
+
     def validate_name_ar(self, value):
         """
         تغيير الاسم يُبطل معنى التوثيق — لذا نمنعه على نشاط موثّق.
@@ -87,6 +123,8 @@ class MerchantProductSerializer(serializers.ModelSerializer):
     )
     # التمييز قرار إداري لا يُشترى من التطبيق.
     is_featured = serializers.BooleanField(read_only=True)
+    images = serializers.SerializerMethodField()
+    primary_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -100,11 +138,25 @@ class MerchantProductSerializer(serializers.ModelSerializer):
             'has_delivery', 'delivery_cost',
             'delivery_time_ar', 'delivery_time_en',
             'order', 'view_count', 'is_featured',
+            'images', 'primary_image',
             'created_at', 'updated_at',
         ]
         read_only_fields = [
             'id', 'slug', 'view_count', 'created_at', 'updated_at',
         ]
+
+    def get_images(self, obj) -> list:
+        return MerchantProductImageSerializer(
+            obj.images.all(), many=True, context=self.context
+        ).data
+
+    def get_primary_image(self, obj) -> str | None:
+        """الصورة الرئيسية، أو أول صورة لو لم تُحدَّد واحدة."""
+        images = list(obj.images.all())
+        if not images:
+            return None
+        primary = next((i for i in images if i.is_primary), images[0])
+        return primary.image.url if primary.image else None
 
     def validate(self, attrs):
         """`old_price` هو السعر قبل الخصم، فيجب أن يكون أعلى من الحالي."""
@@ -143,6 +195,9 @@ class MerchantDealSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id', 'slug', 'current_uses', 'created_at', 'updated_at',
         ]
+
+    def validate_image(self, value):
+        return validate_uploaded_image(value)
 
     def validate(self, attrs):
         start = attrs.get('start_date', getattr(self.instance, 'start_date', None))
@@ -194,3 +249,15 @@ class MerchantReviewSerializer(serializers.ModelSerializer):
         if user is None:
             return 'مستخدم محذوف'
         return user.get_full_name() or user.username
+
+
+class MerchantProductImageSerializer(serializers.ModelSerializer):
+    """صورة واحدة من معرض المنتج."""
+
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'image', 'alt_text_ar', 'is_primary']
+        read_only_fields = ['id']
+
+    def validate_image(self, value):
+        return validate_uploaded_image(value)

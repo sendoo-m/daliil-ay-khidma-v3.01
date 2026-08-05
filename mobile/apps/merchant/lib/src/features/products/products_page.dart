@@ -109,6 +109,33 @@ class _ProductRowState extends ConsumerState<_ProductRow> {
       ),
       child: Row(
         children: [
+          // صورة مصغّرة أو مربع فاضي — العمود يفضل مصطف في الحالتين.
+          Container(
+            width: 54,
+            height: 54,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: Shop.paper,
+              borderRadius: BorderRadius.circular(Radii.control),
+              border: Border.all(color: Shop.rule),
+            ),
+            child: p.hasImage
+                ? Image.network(
+                    p.primaryImage!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.image_not_supported_outlined,
+                      size: 18,
+                      color: Shop.inkFaint,
+                    ),
+                  )
+                : const Icon(
+                    Icons.add_photo_alternate_outlined,
+                    size: 20,
+                    color: Shop.inkFaint,
+                  ),
+          ),
+          const SizedBox(width: Gap.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

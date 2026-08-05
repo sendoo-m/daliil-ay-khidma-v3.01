@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
+import '../../shared/image_field.dart';
 import '../../shared/providers.dart';
 import '../../shared/widgets.dart';
 
@@ -30,6 +31,7 @@ class _ShopPageState extends ConsumerState<ShopPage> {
 
   bool _loaded = false;
   bool _busy = false;
+  double? _uploadProgress;
 
   @override
   void dispose() {
@@ -72,6 +74,37 @@ class _ShopPageState extends ConsumerState<ShopPage> {
       }
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// الشعار يُرفع فور اختياره لا عند الحفظ — تغيير صورة فعل مستقل،
+  /// وانتظاره مع بقية الحقول يجعل التاجر يشك أنه لم يُحفظ.
+  Future<void> _uploadLogo(int shopId, PickedImage image) async {
+    setState(() => _uploadProgress = 0);
+    try {
+      await ref.read(merchantActionsProvider).uploadShopImage(
+            shopId: shopId,
+            field: 'logo',
+            image: image,
+            onProgress: (sent, total) {
+              if (mounted && total > 0) {
+                setState(() => _uploadProgress = sent / total);
+              }
+            },
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('اترفع الشعار')),
+        );
+      }
+    } on ApiFailure catch (failure) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(failure.message), backgroundColor: Shop.clay),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploadProgress = null);
     }
   }
 
@@ -122,6 +155,22 @@ class _ShopPageState extends ConsumerState<ShopPage> {
           const SizedBox(height: Gap.lg),
         ],
 
+        const SectionTitle('شعار المحل'),
+        ImageField(
+          label: 'ارفع الشعار',
+          hint: 'الشعار بيظهر جنب اسم محلك في نتايج البحث.',
+          currentUrl: shop.logo,
+          height: 140,
+          onPicked: (img) {
+            if (img != null) _uploadLogo(shop.id, img);
+          },
+        ),
+        if (_uploadProgress != null) ...[
+          const SizedBox(height: Gap.md),
+          UploadProgress(value: _uploadProgress),
+        ],
+
+        const SizedBox(height: Gap.xl),
         const SectionTitle('التواصل'),
         TextField(
           controller: _phone,

@@ -1,6 +1,7 @@
 import 'package:dalil_core/dalil_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'image_field.dart';
 import 'models.dart';
 
 const _rawBaseUrl = String.fromEnvironment(
@@ -268,6 +269,104 @@ class MerchantActions {
     await _api.delete('merchant/products/$id/');
     _ref.invalidate(productsProvider);
     _ref.invalidate(dashboardProvider);
+  }
+
+  /// رفع صورة لمعرض المنتج. أول صورة تصير الرئيسية تلقائيًا.
+  Future<void> addProductImage({
+    required int productId,
+    required PickedImage image,
+    String altText = '',
+    void Function(int, int)? onProgress,
+  }) async {
+    await _api.sendMultipart(
+      'merchant/products/$productId/images/',
+      method: 'POST',
+      fileField: 'image',
+      bytes: image.bytes,
+      filename: image.filename,
+      fields: {if (altText.isNotEmpty) 'alt_text_ar': altText},
+      onProgress: onProgress,
+    );
+    _ref.invalidate(productsProvider);
+  }
+
+  Future<void> deleteProductImage(int productId, int imageId) async {
+    await _api.delete('merchant/products/$productId/images/$imageId/');
+    _ref.invalidate(productsProvider);
+  }
+
+  Future<void> makeImagePrimary(int productId, int imageId) async {
+    await _api.post('merchant/products/$productId/images/$imageId/make-primary/');
+    _ref.invalidate(productsProvider);
+  }
+
+  /// إنشاء أو تعديل مع صورة في طلب واحد.
+  ///
+  /// طلب واحد لا اثنان: لو رفعنا الصورة في طلب منفصل وفشل الثاني،
+  /// نبقى بسجل ناقص أو صورة يتيمة على الخادم.
+  /// حفظ المنتج ثم رفع صورته. خطوتان لأن الصور موديل منفصل — لا
+  /// يمكن إنشاء صورة قبل وجود المنتج الذي تنتمي إليه.
+  Future<void> saveProductThenImage({
+    int? id,
+    required Map<String, dynamic> fields,
+    PickedImage? image,
+    void Function(int, int)? onProgress,
+  }) async {
+    int productId;
+    if (id == null) {
+      final created = await _api.post('merchant/products/', body: fields);
+      productId = (created['id'] as num).toInt();
+    } else {
+      await _api.patch('merchant/products/$id/', body: fields);
+      productId = id;
+    }
+
+    if (image != null) {
+      await addProductImage(
+        productId: productId,
+        image: image,
+        onProgress: onProgress,
+      );
+    }
+    _ref.invalidate(productsProvider);
+    _ref.invalidate(dashboardProvider);
+  }
+
+  Future<void> saveDealWithImage({
+    int? id,
+    required Map<String, dynamic> fields,
+    required PickedImage image,
+    void Function(int, int)? onProgress,
+  }) async {
+    await _api.sendMultipart(
+      id == null ? 'merchant/deals/' : 'merchant/deals/$id/',
+      method: id == null ? 'POST' : 'PATCH',
+      fileField: 'image',
+      bytes: image.bytes,
+      filename: image.filename,
+      fields: fields,
+      onProgress: onProgress,
+    );
+    _ref.invalidate(dealsProvider);
+    _ref.invalidate(dashboardProvider);
+  }
+
+  /// شعار المحل أو صورة الغلاف.
+  Future<void> uploadShopImage({
+    required int shopId,
+    required String field,
+    required PickedImage image,
+    void Function(int, int)? onProgress,
+  }) async {
+    await _api.sendMultipart(
+      'merchant/businesses/$shopId/',
+      method: 'PATCH',
+      fileField: field,
+      bytes: image.bytes,
+      filename: image.filename,
+      onProgress: onProgress,
+    );
+    await _ref.read(sessionProvider.notifier).refreshShops();
   }
 
   // ── العروض ──────────────────────────────────────────

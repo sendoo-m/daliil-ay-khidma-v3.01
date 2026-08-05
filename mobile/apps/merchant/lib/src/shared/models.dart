@@ -240,6 +240,8 @@ class ProductItem {
     this.hasDelivery = false,
     this.deliveryCost,
     this.deliveryTimeAr = '',
+    this.primaryImage,
+    this.images = const [],
   });
 
   final int id;
@@ -256,6 +258,11 @@ class ProductItem {
   final String? deliveryCost;
   final String deliveryTimeAr;
 
+  /// المنتج عنده معرض صور، والرئيسية هي اللي بتظهر في الدليل.
+  final String? primaryImage;
+  final List<ProductImage> images;
+
+  bool get hasImage => primaryImage != null && primaryImage!.isNotEmpty;
   bool get isService => productType == 'service';
   bool get hasDiscount => oldPrice != null && oldPrice!.isNotEmpty;
 
@@ -282,6 +289,32 @@ class ProductItem {
         deliveryCost:
             json['delivery_cost'] == null ? null : '${json['delivery_cost']}',
         deliveryTimeAr: json['delivery_time_ar'] as String? ?? '',
+        primaryImage: json['primary_image'] as String?,
+        images: (json['images'] is List ? json['images'] as List : const [])
+            .whereType<Map<String, dynamic>>()
+            .map(ProductImage.fromJson)
+            .toList(growable: false),
+      );
+}
+
+class ProductImage {
+  const ProductImage({
+    required this.id,
+    required this.url,
+    required this.isPrimary,
+    this.altTextAr = '',
+  });
+
+  final int id;
+  final String url;
+  final bool isPrimary;
+  final String altTextAr;
+
+  factory ProductImage.fromJson(Map<String, dynamic> json) => ProductImage(
+        id: (json['id'] as num?)?.toInt() ?? 0,
+        url: json['image'] as String? ?? '',
+        isPrimary: json['is_primary'] as bool? ?? false,
+        altTextAr: json['alt_text_ar'] as String? ?? '',
       );
 }
 
@@ -299,6 +332,7 @@ class DealItem {
     this.endDate,
     this.termsAr = '',
     this.currentUses = 0,
+    this.imageUrl,
   });
 
   final int id;
@@ -313,6 +347,7 @@ class DealItem {
   final bool isActive;
   final int currentUses;
   final int businessId;
+  final String? imageUrl;
 
   /// كام يوم فاضل. سالب = خلص.
   int? get daysLeft {
@@ -342,5 +377,6 @@ class DealItem {
         isActive: json['is_active'] as bool? ?? false,
         currentUses: (json['current_uses'] as num?)?.toInt() ?? 0,
         businessId: (json['business'] as num?)?.toInt() ?? 0,
+        imageUrl: json['image'] as String?,
       );
 }
