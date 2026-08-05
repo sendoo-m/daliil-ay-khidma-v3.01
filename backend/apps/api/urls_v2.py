@@ -22,6 +22,11 @@ from apps.api.views.auth import (
     logout, request_password_reset, confirm_password_reset,
 )
 from apps.api.views.home import MobileHomeView
+from apps.api.views.merchant import (
+    MerchantSessionView, MerchantDashboardView,
+    MerchantBusinessViewSet, MerchantProductViewSet,
+    MerchantDealViewSet, MerchantReviewViewSet,
+)
 from apps.administration.views import (
     AdminSessionView, PermissionCatalogView,
     RoleViewSet, StaffProfileViewSet, AuditLogViewSet,
@@ -48,6 +53,12 @@ router.register(r'admin/reviews',     AdminReviewViewSet,     basename='admin-re
 router.register(r'admin/roles',       RoleViewSet,            basename='admin-roles')
 router.register(r'admin/staff',       StaffProfileViewSet,    basename='admin-staff')
 router.register(r'admin/audit',       AuditLogViewSet,        basename='admin-audit')
+
+# ── تطبيق الأنشطة — مسار منفصل بنيويًا عن الإدارة ──
+router.register(r'merchant/businesses', MerchantBusinessViewSet, basename='merchant-businesses')
+router.register(r'merchant/products',   MerchantProductViewSet,  basename='merchant-products')
+router.register(r'merchant/deals',      MerchantDealViewSet,     basename='merchant-deals')
+router.register(r'merchant/reviews',    MerchantReviewViewSet,   basename='merchant-reviews')
 
 # Business Owner
 router.register(r'business-owner/dashboard',  BusinessOwnerDashboardViewSet, basename='business-owner-dashboard')
@@ -89,6 +100,8 @@ urlpatterns = [
     path('app-config/',           MobileAppConfigView.as_view(),        name='app_config'),
     path('admin/session/',        AdminSessionView.as_view(),           name='admin_session'),
     path('admin/permissions/',    PermissionCatalogView.as_view(),      name='admin_permissions'),
+    path('merchant/session/',     MerchantSessionView.as_view(),        name='merchant_session'),
+    path('merchant/dashboard/',   MerchantDashboardView.as_view(),      name='merchant_dashboard'),
     path('admin/notifications/send/', AdminSendNotificationView.as_view(), name='admin_send_notification'),
     path('schema/', SpectacularAPIView.as_view(urlconf='apps.api.urls_v2'), name='schema'),
     path('docs/', SpectacularSwaggerView.as_view(url_name='api_v2:schema'), name='swagger'),
