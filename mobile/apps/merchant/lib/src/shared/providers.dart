@@ -193,6 +193,17 @@ final reviewsProvider =
   return items;
 });
 
+final dealsProvider = FutureProvider.autoDispose<List<DealItem>>((ref) async {
+  final api = ref.watch(apiClientProvider);
+  final shop = ref.watch(currentShopProvider);
+  final page = await api.getPage(
+    'merchant/deals/',
+    DealItem.fromJson,
+    query: {if (shop != null) 'business': shop.id},
+  );
+  return page.items;
+});
+
 final productsProvider =
     FutureProvider.autoDispose<List<ProductItem>>((ref) async {
   final api = ref.watch(apiClientProvider);
@@ -237,6 +248,45 @@ class MerchantActions {
   Future<void> updateShop(int shopId, Map<String, dynamic> changes) async {
     await _api.patch('merchant/businesses/$shopId/', body: changes);
     await _ref.read(sessionProvider.notifier).refreshShops();
+    _ref.invalidate(dashboardProvider);
+  }
+
+  // ── المنتجات ────────────────────────────────────────
+
+  Future<void> createProduct(Map<String, dynamic> body) async {
+    await _api.post('merchant/products/', body: body);
+    _ref.invalidate(productsProvider);
+    _ref.invalidate(dashboardProvider);
+  }
+
+  Future<void> updateProduct(int id, Map<String, dynamic> body) async {
+    await _api.patch('merchant/products/$id/', body: body);
+    _ref.invalidate(productsProvider);
+  }
+
+  Future<void> deleteProduct(int id) async {
+    await _api.delete('merchant/products/$id/');
+    _ref.invalidate(productsProvider);
+    _ref.invalidate(dashboardProvider);
+  }
+
+  // ── العروض ──────────────────────────────────────────
+
+  Future<void> createDeal(Map<String, dynamic> body) async {
+    await _api.post('merchant/deals/', body: body);
+    _ref.invalidate(dealsProvider);
+    _ref.invalidate(dashboardProvider);
+  }
+
+  Future<void> updateDeal(int id, Map<String, dynamic> body) async {
+    await _api.patch('merchant/deals/$id/', body: body);
+    _ref.invalidate(dealsProvider);
+    _ref.invalidate(dashboardProvider);
+  }
+
+  Future<void> deleteDeal(int id) async {
+    await _api.delete('merchant/deals/$id/');
+    _ref.invalidate(dealsProvider);
     _ref.invalidate(dashboardProvider);
   }
 }

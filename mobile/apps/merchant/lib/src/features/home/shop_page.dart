@@ -22,6 +22,11 @@ class _ShopPageState extends ConsumerState<ShopPage> {
   final _whatsapp = TextEditingController();
   final _address = TextEditingController();
   final _about = TextEditingController();
+  final _email = TextEditingController();
+  final _website = TextEditingController();
+  final _facebook = TextEditingController();
+  final _instagram = TextEditingController();
+  final _hours = TextEditingController();
 
   bool _loaded = false;
   bool _busy = false;
@@ -32,6 +37,11 @@ class _ShopPageState extends ConsumerState<ShopPage> {
     _whatsapp.dispose();
     _address.dispose();
     _about.dispose();
+    _email.dispose();
+    _website.dispose();
+    _facebook.dispose();
+    _instagram.dispose();
+    _hours.dispose();
     super.dispose();
   }
 
@@ -43,6 +53,11 @@ class _ShopPageState extends ConsumerState<ShopPage> {
         'whatsapp': _whatsapp.text.trim(),
         'address_ar': _address.text.trim(),
         'description_ar': _about.text.trim(),
+        'email': _email.text.trim(),
+        'website': _website.text.trim(),
+        'facebook': _facebook.text.trim(),
+        'instagram': _instagram.text.trim(),
+        'working_hours_ar': _hours.text.trim(),
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -72,6 +87,11 @@ class _ShopPageState extends ConsumerState<ShopPage> {
       _whatsapp.text = shop.whatsapp;
       _address.text = shop.addressAr;
       _about.text = shop.descriptionAr;
+      _email.text = shop.email;
+      _website.text = shop.website;
+      _facebook.text = shop.facebook;
+      _instagram.text = shop.instagram;
+      _hours.text = shop.workingHoursAr;
       _loaded = true;
     }
 
@@ -122,6 +142,48 @@ class _ShopPageState extends ConsumerState<ShopPage> {
           maxLines: 2,
           decoration: const InputDecoration(
             hintText: 'الشارع والعلامة المميزة',
+          ),
+        ),
+
+        const SizedBox(height: Gap.md),
+        TextField(
+          controller: _email,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(labelText: 'البريد الإلكتروني'),
+        ),
+
+        const SizedBox(height: Gap.xl),
+        const SectionTitle('على النت'),
+        TextField(
+          controller: _website,
+          keyboardType: TextInputType.url,
+          decoration: const InputDecoration(
+            labelText: 'الموقع',
+            hintText: 'https://',
+          ),
+        ),
+        const SizedBox(height: Gap.md),
+        TextField(
+          controller: _facebook,
+          keyboardType: TextInputType.url,
+          decoration: const InputDecoration(labelText: 'فيسبوك'),
+        ),
+        const SizedBox(height: Gap.md),
+        TextField(
+          controller: _instagram,
+          keyboardType: TextInputType.url,
+          decoration: const InputDecoration(labelText: 'إنستجرام'),
+        ),
+
+        const SizedBox(height: Gap.xl),
+        const SectionTitle('المواعيد'),
+        TextField(
+          controller: _hours,
+          maxLines: 3,
+          minLines: 2,
+          decoration: const InputDecoration(
+            hintText: 'مثلًا: من ١٠ صباحًا لـ١٢ بالليل — الجمعة إجازة\n'
+                'أو: فاتح ٢٤ ساعة',
           ),
         ),
 

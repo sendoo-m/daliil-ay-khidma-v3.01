@@ -6,6 +6,7 @@ import '../../app/theme.dart';
 import '../../shared/models.dart';
 import '../../shared/providers.dart';
 import '../../shared/widgets.dart';
+import 'product_editor_page.dart';
 
 class ProductsPage extends ConsumerWidget {
   const ProductsPage({super.key});
@@ -22,9 +23,13 @@ class ProductsPage extends ConsumerWidget {
       ),
       data: (items) {
         if (items.isEmpty) {
-          return const ShopEmpty(
+          return ShopEmpty(
             title: 'لسه مضفتش منتجات',
-            hint: 'المحلات اللي عندها منتجات بصور وأسعار بتجيب ضِعف الزيارات.',
+            hint: 'المحلات اللي عندها منتجات بأسعار واضحة بتجيب زيارات أكتر.',
+            action: FilledButton(
+              onPressed: () => openProductEditor(context),
+              child: const Text('ضيف أول منتج'),
+            ),
           );
         }
         return RefreshIndicator(
@@ -32,11 +37,23 @@ class ProductsPage extends ConsumerWidget {
           onRefresh: () async => ref.invalidate(productsProvider),
           child: ListView.builder(
             padding: const EdgeInsets.all(Gap.md),
-            itemCount: items.length,
-            itemBuilder: (context, i) => Padding(
-              padding: const EdgeInsets.only(bottom: Gap.sm),
-              child: _ProductRow(product: items[i]),
-            ),
+            itemCount: items.length + 1,
+            itemBuilder: (context, i) {
+              if (i == items.length) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: Gap.md),
+                  child: OutlinedButton.icon(
+                    onPressed: () => openProductEditor(context),
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('منتج أو خدمة جديدة'),
+                  ),
+                );
+              }
+              return Padding(
+                padding: const EdgeInsets.only(bottom: Gap.sm),
+                child: _ProductRow(product: items[i]),
+              );
+            },
           ),
         );
       },
@@ -80,7 +97,10 @@ class _ProductRowState extends ConsumerState<_ProductRow> {
     final p = widget.product;
     final text = Theme.of(context).textTheme;
 
-    return Container(
+    return InkWell(
+      onTap: () => openProductEditor(context, product: p),
+      borderRadius: BorderRadius.circular(Radii.card),
+      child: Container(
       padding: const EdgeInsets.all(Gap.md),
       decoration: BoxDecoration(
         color: Shop.surface,
@@ -149,6 +169,16 @@ class _ProductRowState extends ConsumerState<_ProductRow> {
           ),
         ],
       ),
+      ),
     );
   }
+}
+
+void openProductEditor(BuildContext context, {ProductItem? product}) {
+  Navigator.push(
+    context,
+    MaterialPageRoute<void>(
+      builder: (_) => ProductEditorPage(product: product),
+    ),
+  );
 }

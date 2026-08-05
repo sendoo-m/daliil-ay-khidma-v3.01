@@ -84,7 +84,8 @@ class MerchantBusinessViewSet(OwnedQuerysetMixin, viewsets.ModelViewSet):
 
     audited_fields = [
         'name_ar', 'name_en', 'phone', 'whatsapp', 'email', 'website',
-        'address_ar', 'description_ar', 'is_active',
+        'facebook', 'instagram', 'address_ar', 'description_ar',
+        'working_hours_ar', 'is_active',
     ]
 
     def perform_update(self, serializer):

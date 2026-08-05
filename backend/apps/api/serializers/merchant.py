@@ -49,6 +49,7 @@ class MerchantBusinessSerializer(serializers.ModelSerializer):
             'facebook', 'instagram',
             'address_ar', 'address_en',
             'latitude', 'longitude',
+            'working_hours_ar', 'working_hours_en',
             'logo', 'cover_image',
             'category_name', 'governorate_name', 'city_name',
             'is_active', 'is_verified', 'is_featured',

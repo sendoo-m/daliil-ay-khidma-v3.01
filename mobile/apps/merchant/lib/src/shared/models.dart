@@ -14,6 +14,11 @@ class ShopSummary {
     this.whatsapp = '',
     this.addressAr = '',
     this.descriptionAr = '',
+    this.email = '',
+    this.website = '',
+    this.facebook = '',
+    this.instagram = '',
+    this.workingHoursAr = '',
     this.viewCount = 0,
     this.clickCount = 0,
     this.logo,
@@ -31,6 +36,11 @@ class ShopSummary {
   final String whatsapp;
   final String addressAr;
   final String descriptionAr;
+  final String email;
+  final String website;
+  final String facebook;
+  final String instagram;
+  final String workingHoursAr;
   final int viewCount;
   final int clickCount;
   final String? logo;
@@ -54,6 +64,11 @@ class ShopSummary {
         whatsapp: json['whatsapp'] as String? ?? '',
         addressAr: json['address_ar'] as String? ?? '',
         descriptionAr: json['description_ar'] as String? ?? '',
+        email: json['email'] as String? ?? '',
+        website: json['website'] as String? ?? '',
+        facebook: json['facebook'] as String? ?? '',
+        instagram: json['instagram'] as String? ?? '',
+        workingHoursAr: json['working_hours_ar'] as String? ?? '',
         viewCount: (json['view_count'] as num?)?.toInt() ?? 0,
         clickCount: (json['click_count'] as num?)?.toInt() ?? 0,
         logo: json['logo'] as String?,
@@ -221,6 +236,10 @@ class ProductItem {
     this.oldPrice,
     this.descriptionAr = '',
     this.productType = 'product',
+    this.stockQuantity,
+    this.hasDelivery = false,
+    this.deliveryCost,
+    this.deliveryTimeAr = '',
   });
 
   final int id;
@@ -232,8 +251,21 @@ class ProductItem {
   final String businessName;
   final String descriptionAr;
   final String productType;
+  final int? stockQuantity;
+  final bool hasDelivery;
+  final String? deliveryCost;
+  final String deliveryTimeAr;
 
+  bool get isService => productType == 'service';
   bool get hasDiscount => oldPrice != null && oldPrice!.isNotEmpty;
+
+  /// نسبة الخصم للعرض. تُحسب هنا لا في الواجهة حتى لا تختلف من شاشة لأخرى.
+  int? get discountPercent {
+    final now = double.tryParse(price);
+    final before = double.tryParse(oldPrice ?? '');
+    if (now == null || before == null || before <= now) return null;
+    return (((before - now) / before) * 100).round();
+  }
 
   factory ProductItem.fromJson(Map<String, dynamic> json) => ProductItem(
         id: (json['id'] as num?)?.toInt() ?? 0,
@@ -245,5 +277,70 @@ class ProductItem {
         businessName: json['business_name'] as String? ?? '',
         descriptionAr: json['description_ar'] as String? ?? '',
         productType: json['product_type'] as String? ?? 'product',
+        stockQuantity: (json['stock_quantity'] as num?)?.toInt(),
+        hasDelivery: json['has_delivery'] as bool? ?? false,
+        deliveryCost:
+            json['delivery_cost'] == null ? null : '${json['delivery_cost']}',
+        deliveryTimeAr: json['delivery_time_ar'] as String? ?? '',
+      );
+}
+
+class DealItem {
+  const DealItem({
+    required this.id,
+    required this.titleAr,
+    required this.dealType,
+    required this.isActive,
+    required this.businessId,
+    this.descriptionAr = '',
+    this.dealTypeDisplay = '',
+    this.discountPercentage,
+    this.startDate,
+    this.endDate,
+    this.termsAr = '',
+    this.currentUses = 0,
+  });
+
+  final int id;
+  final String titleAr;
+  final String descriptionAr;
+  final String dealType;
+  final String dealTypeDisplay;
+  final int? discountPercentage;
+  final DateTime? startDate;
+  final DateTime? endDate;
+  final String termsAr;
+  final bool isActive;
+  final int currentUses;
+  final int businessId;
+
+  /// كام يوم فاضل. سالب = خلص.
+  int? get daysLeft {
+    if (endDate == null) return null;
+    return endDate!.difference(DateTime.now()).inDays;
+  }
+
+  bool get isExpired => (daysLeft ?? 1) < 0;
+  bool get isEndingSoon => !isExpired && (daysLeft ?? 99) <= 3;
+
+  bool get isLive {
+    if (!isActive || isExpired) return false;
+    if (startDate == null) return true;
+    return !startDate!.isAfter(DateTime.now());
+  }
+
+  factory DealItem.fromJson(Map<String, dynamic> json) => DealItem(
+        id: (json['id'] as num?)?.toInt() ?? 0,
+        titleAr: json['title_ar'] as String? ?? '',
+        descriptionAr: json['description_ar'] as String? ?? '',
+        dealType: json['deal_type'] as String? ?? 'percentage',
+        dealTypeDisplay: json['deal_type_display'] as String? ?? '',
+        discountPercentage: (json['discount_percentage'] as num?)?.toInt(),
+        startDate: DateTime.tryParse(json['start_date'] as String? ?? ''),
+        endDate: DateTime.tryParse(json['end_date'] as String? ?? ''),
+        termsAr: json['terms_ar'] as String? ?? '',
+        isActive: json['is_active'] as bool? ?? false,
+        currentUses: (json['current_uses'] as num?)?.toInt() ?? 0,
+        businessId: (json['business'] as num?)?.toInt() ?? 0,
       );
 }
