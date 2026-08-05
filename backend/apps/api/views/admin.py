@@ -394,7 +394,10 @@ class AdminUserViewSet(AdminModelViewSet):
         User.objects
         .select_related('staff_profile__role')
         .annotate(
-            businesses_count=Count('businesses', distinct=True),
+            # ‏annotate/filter تستعملان related_query_name لا related_name.
+            # الحقل معرّف بـ related_name='businesses' لكن
+            # related_query_name='business' — والثانية هي المقصودة هنا.
+            businesses_count=Count('business', distinct=True),
             reviews_count=Count('reviews', distinct=True),
         )
         .order_by('-date_joined')
