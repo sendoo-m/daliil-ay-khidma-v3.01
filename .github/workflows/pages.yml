@@ -30,7 +30,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: subosito/flutter-action@v2
         with:
@@ -55,7 +55,6 @@ jobs:
           flutter build web --release \
             --base-href "${{ env.REPO_PATH }}/" \
             --no-web-resources-cdn \
-            --pwa-strategy=none \
             --dart-define=API_BASE_URL=${{ env.API_BASE_URL }}
 
       - name: Stage user app
@@ -78,7 +77,6 @@ jobs:
           flutter build web --release \
             --base-href "${{ env.REPO_PATH }}/admin/" \
             --no-web-resources-cdn \
-            --pwa-strategy=none \
             --dart-define=API_BASE_URL=${{ env.API_BASE_URL }}
 
       - name: Stage admin app

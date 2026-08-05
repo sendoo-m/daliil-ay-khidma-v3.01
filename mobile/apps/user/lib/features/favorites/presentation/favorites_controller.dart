@@ -57,15 +57,17 @@ final class FavoritesController
     if (previous == null) state = const AsyncValue.loading();
     state = await AsyncValue.guard(
       () async {
-        final results = await Future.wait([
+        // ‏record.wait يحافظ على نوع كل نتيجة، بعكس Future.wait التي
+        // تُرجع List<Object> وتحتاج casts هشّة.
+        final (businesses, products, deals) = await (
           _repository.businesses(),
           _repository.products(),
           _repository.deals(),
-        ]);
+        ).wait;
         return FavoritesState(
-          businesses: results[0] as List<Business>,
-          products: results[1] as List<ProductSummary>,
-          deals: results[2] as List<DealSummary>,
+          businesses: businesses,
+          products: products,
+          deals: deals,
           pendingBusinessIds: previous?.pendingBusinessIds ?? const {},
         );
       },
