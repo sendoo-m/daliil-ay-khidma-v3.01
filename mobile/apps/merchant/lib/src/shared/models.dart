@@ -1,4 +1,5 @@
 /// نماذج تطبيق الأنشطة — تطابق ما يعيده `/api/v2/merchant/`.
+library;
 
 class ShopSummary {
   const ShopSummary({

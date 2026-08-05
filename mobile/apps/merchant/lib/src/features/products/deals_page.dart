@@ -399,14 +399,10 @@ class _DealEditorPageState extends ConsumerState<DealEditorPage> {
             const SizedBox(height: Gap.xl),
             const SectionTitle('نوع العرض'),
             for (final entry in _types.entries)
-              RadioListTile<String>(
-                value: entry.key,
-                groupValue: _type,
-                onChanged: (v) => setState(() => _type = v!),
-                title: Text(entry.value),
-                activeColor: Shop.jade,
-                contentPadding: EdgeInsets.zero,
-                dense: true,
+              _TypeOption(
+                label: entry.value,
+                active: _type == entry.key,
+                onTap: () => setState(() => _type = entry.key),
               ),
 
             const SizedBox(height: Gap.lg),
@@ -568,6 +564,68 @@ class _DateField extends StatelessWidget {
               style: MerchantTheme.figure(size: 15),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+
+/// خيار نوع العرض.
+///
+/// كُتب يدويًا بدل `RadioListTile` لأن الأخيرة هُجرت في Flutter 3.32
+/// لصالح `RadioGroup`. الفائدة الجانبية أهم: العنصر بقى بلغة التطبيق
+/// نفسها — نفس الأخضر ونفس الانحناء — بدل شكل ماتيريال الافتراضي.
+class _TypeOption extends StatelessWidget {
+  const _TypeOption({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Gap.sm),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(Radii.control),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Gap.md,
+            vertical: 13,
+          ),
+          decoration: BoxDecoration(
+            color: active ? Shop.jadeWash : Shop.surface,
+            borderRadius: BorderRadius.circular(Radii.control),
+            border: Border.all(
+              color: active ? Shop.jade : Shop.rule,
+              width: active ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                active
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+                size: 19,
+                color: active ? Shop.jade : Shop.inkFaint,
+              ),
+              const SizedBox(width: Gap.sm),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: active ? Shop.jade : Shop.ink,
+                      fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                    ),
+              ),
+            ],
+          ),
         ),
       ),
     );

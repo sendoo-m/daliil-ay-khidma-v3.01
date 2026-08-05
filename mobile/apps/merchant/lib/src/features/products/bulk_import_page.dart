@@ -62,10 +62,12 @@ class RowError {
                 ? json['problems'] as List
                 : const [])
             .whereType<Map<String, dynamic>>()
-            .map((p) => (
-                  p['field'] as String? ?? '',
-                  p['message'] as String? ?? '',
-                ))
+            .map(
+              (p) => (
+                p['field'] as String? ?? '',
+                p['message'] as String? ?? '',
+              ),
+            )
             .toList(growable: false),
       );
 }

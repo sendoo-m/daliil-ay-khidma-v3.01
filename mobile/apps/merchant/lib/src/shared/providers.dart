@@ -383,7 +383,8 @@ class MerchantActions {
     await FileSaver.instance.saveFile(
       name: 'منتجاتي-$shopId',
       bytes: bytes,
-      fileExtension: 'xlsx',
+      // ‏file_saver 0.2.x اسمه ext — اتغيّر لـfileExtension في 0.4.
+      ext: 'xlsx',
       mimeType: MimeType.microsoftExcel,
     );
   }
