@@ -425,6 +425,11 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@daliilaaykhid
 # ========================================
 # LOGGING
 # ========================================
+# مجلد السجلات مستبعَد من Git، فقد لا يوجد على خادم جديد أو في الـCI.
+# بدون هذا السطر يسقط Django بالكامل عند الإقلاع — إعداد تسجيل ناقص
+# لا يجب أن يمنع التطبيق من العمل.
+(BASE_DIR / 'logs').mkdir(parents=True, exist_ok=True)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

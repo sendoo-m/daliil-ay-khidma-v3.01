@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/app_theme.dart';
@@ -549,4 +548,3 @@ String _internationalPhone(String value) {
   return digits;
 }
 
-String _money(double value) => NumberFormat('#,##0.##').format(value);

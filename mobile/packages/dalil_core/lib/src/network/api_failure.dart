@@ -80,7 +80,8 @@ class ApiFailure implements Exception {
 
   static String _messageForStatus(int? status, Map<String, List<String>> f) {
     if (f.isNotEmpty) return f.values.first.first;
-    return switch (status) {
+    // ‏?? 0 يجعل المتغيّر غير قابل للعدم، وإلا رفض المحلل النمط >= 500.
+    return switch (status ?? 0) {
       400 => 'البيانات المرسلة غير صحيحة.',
       401 => 'انتهت جلستك. سجّل الدخول من جديد.',
       403 => 'ليس لديك صلاحية هذه العملية.',

@@ -20,11 +20,13 @@ class TokenStore {
   String? _memAccess;
   String? _memRefresh;
 
+  // ‏await ضرورية: بدونها يستنتج المحلل Object? من فرعَي الشرطي
+  // (‏String? و Future<String?>) ويرفض الإرجاع.
   Future<String?> readAccess() async =>
-      _useMemory ? _memAccess : _read(_accessKey);
+      _useMemory ? _memAccess : await _read(_accessKey);
 
   Future<String?> readRefresh() async =>
-      _useMemory ? _memRefresh : _read(_refreshKey);
+      _useMemory ? _memRefresh : await _read(_refreshKey);
 
   Future<void> saveAccess(String token) async {
     if (_useMemory) {
