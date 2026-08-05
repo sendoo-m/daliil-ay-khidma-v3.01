@@ -114,6 +114,15 @@ class SessionNotifier extends Notifier<SessionState> {
           statusCode: 403,
         );
       }
+
+      // 404 هنا معناه الخادم يشغّل نسخة أقدم لا تعرف مسار الإدارة.
+      if (failure.isNotFound) {
+        throw const ApiFailure(
+          message: 'الخادم لسه بيشغّل نسخة قديمة مفيهاش لوحة الإدارة. '
+              'محتاج تحديث النشر على الخادم.',
+          statusCode: 404,
+        );
+      }
       rethrow;
     }
   }

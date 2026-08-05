@@ -101,6 +101,16 @@ class SessionNotifier extends Notifier<SessionState> {
       if (failure.isForbidden) {
         throw const ApiFailure(message: _noShop, statusCode: 403);
       }
+      // 404 على نقطة الجلسة معناه الخادم لا يعرف هذا المسار — أي أنه
+      // يشغّل نسخة أقدم من الكود. الرسالة تقول ذلك صراحةً بدل تركها
+      // "غير موجود" الغامضة التي ترسل التاجر يشك في حسابه.
+      if (failure.isNotFound) {
+        throw const ApiFailure(
+          message: 'الخادم لسه بيشغّل نسخة قديمة مفيهاش خدمة الأنشطة. '
+              'محتاج تحديث النشر على الخادم قبل ما التطبيق يشتغل.',
+          statusCode: 404,
+        );
+      }
       rethrow;
     }
   }

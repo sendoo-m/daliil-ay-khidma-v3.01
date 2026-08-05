@@ -67,8 +67,15 @@ class ApiFailure implements Exception {
           fields['$key'] = [value];
         }
       });
-    } else if (data is String && data.isNotEmpty && data.length < 300) {
-      detail = data;
+    } else if (data is String && data.isNotEmpty) {
+      // صفحات الخطأ من الخادم ترجع HTML. عرضها للمستخدم خام غير مقبول:
+      // هو لا يقرأ وسوم، والرسالة تخفي السبب الحقيقي بدل أن تكشفه.
+      final looksLikeHtml = data.trimLeft().startsWith('<') ||
+          data.contains('<html') ||
+          data.contains('<!doctype');
+      if (!looksLikeHtml && data.length < 300) {
+        detail = data;
+      }
     }
 
     return ApiFailure(
@@ -85,7 +92,8 @@ class ApiFailure implements Exception {
       400 => 'البيانات المرسلة غير صحيحة.',
       401 => 'انتهت جلستك. سجّل الدخول من جديد.',
       403 => 'ليس لديك صلاحية هذه العملية.',
-      404 => 'العنصر غير موجود، أو خارج نطاقك.',
+      404 => 'المسار ده مش موجود على الخادم. غالبًا الخادم بيشغّل '
+          'نسخة أقدم من التطبيق.',
       409 => 'تعارض مع بيانات موجودة.',
       429 => 'محاولات كثيرة. انتظر قليلًا وأعد المحاولة.',
       >= 500 => 'الخادم لا يستجيب حاليًا. أعد المحاولة بعد قليل.',
