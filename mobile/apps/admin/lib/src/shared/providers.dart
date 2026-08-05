@@ -82,18 +82,38 @@ class SessionNotifier extends Notifier<SessionState> {
     }
   }
 
-  /// يرمي [ApiFailure] ليعرضها نموذج الدخول تحت الحقل المناسب.
+  /// يرمي [ApiFailure] ليعرضها نموذج الدخول.
+  ///
+  /// لا نضبط [SessionLoading] هنا — وهذا مقصود. تغيير الحالة يُعيد بناء
+  /// البوابة فتُهدَم شاشة الدخول، ويصل الخطأ إلى `State` مُتلَف فتضيع
+  /// الرسالة وتبدو الشاشة كأنها أعادت نفسها بلا سبب. الشاشة تدير مؤشر
+  /// انتظارها بنفسها، والحالة لا تتغير إلا عند النجاح.
   Future<void> signIn({
     required String username,
     required String password,
   }) async {
-    state = const SessionLoading();
     try {
       await _auth.login(username: username, password: password);
-      state = SessionActive(await _auth.loadAdminSession());
     } catch (error) {
       await _tokens.clear();
-      state = const SessionSignedOut();
+      rethrow;
+    }
+
+    try {
+      state = SessionActive(await _auth.loadAdminSession());
+    } on ApiFailure catch (failure) {
+      await _tokens.clear();
+
+      // بيانات صحيحة لكن الحساب ليس موظفًا — أشهر سبب للرفض هنا،
+      // ويستحق رسالة تشرح الفرق بدل "ليس لديك صلاحية".
+      if (failure.isForbidden) {
+        throw const ApiFailure(
+          message: 'بيانات الدخول صحيحة، لكن هذا الحساب غير مسجَّل كموظف '
+              'إدارة. لوحة الإدارة للموظفين فقط — أصحاب المحلات '
+              'والمستخدمون يدخلون من تطبيق المستخدم.',
+          statusCode: 403,
+        );
+      }
       rethrow;
     }
   }
