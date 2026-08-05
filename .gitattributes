@@ -1,0 +1,23 @@
+# نهايات الأسطر — تُحسم هنا مرة واحدة بدل ما تعتمد على إعدادات كل جهاز.
+* text=auto eol=lf
+
+# سكربتات ويندوز تحتاج CRLF لتعمل
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# سكربتات يونكس لازم تفضل LF وإلا مش هتشتغل
+*.sh text eol=lf
+
+# ملفات ثنائية — لا تُلمس
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.jar binary
+*.keystore binary
+*.jks binary
