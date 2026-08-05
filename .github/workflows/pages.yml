@@ -1,8 +1,9 @@
 name: Deploy web demos
 
 # ينشر تطبيقين من مستودع واحد على GitHub Pages:
-#   تطبيق المستخدم  →  /daliil-ay-khidma-v3.01/
-#   تطبيق الإدارة   →  /daliil-ay-khidma-v3.01/admin/
+#   تطبيق الدليل   →  /daliil-ay-khidma-v3.01/
+#   تطبيق الأنشطة  →  /daliil-ay-khidma-v3.01/merchant/
+#   لوحة الإدارة   →  /daliil-ay-khidma-v3.01/admin/
 #
 # ملاحظة: التطبيقان لا يحتويان على ملفات منصة الويب في المستودع،
 # فنولّدها هنا بـ`flutter create --platforms=web` قبل البناء. هذا مقصود:
@@ -84,11 +85,35 @@ jobs:
           mkdir -p _site/admin
           cp -r mobile/apps/admin/build/web/. _site/admin/
 
+      # ── تطبيق الأنشطة → /merchant/ ──────────────────
+      - name: Scaffold web platform (merchant)
+        working-directory: mobile/apps/merchant
+        run: |
+          cp -f web/index.html /tmp/merchant-index.html
+          flutter create --platforms=web \
+            --org=com.daliilaykhidma --project-name=dalil_merchant .
+          cp -f /tmp/merchant-index.html web/index.html
+
+      - name: Build merchant app
+        working-directory: mobile/apps/merchant
+        run: |
+          flutter pub get
+          flutter build web --release \
+            --base-href "${{ env.REPO_PATH }}/merchant/" \
+            --no-web-resources-cdn \
+            --dart-define=API_BASE_URL=${{ env.API_BASE_URL }}
+
+      - name: Stage merchant app
+        run: |
+          mkdir -p _site/merchant
+          cp -r mobile/apps/merchant/build/web/. _site/merchant/
+
       - name: Add SPA fallbacks
         run: |
           # Pages ترجّع 404 لأي مسار عميق. نسخة من index.html تعالج ذلك.
           cp _site/index.html _site/404.html
           cp _site/admin/index.html _site/admin/404.html
+          cp _site/merchant/index.html _site/merchant/404.html
           # يمنع Jekyll من تجاهل الملفات التي تبدأ بشرطة سفلية.
           touch _site/.nojekyll
 
