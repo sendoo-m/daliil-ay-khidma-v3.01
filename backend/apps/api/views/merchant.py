@@ -16,6 +16,7 @@ from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.views import APIView
 
 from apps.api.merchant_base import (
@@ -273,6 +274,143 @@ class MerchantDealViewSet(MerchantScopedWriteMixin, MerchantViewSet):
     audited_fields = [
         'title_ar', 'start_date', 'end_date', 'is_active', 'deal_type',
     ]
+
+
+class MerchantProductBulkView(APIView):
+    """
+    استيراد وتصدير المنتجات بملف إكسل.
+
+    GET  /merchant/products/bulk/?business=<id>   → تنزيل الملف
+    POST /merchant/products/bulk/                 → رفع الملف
+
+    الرفع على مرحلتين بنفس النقطة:
+        dry_run=true   → فحص فقط، يرجّع تقريرًا ولا يكتب شيئًا
+        dry_run=false  → يكتب داخل transaction واحدة
+
+    لماذا يُرفع الملف مرتين بدل تخزين نتيجة الفحص؟ لأن الملف صغير
+    (٢٠٠ صف ≈ ٣٠ كيلوبايت) وحفظ حالة بين الطلبين يفتح بابًا لتناقض:
+    ملف يُفحص ثم يُعدَّل ثم يُعتمد الفحص القديم. البساطة أأمن هنا.
+    """
+
+    permission_classes = [IsBusinessOwner]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def _resolve_business(self, request):
+        owned = Business.objects.filter(owner=request.user)
+        raw = request.query_params.get('business') or request.data.get('business')
+        if raw:
+            return owned.filter(pk=raw).first()
+        # تاجر بنشاط واحد لا يجب أن يُطلب منه تحديده.
+        return owned.first() if owned.count() == 1 else None
+
+    def get(self, request):
+        from django.http import HttpResponse
+        from apps.api import merchant_import as bulk
+
+        business = self._resolve_business(request)
+        if business is None:
+            return Response(
+                {'detail': 'حدّد النشاط اللي عايز تنزّل منتجاته.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        products = Product.objects.filter(business=business).order_by('id')
+        try:
+            content = bulk.build_workbook(products)
+        except bulk.ImportError_ as exc:
+            return Response({'detail': str(exc)},
+                            status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        response = HttpResponse(
+            content,
+            content_type=(
+                'application/vnd.openxmlformats-officedocument'
+                '.spreadsheetml.sheet'
+            ),
+        )
+        # اسم الملف بالإنجليزية: بعض المتصفحات تُفسد العربية في الترويسة.
+        response['Content-Disposition'] = (
+            f'attachment; filename="products-{business.pk}.xlsx"'
+        )
+        return response
+
+    def post(self, request):
+        from apps.api import merchant_import as bulk
+
+        business = self._resolve_business(request)
+        if business is None:
+            return Response(
+                {'detail': 'حدّد النشاط اللي هترفع له المنتجات.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        uploaded = request.FILES.get('file')
+        if uploaded is None:
+            return Response({'detail': 'ارفع ملف الأول.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            rows = bulk.read_rows(uploaded)
+        except bulk.ImportError_ as exc:
+            return Response({'detail': str(exc)},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        owned_ids = set(
+            Product.objects.filter(business__owner=request.user)
+            .values_list('id', flat=True)
+        )
+        report = bulk.validate_rows(rows, owned_ids)
+
+        dry_run = str(request.data.get('dry_run', 'true')).lower() != 'false'
+        skip_invalid = str(
+            request.data.get('skip_invalid', 'false')
+        ).lower() == 'true'
+
+        prepared = report.pop('prepared')
+
+        if dry_run:
+            report['can_commit'] = report['valid'] > 0
+            return Response(report)
+
+        # الحفظ: لو فيه أخطاء ولم يوافق التاجر صراحةً على تخطّيها، نتوقف.
+        # قرار "استورد السليم وسيب الباقي" قراره هو لا قرارنا.
+        if report['error_count'] and not skip_invalid:
+            report['can_commit'] = False
+            report['detail'] = (
+                'فيه صفوف فيها مشاكل. صلّحها وارفع الملف تاني، '
+                'أو اختار تستورد السليم بس.'
+            )
+            return Response(report, status=status.HTTP_400_BAD_REQUEST)
+
+        if not prepared:
+            return Response(
+                {'detail': 'مفيش أي صف سليم في الملف.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        result = bulk.commit_rows(prepared, business)
+
+        from apps.administration import services
+        from apps.administration.models import AuditLog
+        services.record(
+            actor=request.user,
+            action=AuditLog.Action.BULK,
+            target=business,
+            target_label=f'استيراد منتجات — {business.name_ar}',
+            changes={
+                'created': result['created'],
+                'updated': result['updated'],
+                'skipped': report['error_count'],
+            },
+            request=request,
+        )
+
+        return Response({
+            **report,
+            **result,
+            'skipped': report['error_count'],
+            'status': 'success',
+        })
 
 
 class MerchantReviewViewSet(OwnedQuerysetMixin, viewsets.ReadOnlyModelViewSet):

@@ -26,6 +26,7 @@ from apps.api.views.merchant import (
     MerchantSessionView, MerchantDashboardView,
     MerchantBusinessViewSet, MerchantProductViewSet,
     MerchantDealViewSet, MerchantReviewViewSet, MerchantProductImageViewSet,
+    MerchantProductBulkView,
 )
 from apps.administration.views import (
     AdminSessionView, PermissionCatalogView,
@@ -107,6 +108,7 @@ urlpatterns = [
     path('admin/permissions/',    PermissionCatalogView.as_view(),      name='admin_permissions'),
     path('merchant/session/',     MerchantSessionView.as_view(),        name='merchant_session'),
     path('merchant/dashboard/',   MerchantDashboardView.as_view(),      name='merchant_dashboard'),
+    path('merchant/products/bulk/', MerchantProductBulkView.as_view(),  name='merchant_products_bulk'),
     path('admin/notifications/send/', AdminSendNotificationView.as_view(), name='admin_send_notification'),
     path('schema/', SpectacularAPIView.as_view(urlconf='apps.api.urls_v2'), name='schema'),
     path('docs/', SpectacularSwaggerView.as_view(url_name='api_v2:schema'), name='swagger'),

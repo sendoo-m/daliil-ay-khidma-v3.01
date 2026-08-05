@@ -52,3 +52,6 @@ drf-spectacular>=0.27.0
 
 # Push Notifications
 firebase-admin>=6.5.0
+
+# Excel import/export for merchant bulk product upload
+openpyxl>=3.1.2

@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:dalil_core/dalil_core.dart';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'image_field.dart';
@@ -367,6 +370,61 @@ class MerchantActions {
       onProgress: onProgress,
     );
     await _ref.read(sessionProvider.notifier).refreshShops();
+  }
+
+  // ── الرفع الجماعي ───────────────────────────────────
+
+  /// ينزّل ملف المنتجات ويحفظه على الجهاز.
+  Future<void> downloadProductsFile(int shopId) async {
+    final bytes = await _api.getBytes(
+      'merchant/products/bulk/',
+      query: {'business': shopId},
+    );
+    await FileSaver.instance.saveFile(
+      name: 'منتجاتي-$shopId',
+      bytes: bytes,
+      fileExtension: 'xlsx',
+      mimeType: MimeType.microsoftExcel,
+    );
+  }
+
+  /// فحص بلا كتابة — يرجّع التقرير.
+  Future<Map<String, dynamic>> checkProductsFile({
+    required int shopId,
+    required Uint8List bytes,
+    required String filename,
+  }) {
+    return _api.sendMultipart(
+      'merchant/products/bulk/',
+      method: 'POST',
+      fileField: 'file',
+      bytes: bytes,
+      filename: filename,
+      fields: {'business': shopId, 'dry_run': 'true'},
+    );
+  }
+
+  Future<Map<String, dynamic>> commitProductsFile({
+    required int shopId,
+    required Uint8List bytes,
+    required String filename,
+    bool skipInvalid = false,
+  }) async {
+    final result = await _api.sendMultipart(
+      'merchant/products/bulk/',
+      method: 'POST',
+      fileField: 'file',
+      bytes: bytes,
+      filename: filename,
+      fields: {
+        'business': shopId,
+        'dry_run': 'false',
+        'skip_invalid': skipInvalid ? 'true' : 'false',
+      },
+    );
+    _ref.invalidate(productsProvider);
+    _ref.invalidate(dashboardProvider);
+    return result;
   }
 
   // ── العروض ──────────────────────────────────────────

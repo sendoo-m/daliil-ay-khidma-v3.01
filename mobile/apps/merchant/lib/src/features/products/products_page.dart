@@ -6,6 +6,7 @@ import '../../app/theme.dart';
 import '../../shared/models.dart';
 import '../../shared/providers.dart';
 import '../../shared/widgets.dart';
+import 'bulk_import_page.dart';
 import 'product_editor_page.dart';
 
 class ProductsPage extends ConsumerWidget {
@@ -26,9 +27,20 @@ class ProductsPage extends ConsumerWidget {
           return ShopEmpty(
             title: 'لسه مضفتش منتجات',
             hint: 'المحلات اللي عندها منتجات بأسعار واضحة بتجيب زيارات أكتر.',
-            action: FilledButton(
-              onPressed: () => openProductEditor(context),
-              child: const Text('ضيف أول منتج'),
+            action: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FilledButton(
+                  onPressed: () => openProductEditor(context),
+                  child: const Text('ضيف أول منتج'),
+                ),
+                const SizedBox(height: Gap.sm),
+                TextButton.icon(
+                  onPressed: () => _openBulk(context),
+                  icon: const Icon(Icons.table_chart_outlined, size: 17),
+                  label: const Text('عندي منتجات كتير — ارفعها بملف'),
+                ),
+              ],
             ),
           );
         }
@@ -42,10 +54,20 @@ class ProductsPage extends ConsumerWidget {
               if (i == items.length) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: Gap.md),
-                  child: OutlinedButton.icon(
-                    onPressed: () => openProductEditor(context),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('منتج أو خدمة جديدة'),
+                  child: Column(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => openProductEditor(context),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('منتج أو خدمة جديدة'),
+                      ),
+                      const SizedBox(height: Gap.sm),
+                      TextButton.icon(
+                        onPressed: () => _openBulk(context),
+                        icon: const Icon(Icons.table_chart_outlined, size: 17),
+                        label: const Text('رفع منتجات بملف إكسل'),
+                      ),
+                    ],
                   ),
                 );
               }
@@ -199,6 +221,13 @@ class _ProductRowState extends ConsumerState<_ProductRow> {
       ),
     );
   }
+}
+
+void _openBulk(BuildContext context) {
+  Navigator.push(
+    context,
+    MaterialPageRoute<void>(builder: (_) => const BulkImportPage()),
+  );
 }
 
 void openProductEditor(BuildContext context, {ProductItem? product}) {

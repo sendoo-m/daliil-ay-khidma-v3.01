@@ -153,6 +153,23 @@ class ApiClient {
     }
   }
 
+  /// تنزيل ملف كبايتات (إكسل، PDF…).
+  Future<Uint8List> getBytes(
+    String path, {
+    Map<String, dynamic>? query,
+  }) async {
+    try {
+      final res = await dio.get<List<int>>(
+        path,
+        queryParameters: query,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return Uint8List.fromList(res.data ?? const []);
+    } catch (e) {
+      throw ApiFailure.from(e);
+    }
+  }
+
   Future<void> delete(String path) async {
     try {
       await dio.delete<dynamic>(path);
