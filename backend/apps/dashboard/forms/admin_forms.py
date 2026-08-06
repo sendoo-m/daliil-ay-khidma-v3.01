@@ -219,6 +219,7 @@ def _category_fields():
     allowed = [
         'name_en', 'name_ar',
         'description_en', 'description_ar',
+        'business_type',
         'parent', 'icon', 'ProductImage',
         'order', 'is_active',
         'meta_keywords_en', 'meta_keywords_ar',
@@ -236,6 +237,7 @@ class CategoryForm(forms.ModelForm):
             'name_ar':          forms.TextInput(attrs={'class': 'form-control'}),
             'description_en':   forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'description_ar':   forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'business_type':    forms.Select(attrs={'class': 'form-select'}),
             'parent':           forms.Select(attrs={'class': 'form-select'}),
             'icon':             forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'fas fa-store'}),
             'order':            forms.NumberInput(attrs={'class': 'form-control'}),

@@ -87,6 +87,7 @@ INSTALLED_APPS = [
 #     'django.contrib.auth.middleware.AuthenticationMiddleware',
 #     'django.contrib.messages.middleware.MessageMiddleware',
 #     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+#     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 # ]
 
 MIDDLEWARE = [
@@ -100,6 +101,12 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # الأدوار وسجل العمليات على لوحة الويب. موضعها بعد
+    # AuthenticationMiddleware لأنها تحتاج request.user، وبعد
+    # MessageMiddleware لأنها تستعمل messages عند الرفض.
+    'apps.dashboard.middleware.DashboardPermissionMiddleware',
+    'apps.dashboard.middleware.DashboardAuditMiddleware',
 ]
 
 

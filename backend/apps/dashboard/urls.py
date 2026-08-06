@@ -29,10 +29,16 @@ from apps.dashboard.views import admin_views, admin_crud
 from apps.dashboard.views import subscription_admin
 
 
+from apps.dashboard.views.auth import staff_login, staff_logout
+
 app_name = 'dashboard'
 
 
 urlpatterns = [
+    # ── دخول الموظفين ──
+    path('login/',  staff_login,  name='staff_login'),
+    path('logout/', staff_logout, name='staff_logout'),
+
     path('', index, name='index'),
 
     path('profile/', profile, name='profile'),
