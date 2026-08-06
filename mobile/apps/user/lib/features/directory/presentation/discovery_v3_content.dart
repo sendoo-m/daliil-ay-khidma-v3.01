@@ -43,7 +43,7 @@ class DiscoveryV3Content extends StatelessWidget {
       child: CustomScrollView(
         key: const PageStorageKey<String>('discovery-v3-scroll'),
         physics: const AlwaysScrollableScrollPhysics(),
-        cacheExtent: 700,
+        scrollCacheExtent: 700,
         slivers: [
           SliverPadding(
             padding: EdgeInsets.fromLTRB(
@@ -364,7 +364,7 @@ class _ProductSection extends StatelessWidget {
             child: ListView.separated(
               key: const PageStorageKey<String>('discovery-products'),
               scrollDirection: Axis.horizontal,
-              cacheExtent: 600,
+              scrollCacheExtent: 600,
               itemCount: items.take(8).length,
               separatorBuilder: (_, __) => const SizedBox(width: 10),
               itemBuilder: (context, index) {

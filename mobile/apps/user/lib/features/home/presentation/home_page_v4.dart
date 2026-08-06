@@ -530,9 +530,9 @@ class _ProductRail extends StatelessWidget {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              // ‏double.toString() يعطي "75.0" — الكسر
-                              // العشري لا معنى له في سعر بالجنيه.
-                              '${item.price.toStringAsFixed(0)} جنيه',
+                              // ‏ProductSummary.price نصّ لا رقم —
+                              // ‏ProductDetail هو الذي يحمل double.
+                              '${item.displayPrice} جنيه',
                               style: const TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w900,

@@ -36,6 +36,16 @@ final class ProductSummary {
   final String? image;
 
   double get numericPrice => double.tryParse(price) ?? double.infinity;
+
+  /// السعر للعرض: "75" لا "75.00"، و"75.50" تفضل بكسرها.
+  /// النص غير الرقمي يُعاد كما هو بدل أن يتحوّل إلى Infinity.
+  String get displayPrice {
+    final n = double.tryParse(price);
+    if (n == null) return price;
+    return n == n.roundToDouble()
+        ? n.toStringAsFixed(0)
+        : n.toStringAsFixed(2);
+  }
 }
 
 final class ProductDetail {
