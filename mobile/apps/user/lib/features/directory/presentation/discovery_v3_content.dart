@@ -43,7 +43,11 @@ class DiscoveryV3Content extends StatelessWidget {
       child: CustomScrollView(
         key: const PageStorageKey<String>('discovery-v3-scroll'),
         physics: const AlwaysScrollableScrollPhysics(),
-        scrollCacheExtent: 700,
+        // مهجورة لكنها تعمل. البديل `scrollCacheExtent` يأخذ
+        // ‏ScrollCacheExtent لا رقمًا، وتغييره بلا تحقق حوّل تحذيرًا
+        // غير مؤذٍ إلى خطأ يوقف البناء. يُترك حتى يُختبر محليًا.
+        // ignore: deprecated_member_use
+        cacheExtent: 700,
         slivers: [
           SliverPadding(
             padding: EdgeInsets.fromLTRB(
@@ -364,7 +368,8 @@ class _ProductSection extends StatelessWidget {
             child: ListView.separated(
               key: const PageStorageKey<String>('discovery-products'),
               scrollDirection: Axis.horizontal,
-              scrollCacheExtent: 600,
+              // ignore: deprecated_member_use
+              cacheExtent: 600,
               itemCount: items.take(8).length,
               separatorBuilder: (_, __) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
