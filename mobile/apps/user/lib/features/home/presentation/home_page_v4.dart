@@ -8,7 +8,8 @@ import '../../catalog/data/catalog_models.dart';
 import '../../catalog/presentation/catalog_detail_pages.dart';
 import '../../directory/data/business.dart';
 import '../../directory/presentation/business_card.dart';
-import '../../directory/presentation/directory_hub_page.dart';
+import '../../browse/presentation/browse_hub_page.dart';
+import '../../browse/presentation/browse_results_page.dart';
 import '../../notifications/presentation/notifications_page.dart';
 
 class HomePageV4 extends ConsumerWidget {
@@ -41,10 +42,7 @@ class HomePageV4 extends ConsumerWidget {
                   child: _DirectoryEntry(
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => DirectoryHubPage(
-                          categories: data.categories,
-                          governorates: data.governorates,
-                        ),
+                        builder: (_) => const BrowseHubPage(),
                       ),
                     ),
                   ),
@@ -329,14 +327,28 @@ class _DealsSpotlight extends StatelessWidget {
                         const Spacer(),
                         Row(
                           children: [
-                            Text(
-                              '${item.finalPrice} جنيه',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 19,
-                                fontWeight: FontWeight.w900,
+                            // العرض قد يكون بلا سعر (هدية، خدمة مجانية).
+                            // ‏finalPrice نوعه double? — طباعته مباشرة تُظهر
+                            // كلمة null للمستخدم. hasPrice موجودة في الموديل
+                            // لهذا الغرض بالضبط.
+                            if (item.hasPrice)
+                              Text(
+                                '${item.finalPrice!.toStringAsFixed(0)} جنيه',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              )
+                            else
+                              const Text(
+                                'عرض مجاني',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                            ),
                             const Spacer(),
                             const Icon(
                               Icons.arrow_back_rounded,
@@ -376,10 +388,26 @@ class _CategoryRail extends StatelessWidget {
           itemCount: items.length > 10 ? 10 : items.length,
           separatorBuilder: (_, __) => const SizedBox(width: 12),
           itemBuilder: (_, index) {
-            final name = '${items[index]['name_ar'] ?? ''}';
+            final item = items[index];
+            final name = '${item['name_ar'] ?? ''}';
+            final id = item['id'] as int?;
             return SizedBox(
               width: 96,
-              child: Column(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(22),
+                // كانت بلا onTap تمامًا: اسم وأيقونة ولا شيء يحدث
+                // عند الضغط، وهو أسوأ من غياب القسم أصلًا.
+                onTap: id == null
+                    ? null
+                    : () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => BrowseResultsPage(
+                              title: name,
+                              categoryId: id,
+                            ),
+                          ),
+                        ),
+                child: Column(
                 children: [
                   Container(
                     width: 74,
@@ -405,6 +433,7 @@ class _CategoryRail extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ],
+                ),
               ),
             );
           },
@@ -501,7 +530,9 @@ class _ProductRail extends StatelessWidget {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              '${item.price} جنيه',
+                              // ‏double.toString() يعطي "75.0" — الكسر
+                              // العشري لا معنى له في سعر بالجنيه.
+                              '${item.price.toStringAsFixed(0)} جنيه',
                               style: const TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w900,
