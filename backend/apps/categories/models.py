@@ -102,6 +102,26 @@ class Category(models.Model):
     # ========================================
     # STATUS & TRACKING
     # ========================================
+    # ========================================
+    # DIRECTORY TYPE
+    # ========================================
+    # القسم ينتمي لدليل واحد. "سبّاك" حرفة، "مطعم" محل، "قسم شرطة"
+    # خدمة عامة — والثلاثة لا يصح خلطهم في قائمة واحدة أمام المستخدم.
+    BUSINESS_TYPE_CHOICES = [
+        ('shop', 'محل تجاري'),
+        ('craft', 'حرفة أو مهنة'),
+        ('public', 'خدمة عامة'),
+    ]
+
+    business_type = models.CharField(
+        max_length=20,
+        choices=BUSINESS_TYPE_CHOICES,
+        default='shop',
+        db_index=True,
+        verbose_name='نوع الدليل',
+        help_text='الدليل الذي يظهر فيه هذا القسم'
+    )
+
     is_active = models.BooleanField(
         default=True,
         verbose_name='Active',

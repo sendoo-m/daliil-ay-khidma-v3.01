@@ -22,6 +22,7 @@ from apps.api.views.auth import (
     logout, request_password_reset, confirm_password_reset,
 )
 from apps.api.views.home import MobileHomeView
+from apps.api.views import browse
 from apps.api.views.merchant import (
     MerchantSessionView, MerchantDashboardView,
     MerchantBusinessViewSet, MerchantProductViewSet,
@@ -109,6 +110,12 @@ urlpatterns = [
     path('merchant/session/',     MerchantSessionView.as_view(),        name='merchant_session'),
     path('merchant/dashboard/',   MerchantDashboardView.as_view(),      name='merchant_dashboard'),
     path('merchant/products/bulk/', MerchantProductBulkView.as_view(),  name='merchant_products_bulk'),
+
+    # ── التصفّح العام ──
+    path('browse/directories/',   browse.directories,           name='browse_directories'),
+    path('browse/categories/',    browse.categories_by_directory, name='browse_categories'),
+    path('browse/governorates/',  browse.governorates_index,    name='browse_governorates'),
+    path('browse/governorates/<int:pk>/', browse.governorate_overview, name='browse_governorate'),
     path('admin/notifications/send/', AdminSendNotificationView.as_view(), name='admin_send_notification'),
     path('schema/', SpectacularAPIView.as_view(urlconf='apps.api.urls_v2'), name='schema'),
     path('docs/', SpectacularSwaggerView.as_view(url_name='api_v2:schema'), name='swagger'),

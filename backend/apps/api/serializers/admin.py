@@ -79,6 +79,7 @@ class AdminBusinessListSerializer(serializers.ModelSerializer):
             'id', 'name_ar', 'name_en', 'slug',
             'owner_name', 'category_name', 'governorate_name',
             'is_active', 'is_verified', 'is_featured',
+            'business_type', 'source', 'verified_at',
             'view_count', 'click_count', 'created_at',
         ]
 
@@ -135,7 +136,7 @@ class AdminCategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = [
             'id', 'name_ar', 'name_en', 'slug', 'icon', 'image',
-            'parent', 'parent_name', 'order', 'is_active',
+            'business_type', 'parent', 'parent_name', 'order', 'is_active',
             'businesses_count', 'created_at',
         ]
         read_only_fields = ['id', 'slug', 'created_at']

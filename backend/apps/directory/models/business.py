@@ -304,6 +304,43 @@ class Business(models.Model):
         db_index=True,
         help_text='Business has been verified by admin'
     )
+
+    # ========================================
+    # PROVENANCE
+    # ========================================
+    # من أين جاء هذا السجل. مهم للخدمات العامة تحديدًا: مستشفى أدخله
+    # موظف يختلف عن مستشفى سجّله صاحبه — الأول يحتاج مراجعة دورية
+    # لأن لا أحد سيحدّثه من تلقاء نفسه.
+    SOURCE_CHOICES = [
+        ('owner', 'صاحب النشاط'),
+        ('staff', 'موظف الإدارة'),
+        ('imported', 'مستورَد'),
+    ]
+
+    source = models.CharField(
+        max_length=20,
+        choices=SOURCE_CHOICES,
+        default='owner',
+        db_index=True,
+        verbose_name='المصدر'
+    )
+
+    verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='تاريخ آخر تحقق',
+        help_text='آخر مرة أكّد فيها موظف صحة البيانات'
+    )
+
+    verified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='verified_businesses',
+        related_query_name='verified_business',
+        verbose_name='تحقق منه'
+    )
     
     is_featured = models.BooleanField(
         default=False,

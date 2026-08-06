@@ -300,11 +300,19 @@ class AdminBusinessViewSet(AdminModelViewSet):
 
     @action(detail=True, methods=['post'])
     def verify(self, request, pk=None):
-        return self.audited_toggle(
-            self.get_object(), 'is_verified', True,
+        business = self.get_object()
+        response = self.audited_toggle(
+            business, 'is_verified', True,
             action_on=AuditLog.Action.VERIFY,
             action_off=AuditLog.Action.UNVERIFY,
         )
+        # ختم التحقق: الخدمات العامة لا يحدّثها أحد من تلقاء نفسه،
+        # فنحتاج معرفة عمر البيانات لا مجرد كونها موثّقة.
+        if response.status_code < 400:
+            business.verified_at = timezone.now()
+            business.verified_by = request.user
+            business.save(update_fields=['verified_at', 'verified_by'])
+        return response
 
     @action(detail=True, methods=['post'])
     def unverify(self, request, pk=None):
@@ -502,7 +510,7 @@ class AdminCategoryViewSet(AdminModelViewSet):
         'reorder': Perm.CATEGORY_MANAGE,
     }
 
-    filterset_fields = ['is_active', 'parent']
+    filterset_fields = ['is_active', 'parent', 'business_type']
     search_fields = ['name_ar', 'name_en']
     ordering_fields = ['order', 'name_ar', 'businesses_count']
 
