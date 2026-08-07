@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/app_theme.dart';
 import '../../../app/providers.dart';
@@ -36,6 +37,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
   bool _loading = false;
   bool _styleLoaded = false;
   bool _suppressNextCameraIdle = false;
+  bool _listMode = false;
   double _radius = 10;
   double? _minimumRating;
   bool _featuredOnly = false;
@@ -72,7 +74,9 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
         body: SafeArea(
           child: Stack(
             children: [
-              Positioned.fill(child: _buildMap()),
+              Positioned.fill(
+                child: _listMode ? _buildListResults() : _buildMap(),
+              ),
               Positioned(
                 top: 12,
                 left: 12,
@@ -81,6 +85,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                   controller: _searchController,
                   isArabic: _isArabic,
                   loading: _loading,
+                  listMode: _listMode,
                   radius: _radius,
                   resultCount: _visibleItems.length,
                   filterCount: _filterCount,
@@ -88,6 +93,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                   onSearchSubmitted: (_) => _searchNow(),
                   onLocation: _loadNearby,
                   onFilters: _showFilters,
+                  onToggleMode: () => setState(() => _listMode = !_listMode),
                 ),
               ),
               Positioned(
@@ -112,7 +118,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                   right: 0,
                   child: LinearProgressIndicator(),
                 ),
-              if (_pendingAreaCenter != null)
+              if (!_listMode && _pendingAreaCenter != null)
                 Positioned(
                   top: 204,
                   left: 0,
@@ -129,18 +135,18 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                 ),
               if (_message != null)
                 Positioned(
-                  top: _pendingAreaCenter == null ? 204 : 258,
+                  top: !_listMode && _pendingAreaCenter != null ? 258 : 204,
                   left: 16,
                   right: 16,
                   child: _MessageCard(message: _message!),
                 ),
-              if (_visibleItems.isNotEmpty)
+              if (!_listMode && _visibleItems.isNotEmpty)
                 Positioned(
                   left: 0,
                   right: 0,
                   bottom: 14,
                   child: SizedBox(
-                    height: 164,
+                    height: 174,
                     child: ListView.separated(
                       controller: _resultsController,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -155,6 +161,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                           selected: _selected?.id == business.id,
                           onTap: () => _selectBusiness(business),
                           onDetails: () => _openDetails(business),
+                          onDirections: () => _openDirections(business),
                         );
                       },
                     ),
@@ -171,31 +178,17 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
       return ColoredBox(
         color: AppColors.surfaceMuted,
         child: Center(
-          child: Container(
-            margin: const EdgeInsets.all(28),
-            padding: const EdgeInsets.all(30),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(26),
-              border: Border.all(color: AppColors.border),
-            ),
+          child: Padding(
+            padding: const EdgeInsets.all(28),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 88,
-                  height: 88,
-                  decoration: const BoxDecoration(
-                    gradient: AppColors.brandGradient,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.location_searching_rounded,
-                    color: Colors.white,
-                    size: 42,
-                  ),
+                const Icon(
+                  Icons.location_searching_rounded,
+                  color: AppColors.primary,
+                  size: 54,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
                 Text(
                   _tr(
                     'جارٍ تحديد موقعك لعرض الأنشطة القريبة',
@@ -233,13 +226,35 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
     );
   }
 
+  Widget _buildListResults() => ColoredBox(
+        color: AppColors.surfaceMuted,
+        child: ListView.separated(
+          padding: const EdgeInsets.fromLTRB(14, 214, 14, 24),
+          itemCount: _visibleItems.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          itemBuilder: (_, index) {
+            final business = _visibleItems[index];
+            return _BusinessListCard(
+              business: business,
+              isArabic: _isArabic,
+              onDetails: () => _openDetails(business),
+              onDirections: () => _openDirections(business),
+              onShowOnMap: () async {
+                setState(() => _listMode = false);
+                await Future<void>.delayed(const Duration(milliseconds: 80));
+                await _selectBusiness(business, scrollToCard: true);
+              },
+            );
+          },
+        ),
+      );
+
   Future<void> _loadNearby() async {
     setState(() {
       _loading = true;
       _message = null;
       _pendingAreaCenter = null;
     });
-
     try {
       final coordinates = await ref.read(locationServiceProvider).current();
       if (!mounted) return;
@@ -271,10 +286,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
 
   void _onSearchChanged(String _) {
     _searchDebounce?.cancel();
-    _searchDebounce = Timer(
-      const Duration(milliseconds: 450),
-      _searchNow,
-    );
+    _searchDebounce = Timer(const Duration(milliseconds: 450), _searchNow);
   }
 
   Future<void> _searchNow() async {
@@ -323,11 +335,9 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
     final target = _mapController?.cameraPosition?.target;
     final current = _coordinates;
     if (!mounted || target == null || current == null) return;
-
     final latitudeDelta = (target.latitude - current.latitude).abs();
     final longitudeDelta = (target.longitude - current.longitude).abs();
     if (latitudeDelta < 0.0005 && longitudeDelta < 0.0005) return;
-
     setState(() {
       _pendingAreaCenter = UserCoordinates(
         latitude: target.latitude,
@@ -341,14 +351,12 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
     _searchCancelToken?.cancel('Superseded by a newer map search');
     final cancelToken = CancelToken();
     _searchCancelToken = cancelToken;
-
     if (mounted) {
       setState(() {
         _loading = true;
         _message = null;
       });
     }
-
     try {
       final items = await ref.read(businessRepositoryProvider).nearby(
             latitude: coordinates.latitude,
@@ -362,25 +370,17 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
             cancelToken: cancelToken,
           );
       if (!mounted || revision != _requestRevision) return;
-
       setState(() {
         _visibleItems = items;
         _selected = items.isEmpty ? null : items.first;
         _message = items.isEmpty
-            ? (_searchController.text.trim().isEmpty && _filterCount == 0
-                ? _tr(
-                    'لا توجد أنشطة ضمن النطاق المحدد',
-                    'No businesses in this radius',
-                  )
-                : _tr(
-                    'لا توجد نتائج مطابقة للبحث والفلاتر',
-                    'No results match this search and filters',
-                  ))
+            ? _tr(
+                'لا توجد نتائج مطابقة ضمن المنطقة الحالية',
+                'No matching results in this area',
+              )
             : null;
       });
-      if (_resultsController.hasClients) {
-        _resultsController.jumpTo(0);
-      }
+      if (_resultsController.hasClients) _resultsController.jumpTo(0);
       await _refreshMarkers();
     } on DioException catch (error) {
       if (CancelToken.isCancel(error) || !mounted) return;
@@ -412,37 +412,18 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.primarySoft,
-                        borderRadius: BorderRadius.circular(15),
+                Text(
+                  _tr('خيارات الخريطة', 'Map options'),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
                       ),
-                      child: const Icon(
-                        Icons.map_rounded,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _tr('خيارات الخريطة', 'Map options'),
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w900,
-                            ),
-                      ),
-                    ),
-                  ],
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 18),
                 Text(
                   _tr('نطاق البحث', 'Search radius'),
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
-                const SizedBox(height: 9),
+                const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   children: [5.0, 10.0, 20.0, 50.0]
@@ -450,10 +431,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                         (value) => ChoiceChip(
                           selected: radius == value,
                           label: Text(
-                            _tr(
-                              '${value.toInt()} كم',
-                              '${value.toInt()} km',
-                            ),
+                            _tr('${value.toInt()} كم', '${value.toInt()} km'),
                           ),
                           onSelected: (_) =>
                               setModalState(() => radius = value),
@@ -461,7 +439,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                       )
                       .toList(growable: false),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 16),
                 DropdownButtonFormField<double?>(
                   initialValue: rating,
                   decoration: InputDecoration(
@@ -486,10 +464,8 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                       child: Text(_tr('4.5 نجمة فأكثر', '4.5+ stars')),
                     ),
                   ],
-                  onChanged: (value) =>
-                      setModalState(() => rating = value),
+                  onChanged: (value) => setModalState(() => rating = value),
                 ),
-                const SizedBox(height: 8),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   value: featured,
@@ -497,13 +473,10 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                       setModalState(() => featured = value),
                   secondary: const Icon(Icons.workspace_premium_outlined),
                   title: Text(
-                    _tr(
-                      'الأنشطة المميزة فقط',
-                      'Featured businesses only',
-                    ),
+                    _tr('الأنشطة المميزة فقط', 'Featured businesses only'),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 FilledButton.icon(
                   onPressed: () => Navigator.pop(context, true),
                   icon: const Icon(Icons.check_rounded),
@@ -516,7 +489,6 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
       ),
     );
     if (applied != true || !mounted) return;
-
     setState(() {
       _radius = radius;
       _minimumRating = rating;
@@ -528,7 +500,6 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
   Future<void> _refreshMarkers() async {
     final controller = _mapController;
     if (!_styleLoaded || controller == null) return;
-
     await controller.clearCircles();
     _businessByCircle.clear();
     for (final business in _visibleItems.where((item) => item.hasCoordinates)) {
@@ -536,21 +507,25 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
       final circle = await controller.addCircle(
         CircleOptions(
           geometry: LatLng(business.latitude!, business.longitude!),
-          circleRadius: selected ? 13 : 9,
-          circleColor: selected ? '#667EEA' : '#0A8F68',
+          circleRadius: selected ? 14 : 10,
+          circleColor: selected ? '#6C5CE7' : _markerColor(business),
           circleStrokeColor: '#FFFFFF',
-          circleStrokeWidth: 3,
+          circleStrokeWidth: selected ? 4 : 3,
         ),
       );
       _businessByCircle[circle] = business;
     }
   }
 
+  String _markerColor(Business business) => switch (business.businessType) {
+        'craft' => '#E8952E',
+        'public' => '#3478F6',
+        _ => '#0A8F68',
+      };
+
   void _onCircleTapped(Circle circle) {
     final business = _businessByCircle[circle];
-    if (business != null) {
-      _selectBusiness(business, scrollToCard: true);
-    }
+    if (business != null) _selectBusiness(business, scrollToCard: true);
   }
 
   Future<void> _selectBusiness(
@@ -559,7 +534,6 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
   }) async {
     setState(() => _selected = business);
     await _refreshMarkers();
-
     if (scrollToCard) {
       final index = _visibleItems.indexWhere((item) => item.id == business.id);
       if (index >= 0 && _resultsController.hasClients) {
@@ -574,7 +548,6 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
         );
       }
     }
-
     if (_mapController != null && business.hasCoordinates) {
       await _moveCameraTo(
         UserCoordinates(
@@ -601,6 +574,24 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
             zoom,
           );
     await controller.animateCamera(update);
+  }
+
+  Future<void> _openDirections(Business business) async {
+    if (!business.hasCoordinates) return;
+    final uri = Uri.https('www.google.com', '/maps/dir/', {
+      'api': '1',
+      'destination': '${business.latitude},${business.longitude}',
+    });
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _tr('تعذر فتح تطبيق الخرائط', 'Could not open maps'),
+          ),
+        ),
+      );
+    }
   }
 
   void _openDetails(Business business) => Navigator.of(context).push(
@@ -733,6 +724,7 @@ class _MapToolbar extends StatelessWidget {
     required this.controller,
     required this.isArabic,
     required this.loading,
+    required this.listMode,
     required this.radius,
     required this.resultCount,
     required this.filterCount,
@@ -740,11 +732,13 @@ class _MapToolbar extends StatelessWidget {
     required this.onSearchSubmitted,
     required this.onLocation,
     required this.onFilters,
+    required this.onToggleMode,
   });
 
   final TextEditingController controller;
   final bool isArabic;
   final bool loading;
+  final bool listMode;
   final double radius;
   final int resultCount;
   final int filterCount;
@@ -752,6 +746,7 @@ class _MapToolbar extends StatelessWidget {
   final ValueChanged<String> onSearchSubmitted;
   final VoidCallback onLocation;
   final VoidCallback onFilters;
+  final VoidCallback onToggleMode;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -801,6 +796,16 @@ class _MapToolbar extends StatelessWidget {
                     ),
                   ),
                 ),
+                IconButton.filledTonal(
+                  tooltip: listMode
+                      ? (isArabic ? 'عرض الخريطة' : 'Map view')
+                      : (isArabic ? 'عرض القائمة' : 'List view'),
+                  onPressed: onToggleMode,
+                  icon: Icon(
+                    listMode ? Icons.map_outlined : Icons.view_list_rounded,
+                  ),
+                ),
+                const SizedBox(width: 6),
                 OutlinedButton.icon(
                   onPressed: onFilters,
                   icon: Badge(
@@ -830,17 +835,9 @@ class _MessageCard extends StatelessWidget {
           padding: const EdgeInsets.all(15),
           child: Row(
             children: [
-              const Icon(
-                Icons.info_outline_rounded,
-                color: AppColors.primary,
-              ),
+              const Icon(Icons.info_outline_rounded, color: AppColors.primary),
               const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  message,
-                  textAlign: TextAlign.center,
-                ),
-              ),
+              Expanded(child: Text(message, textAlign: TextAlign.center)),
             ],
           ),
         ),
@@ -854,6 +851,7 @@ class _BusinessMapCard extends StatelessWidget {
     required this.selected,
     required this.onTap,
     required this.onDetails,
+    required this.onDirections,
   });
 
   final Business business;
@@ -861,6 +859,7 @@ class _BusinessMapCard extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final VoidCallback onDetails;
+  final VoidCallback onDirections;
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -878,92 +877,191 @@ class _BusinessMapCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(22),
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
+              padding: const EdgeInsets.all(12),
+              child: Column(
                 children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceMuted,
-                      borderRadius: BorderRadius.circular(19),
-                    ),
-                    child: business.logo == null
-                        ? const Icon(
-                            Icons.storefront_rounded,
-                            color: AppColors.primary,
-                            size: 30,
-                          )
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(19),
-                            child: Image.network(
-                              business.logo!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(
-                                Icons.storefront_rounded,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                  ),
-                  const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    child: Row(
                       children: [
-                        Text(
-                          business.displayNameFor(isArabic ? 'ar' : 'en'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w900),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          business.categoryName.isEmpty
-                              ? business.area
-                              : business.categoryName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: AppColors.muted),
-                        ),
-                        const SizedBox(height: 7),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.star_rounded,
-                              size: 17,
-                              color: AppColors.accentDark,
-                            ),
-                            Text(' ${business.rating.toStringAsFixed(1)}'),
-                            if (business.distanceKm != null) ...[
-                              const Text('  •  '),
-                              Text(
-                                isArabic
-                                    ? '${business.distanceKm!.toStringAsFixed(1)} كم'
-                                    : '${business.distanceKm!.toStringAsFixed(1)} km',
-                              ),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        GestureDetector(
-                          onTap: onDetails,
-                          child: Text(
-                            isArabic ? 'عرض التفاصيل' : 'View details',
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w900,
-                            ),
+                        _BusinessLogo(business: business),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _BusinessInfo(
+                            business: business,
+                            isArabic: isArabic,
                           ),
                         ),
                       ],
                     ),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton.icon(
+                          onPressed: onDirections,
+                          icon: const Icon(Icons.directions_outlined, size: 18),
+                          label: Text(isArabic ? 'الاتجاهات' : 'Directions'),
+                        ),
+                      ),
+                      Expanded(
+                        child: FilledButton.tonal(
+                          onPressed: onDetails,
+                          child: Text(isArabic ? 'التفاصيل' : 'Details'),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
         ),
+      );
+}
+
+class _BusinessListCard extends StatelessWidget {
+  const _BusinessListCard({
+    required this.business,
+    required this.isArabic,
+    required this.onDetails,
+    required this.onDirections,
+    required this.onShowOnMap,
+  });
+
+  final Business business;
+  final bool isArabic;
+  final VoidCallback onDetails;
+  final VoidCallback onDirections;
+  final VoidCallback onShowOnMap;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  _BusinessLogo(business: business, size: 78),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: _BusinessInfo(
+                      business: business,
+                      isArabic: isArabic,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onShowOnMap,
+                      icon: const Icon(Icons.pin_drop_outlined),
+                      label: Text(isArabic ? 'على الخريطة' : 'On map'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onDirections,
+                      icon: const Icon(Icons.directions_outlined),
+                      label: Text(isArabic ? 'الاتجاهات' : 'Directions'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: onDetails,
+                      child: Text(isArabic ? 'التفاصيل' : 'Details'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+class _BusinessLogo extends StatelessWidget {
+  const _BusinessLogo({required this.business, this.size = 72});
+  final Business business;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(19),
+        ),
+        child: business.logo == null
+            ? const Icon(
+                Icons.storefront_rounded,
+                color: AppColors.primary,
+                size: 30,
+              )
+            : ClipRRect(
+                borderRadius: BorderRadius.circular(19),
+                child: Image.network(
+                  business.logo!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.storefront_rounded,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+      );
+}
+
+class _BusinessInfo extends StatelessWidget {
+  const _BusinessInfo({required this.business, required this.isArabic});
+  final Business business;
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            business.displayNameFor(isArabic ? 'ar' : 'en'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            business.categoryName.isEmpty ? business.area : business.categoryName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: AppColors.muted),
+          ),
+          const SizedBox(height: 7),
+          Wrap(
+            spacing: 7,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              const Icon(Icons.star_rounded, size: 17, color: AppColors.accentDark),
+              Text(business.rating.toStringAsFixed(1)),
+              if (business.distanceKm != null)
+                Text(
+                  isArabic
+                      ? '${business.distanceKm!.toStringAsFixed(1)} كم'
+                      : '${business.distanceKm!.toStringAsFixed(1)} km',
+                ),
+              if (business.isFeatured)
+                const Icon(
+                  Icons.workspace_premium_rounded,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
+            ],
+          ),
+        ],
       );
 }
