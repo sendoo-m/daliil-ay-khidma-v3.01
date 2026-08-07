@@ -23,6 +23,7 @@ from apps.api.views.auth import (
 )
 from apps.api.views.home import MobileHomeView
 from apps.api.views import browse
+from apps.api.views import search as unified
 from apps.api.views.merchant import (
     MerchantSessionView, MerchantDashboardView,
     MerchantBusinessViewSet, MerchantProductViewSet,
@@ -116,6 +117,10 @@ urlpatterns = [
     path('browse/categories/',    browse.categories_by_directory, name='browse_categories'),
     path('browse/governorates/',  browse.governorates_index,    name='browse_governorates'),
     path('browse/governorates/<int:pk>/', browse.governorate_overview, name='browse_governorate'),
+
+    # ── البحث الموحّد: أماكن ومنتجات معًا ──
+    path('search/',         unified.unified_search,     name='unified_search'),
+    path('search/suggest/', unified.search_suggestions, name='search_suggest'),
     path('admin/notifications/send/', AdminSendNotificationView.as_view(), name='admin_send_notification'),
     path('schema/', SpectacularAPIView.as_view(urlconf='apps.api.urls_v2'), name='schema'),
     path('docs/', SpectacularSwaggerView.as_view(url_name='api_v2:schema'), name='swagger'),

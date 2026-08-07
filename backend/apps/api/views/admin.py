@@ -115,6 +115,10 @@ class AdminDashboardViewSet(viewsets.ViewSet):
             verified=Count('id', filter=Q(is_verified=True)),
             pending=Count('id', filter=Q(is_verified=False, is_active=True)),
             featured=Count('id', filter=Q(is_featured=True)),
+            no_location=Count(
+                'id',
+                filter=Q(latitude__isnull=True) | Q(longitude__isnull=True),
+            ),
             views=Sum('view_count'),
             clicks=Sum('click_count'),
         )
@@ -148,6 +152,9 @@ class AdminDashboardViewSet(viewsets.ViewSet):
             },
             'businesses': {
                 'total': business_agg['total'],
+                # نشاط بلا إحداثيات لا يظهر على الخريطة إطلاقًا، ولا
+                # شيء في الواجهة يشير إلى ذلك — فيبدو البحث معطّلًا.
+                'missing_location': business_agg['no_location'],
                 'verified': business_agg['verified'],
                 'pending_verification': business_agg['pending'],
                 'featured': business_agg['featured'],
