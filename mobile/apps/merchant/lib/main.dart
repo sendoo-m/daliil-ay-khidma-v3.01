@@ -12,6 +12,7 @@ import 'src/features/notifications/notifications_page.dart';
 import 'src/features/products/deals_manager_page.dart';
 import 'src/features/products/products_page.dart';
 import 'src/features/reviews/reviews_page.dart';
+import 'src/features/subscriptions/subscription_center_page.dart';
 import 'src/shared/providers.dart';
 import 'src/shared/widgets.dart';
 
@@ -57,7 +58,6 @@ class _Gate extends ConsumerWidget {
   }
 }
 
-/// الأقسام اليومية الأساسية لصاحب النشاط.
 class _Shell extends ConsumerStatefulWidget {
   const _Shell();
 
@@ -113,6 +113,11 @@ class _ShellState extends ConsumerState<_Shell> {
                 ],
               ),
               actions: [
+                IconButton(
+                  tooltip: 'الاشتراك',
+                  onPressed: _openSubscription,
+                  icon: const Icon(Icons.workspace_premium_outlined),
+                ),
                 _NotificationBell(
                   unread: unread,
                   onTap: _openNotifications,
@@ -128,9 +133,23 @@ class _ShellState extends ConsumerState<_Shell> {
         _ => const ShopPage(),
       },
       floatingActionButton: _index == 0
-          ? _HomeNotificationButton(
-              unread: unread,
-              onTap: _openNotifications,
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: 'merchant-subscription',
+                  tooltip: 'الاشتراك',
+                  backgroundColor: Shop.brass,
+                  foregroundColor: Colors.white,
+                  onPressed: _openSubscription,
+                  child: const Icon(Icons.workspace_premium_outlined),
+                ),
+                const SizedBox(height: Gap.sm),
+                _HomeNotificationButton(
+                  unread: unread,
+                  onTap: _openNotifications,
+                ),
+              ],
             )
           : null,
       bottomNavigationBar: NavigationBar(
@@ -181,6 +200,14 @@ class _ShellState extends ConsumerState<_Shell> {
       ),
     );
     ref.invalidate(merchantUnreadNotificationsProvider);
+  }
+
+  Future<void> _openSubscription() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const SubscriptionCenterPage(),
+      ),
+    );
   }
 }
 
