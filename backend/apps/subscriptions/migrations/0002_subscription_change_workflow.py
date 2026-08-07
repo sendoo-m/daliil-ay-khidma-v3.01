@@ -52,11 +52,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='subscriptionchangerequest',
-            index=models.Index(fields=['owner', 'status', '-created_at'], name='subscriptio_owner_i_30f533_idx'),
+            index=models.Index(fields=['owner', 'status', '-created_at'], name='subscriptio_owner_i_ec79de_idx'),
         ),
         migrations.AddIndex(
             model_name='subscriptionchangerequest',
-            index=models.Index(fields=['status', '-created_at'], name='subscriptio_status_40fa58_idx'),
+            index=models.Index(fields=['status', '-created_at'], name='subscriptio_status_e52064_idx'),
         ),
         migrations.AddConstraint(
             model_name='subscriptionchangerequest',
