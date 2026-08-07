@@ -1,13 +1,14 @@
 """Merchant onboarding API shared by customer, merchant and web clients."""
 
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.directory.models import Business
-from apps.subscriptions.models import SubscriptionPlan
+from apps.subscriptions.models import Subscription, SubscriptionPlan
 from apps.subscriptions.onboarding import build_onboarding_state, get_or_create_onboarding
 
 
@@ -24,6 +25,22 @@ class MerchantOnboardingPlanView(APIView):
 
     @transaction.atomic
     def post(self, request):
+        if Subscription.objects.filter(
+            business__owner=request.user,
+            status='active',
+            end_date__gt=timezone.now(),
+        ).exists():
+            return Response(
+                {
+                    'detail': (
+                        'An active subscription already exists. '
+                        'Use the subscription change workflow instead.'
+                    ),
+                    'code': 'active_subscription_exists',
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
         try:
             plan_id = int(request.data.get('plan_id'))
         except (TypeError, ValueError):
