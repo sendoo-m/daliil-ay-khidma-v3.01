@@ -99,7 +99,6 @@ def business_list(request):
             'subscription__plan',
         )
         .annotate(
-            products_count=Count('product', distinct=True),
             deals_count=Count('deal', distinct=True),
             reviews_count=Count('reviews', distinct=True),
         )
