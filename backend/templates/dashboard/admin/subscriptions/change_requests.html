@@ -1,0 +1,45 @@
+{% extends 'dashboard/admin/base.html' %}
+{% load i18n %}
+{% block title %}{% if LANGUAGE_CODE == 'ar' %}طلبات تغيير الخطط{% else %}Plan Change Requests{% endif %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">{% if LANGUAGE_CODE == 'ar' %}طلبات تغيير الخطط{% else %}Plan Change Requests{% endif %}</h1>
+    <p class="text-muted mb-0">{% if LANGUAGE_CODE == 'ar' %}راجع الترقية أو التخفيض وما سيحدث للمحلات والمنتجات قبل الاعتماد.{% else %}Review upgrades or downgrades and their impact before approval.{% endif %}</p>
+  </div>
+  <a class="btn btn-outline-primary" href="{% url 'dashboard:admin_subscriptions_home' %}">{% if LANGUAGE_CODE == 'ar' %}لوحة الاشتراكات{% else %}Subscriptions Dashboard{% endif %}</a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3"><div class="stat-card stat-card-orange h-100"><div class="d-flex justify-content-between"><div><div>{% if LANGUAGE_CODE == 'ar' %}بانتظار المراجعة{% else %}Pending{% endif %}</div><div class="stat-number">{{ stats.pending }}</div></div><i class="fas fa-clock stat-icon"></i></div></div></div>
+  <div class="col-6 col-xl-3"><div class="stat-card stat-card-green h-100"><div class="d-flex justify-content-between"><div><div>{% if LANGUAGE_CODE == 'ar' %}تم التطبيق{% else %}Applied{% endif %}</div><div class="stat-number">{{ stats.applied }}</div></div><i class="fas fa-check-circle stat-icon"></i></div></div></div>
+  <div class="col-6 col-xl-3"><div class="stat-card stat-card-red h-100"><div class="d-flex justify-content-between"><div><div>{% if LANGUAGE_CODE == 'ar' %}مرفوض{% else %}Rejected{% endif %}</div><div class="stat-number">{{ stats.rejected }}</div></div><i class="fas fa-times-circle stat-icon"></i></div></div></div>
+  <div class="col-6 col-xl-3"><div class="stat-card stat-card-blue h-100"><div class="d-flex justify-content-between"><div><div>{% if LANGUAGE_CODE == 'ar' %}الإجمالي{% else %}Total{% endif %}</div><div class="stat-number">{{ stats.total }}</div></div><i class="fas fa-right-left stat-icon"></i></div></div></div>
+</div>
+
+<div class="table-card mb-4">
+  <form method="get" class="row g-3 align-items-end">
+    <div class="col-lg-4"><label class="form-label">{% if LANGUAGE_CODE == 'ar' %}بحث{% else %}Search{% endif %}</label><input class="form-control" name="search" value="{{ search }}" placeholder="{% if LANGUAGE_CODE == 'ar' %}صاحب النشاط، النشاط أو رقم العملية{% else %}Owner, business or transaction ID{% endif %}"></div>
+    <div class="col-lg-3"><label class="form-label">{% if LANGUAGE_CODE == 'ar' %}الحالة{% else %}Status{% endif %}</label><select class="form-select" name="status"><option value="">{% if LANGUAGE_CODE == 'ar' %}كل الحالات{% else %}All statuses{% endif %}</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+    <div class="col-lg-3"><label class="form-label">{% if LANGUAGE_CODE == 'ar' %}نوع التغيير{% else %}Change type{% endif %}</label><select class="form-select" name="change_type"><option value="">{% if LANGUAGE_CODE == 'ar' %}الكل{% else %}All{% endif %}</option>{% for value,label in change_choices %}<option value="{{ value }}" {% if change_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+    <div class="col-lg-2 d-grid"><button class="btn btn-primary">{% if LANGUAGE_CODE == 'ar' %}تطبيق{% else %}Apply{% endif %}</button></div>
+  </form>
+</div>
+
+<div class="table-card">
+  <div class="table-responsive"><table class="table align-middle">
+    <thead><tr><th>#</th><th>{% if LANGUAGE_CODE == 'ar' %}صاحب النشاط{% else %}Owner{% endif %}</th><th>{% if LANGUAGE_CODE == 'ar' %}النشاط{% else %}Business{% endif %}</th><th>{% if LANGUAGE_CODE == 'ar' %}التغيير{% else %}Change{% endif %}</th><th>{% if LANGUAGE_CODE == 'ar' %}المبلغ{% else %}Amount{% endif %}</th><th>{% if LANGUAGE_CODE == 'ar' %}الحالة{% else %}Status{% endif %}</th><th>{% if LANGUAGE_CODE == 'ar' %}التاريخ{% else %}Date{% endif %}</th><th></th></tr></thead>
+    <tbody>{% for item in change_requests %}<tr>
+      <td class="fw-bold">#{{ item.id }}</td>
+      <td>{{ item.owner.get_full_name|default:item.owner.username }}<div class="small text-muted">{{ item.owner.email }}</div></td>
+      <td>{{ item.subscription.business }}</td>
+      <td><div class="fw-semibold">{{ item.current_plan.display_name }} <i class="fas fa-arrow-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %} text-muted mx-1"></i> {{ item.target_plan.display_name }}</div><small class="text-muted">{{ item.get_change_type_display }} · {{ item.get_billing_period_display }}</small></td>
+      <td>{{ item.requested_amount|floatformat:0 }}</td>
+      <td>{% if item.status == 'pending' %}<span class="badge text-bg-warning">{{ item.get_status_display }}</span>{% elif item.status == 'applied' %}<span class="badge text-bg-success">{{ item.get_status_display }}</span>{% elif item.status == 'rejected' %}<span class="badge text-bg-danger">{{ item.get_status_display }}</span>{% else %}<span class="badge text-bg-secondary">{{ item.get_status_display }}</span>{% endif %}</td>
+      <td>{{ item.created_at|date:'Y-m-d H:i' }}</td>
+      <td><a class="btn btn-sm btn-outline-primary" href="{% url 'dashboard:admin_subscription_change_request_detail' item.id %}">{% if LANGUAGE_CODE == 'ar' %}مراجعة{% else %}Review{% endif %}</a></td>
+    </tr>{% empty %}<tr><td colspan="8" class="text-center text-muted py-5">{% if LANGUAGE_CODE == 'ar' %}لا توجد طلبات تغيير خطط.{% else %}No plan change requests found.{% endif %}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% if change_requests.paginator.num_pages > 1 %}<nav><ul class="pagination justify-content-center mb-0">{% if change_requests.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ change_requests.previous_page_number }}&search={{ search }}&status={{ status }}&change_type={{ change_type }}">{% if LANGUAGE_CODE == 'ar' %}السابق{% else %}Previous{% endif %}</a></li>{% endif %}<li class="page-item active"><span class="page-link">{{ change_requests.number }} / {{ change_requests.paginator.num_pages }}</span></li>{% if change_requests.has_next %}<li class="page-item"><a class="page-link" href="?page={{ change_requests.next_page_number }}&search={{ search }}&status={{ status }}&change_type={{ change_type }}">{% if LANGUAGE_CODE == 'ar' %}التالي{% else %}Next{% endif %}</a></li>{% endif %}</ul></nav>{% endif %}
+</div>
+{% endblock %}

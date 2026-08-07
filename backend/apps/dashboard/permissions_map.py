@@ -13,7 +13,6 @@ Dashboard — Permission Map
 
 from apps.administration.constants import Perm
 
-#: مسارات لا تحتاج صلاحية — تخص المستخدم نفسه لا الإدارة.
 PUBLIC_DASHBOARD_ROUTES = {
     'staff_login',
     'staff_logout',
@@ -26,7 +25,6 @@ PUBLIC_DASHBOARD_ROUTES = {
     'ajax_cities',
     'ajax_districts',
     'ajax_districts_by_gov',
-    # مسارات صاحب النشاط: الملكية تُفحص داخل الـview نفسه.
     'business_list', 'business_detail', 'business_create',
     'business_create_craft', 'business_update', 'business_delete',
     'product_list', 'product_create', 'product_update', 'product_delete',
@@ -34,14 +32,10 @@ PUBLIC_DASHBOARD_ROUTES = {
     'review_list', 'review_reply', 'review_approve', 'review_reject',
 }
 
-#: مسارات تحتاج أن يكون المستخدم موظفًا، بلا صلاحية بعينها.
-#: صفحة الهبوط من هذا النوع: الموظف يُحوَّل إليها فور الدخول، فاشتراط
-#: صلاحية عليها يعني أن مشرف المحتوى يدخل ويصطدم بحائط قبل أن يرى شيئًا.
 STAFF_ONLY_ROUTES = {
     'admin_home',
 }
 
-#: الصلاحية المطلوبة لكل مسار إداري.
 DASHBOARD_PERMISSIONS = {
     # ── التقارير ──
     'admin_analytics': Perm.ANALYTICS_VIEW,
@@ -104,14 +98,24 @@ DASHBOARD_PERMISSIONS = {
     'admin_review_reject': Perm.REVIEW_MODERATE,
     'admin_review_delete': Perm.REVIEW_DELETE,
 
+    # ── الاشتراكات ──
+    'admin_subscriptions_home': Perm.SUBSCRIPTION_VIEW,
+    'admin_subscriptions_list': Perm.SUBSCRIPTION_VIEW,
+    'admin_subscription_detail': Perm.SUBSCRIPTION_VIEW,
+    'admin_subscription_plans': Perm.SUBSCRIPTION_VIEW,
+    'admin_subscription_change_requests': Perm.SUBSCRIPTION_VIEW,
+    'admin_subscription_change_request_detail': Perm.SUBSCRIPTION_VIEW,
+    'admin_subscription_plan_edit': Perm.SUBSCRIPTION_MANAGE,
+    'admin_subscription_activate': Perm.SUBSCRIPTION_MANAGE,
+    'admin_subscription_cancel': Perm.SUBSCRIPTION_MANAGE,
+    'admin_subscription_change_request_approve': Perm.SUBSCRIPTION_MANAGE,
+    'admin_subscription_change_request_reject': Perm.SUBSCRIPTION_MANAGE,
+
     # ── النظام ──
     'admin_settings': Perm.SETTINGS_MANAGE,
     'admin_clear_cache': Perm.SETTINGS_MANAGE,
 }
 
-#: المسارات التي تغيّر بيانات — تُسجَّل في سجل العمليات.
-#: القراءة لا تُسجَّل: سجل يمتلئ بـ"فتح صفحة" لا يُقرأ، والسؤال الحقيقي
-#: دائمًا "مين غيّر ده؟" لا "مين شافه؟".
 MUTATING_ROUTES = {
     name: action
     for name, action in {
@@ -148,6 +152,11 @@ MUTATING_ROUTES = {
         'admin_review_approve': 'approve',
         'admin_review_reject': 'reject',
         'admin_review_delete': 'delete',
+        'admin_subscription_plan_edit': 'update',
+        'admin_subscription_activate': 'activate',
+        'admin_subscription_cancel': 'cancel',
+        'admin_subscription_change_request_approve': 'approve',
+        'admin_subscription_change_request_reject': 'reject',
         'admin_settings': 'update',
         'admin_clear_cache': 'update',
     }.items()

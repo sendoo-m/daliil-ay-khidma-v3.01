@@ -27,18 +27,14 @@ from apps.dashboard.views.review import (
 from apps.dashboard.views.owner import owner_dashboard
 from apps.dashboard.views import admin_views, admin_crud
 from apps.dashboard.views import subscription_admin
-
-
 from apps.dashboard.views.auth import staff_login, staff_logout
 
 app_name = 'dashboard'
 
 
 urlpatterns = [
-    # ── دخول الموظفين ──
-    path('login/',  staff_login,  name='staff_login'),
+    path('login/', staff_login, name='staff_login'),
     path('logout/', staff_logout, name='staff_logout'),
-
     path('', index, name='index'),
 
     path('profile/', profile, name='profile'),
@@ -76,6 +72,10 @@ urlpatterns = [
     path('admin/subscriptions/list/', subscription_admin.subscription_list, name='admin_subscriptions_list'),
     path('admin/subscriptions/plans/', subscription_admin.subscription_plan_list, name='admin_subscription_plans'),
     path('admin/subscriptions/plans/<int:plan_id>/edit/', subscription_admin.subscription_plan_edit, name='admin_subscription_plan_edit'),
+    path('admin/subscriptions/changes/', subscription_admin.subscription_change_request_list, name='admin_subscription_change_requests'),
+    path('admin/subscriptions/changes/<int:request_id>/', subscription_admin.subscription_change_request_detail, name='admin_subscription_change_request_detail'),
+    path('admin/subscriptions/changes/<int:request_id>/approve/', subscription_admin.subscription_change_request_approve, name='admin_subscription_change_request_approve'),
+    path('admin/subscriptions/changes/<int:request_id>/reject/', subscription_admin.subscription_change_request_reject, name='admin_subscription_change_request_reject'),
     path('admin/subscriptions/<int:subscription_id>/', subscription_admin.subscription_detail, name='admin_subscription_detail'),
     path('admin/subscriptions/<int:subscription_id>/activate/', subscription_admin.subscription_activate, name='admin_subscription_activate'),
     path('admin/subscriptions/<int:subscription_id>/cancel/', subscription_admin.subscription_cancel, name='admin_subscription_cancel'),
