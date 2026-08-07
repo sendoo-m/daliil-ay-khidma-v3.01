@@ -200,7 +200,7 @@ def business_create(request, business_type='shop'):
             return redirect('dashboard:business_detail', slug=business.slug)
 
         error_section = _business_form_error_section(form, formset)
-        messages.error(request, 'تعذر حفظ النشاط. راجع الأخطاء الموضحة في النموذج.')
+        messages.error(request, 'لم يتم حفظ المحل. راجع الأخطاء الموضحة في النموذج.')
     else:
         form = BusinessCreateForm(business_type=business_type, user=request.user)
         formset = BusinessImageFormSet()
