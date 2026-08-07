@@ -7,10 +7,6 @@ import '../../shared/models.dart';
 import '../../shared/providers.dart';
 import '../../shared/widgets.dart';
 
-/// Merchant Dashboard V2.
-///
-/// The page is deliberately action-first: status and profile health, then quick
-/// actions, then work that needs attention, and finally performance numbers.
 class HomePage extends ConsumerWidget {
   const HomePage({super.key, required this.onOpenTab});
 
@@ -112,8 +108,9 @@ class HomePage extends ConsumerWidget {
                         ),
                 ),
                 title: Text(business.nameAr),
-                subtitle:
-                    business.placeLine.isEmpty ? null : Text(business.placeLine),
+                subtitle: business.placeLine.isEmpty
+                    ? null
+                    : Text(business.placeLine),
                 trailing: business.id == ref.read(selectedShopProvider)
                     ? const Icon(Icons.check, color: Shop.jade, size: 20)
                     : null,
@@ -147,7 +144,6 @@ class _DashboardBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final profile = _ProfileHealth.from(shop);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -209,7 +205,10 @@ class _WelcomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final firstName = ownerName.trim().split(' ').firstOrNull ?? ownerName;
+    final trimmedName = ownerName.trim();
+    final firstName = trimmedName.isEmpty
+        ? 'صاحب النشاط'
+        : trimmedName.split(RegExp(r'\s+')).first;
 
     return Container(
       padding: const EdgeInsets.all(Gap.lg),
