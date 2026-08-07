@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'src/app/theme.dart';
+import 'src/features/analytics/analytics_page.dart';
 import 'src/features/auth/login_page.dart';
 import 'src/features/home/home_page.dart';
 import 'src/features/home/shop_page.dart';
@@ -54,7 +55,7 @@ class _Gate extends ConsumerWidget {
   }
 }
 
-/// أربعة أقسام. الترتيب حسب كم مرة التاجر هيفتحها في اليوم.
+/// الأقسام اليومية الأساسية لصاحب النشاط.
 class _Shell extends ConsumerStatefulWidget {
   const _Shell();
 
@@ -65,14 +66,19 @@ class _Shell extends ConsumerStatefulWidget {
 class _ShellState extends ConsumerState<_Shell> {
   int _index = 0;
 
-  static const _titles = ['نشاطي', 'التقييمات', 'المنتجات والعروض', 'البيانات'];
+  static const _titles = [
+    'نشاطي',
+    'التقييمات',
+    'المنتجات والعروض',
+    'التحليلات',
+    'البيانات',
+  ];
 
   @override
   Widget build(BuildContext context) {
     final shop = ref.watch(currentShopProvider);
 
     return Scaffold(
-      // الرئيسية بتعرض اللافتة الكاملة بنفسها، فمفيش شريط فوقها.
       appBar: _index == 0
           ? null
           : AppBar(
@@ -108,6 +114,7 @@ class _ShellState extends ConsumerState<_Shell> {
         0 => HomePage(onOpenTab: (i) => setState(() => _index = i)),
         1 => const ReviewsPage(),
         2 => const _CatalogTabs(),
+        3 => const AnalyticsPage(),
         _ => const ShopPage(),
       },
       bottomNavigationBar: NavigationBar(
@@ -131,6 +138,11 @@ class _ShellState extends ConsumerState<_Shell> {
             icon: Icon(Icons.inventory_2_outlined),
             selectedIcon: Icon(Icons.inventory_2, color: Shop.jade),
             label: 'المنتجات',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.insights_outlined),
+            selectedIcon: Icon(Icons.insights, color: Shop.jade),
+            label: 'التحليلات',
           ),
           NavigationDestination(
             icon: Icon(Icons.tune_outlined),
