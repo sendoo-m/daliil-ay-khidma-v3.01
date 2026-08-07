@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import migrations, models
 import django.db.models.deletion
 
@@ -31,7 +32,7 @@ class Migration(migrations.Migration):
                 ('keep_product_ids', models.JSONField(blank=True, default=list)),
                 ('preview', models.JSONField(blank=True, default=dict)),
                 ('applied_changes', models.JSONField(blank=True, default=dict)),
-                ('requested_amount', models.DecimalField(decimal_places=2, default=0, max_digits=10)),
+                ('requested_amount', models.DecimalField(decimal_places=2, default=0, max_digits=10, validators=[MinValueValidator(0)])),
                 ('payment_confirmed', models.BooleanField(default=False)),
                 ('payment_method', models.CharField(blank=True, max_length=50)),
                 ('transaction_id', models.CharField(blank=True, max_length=100)),
@@ -47,9 +48,7 @@ class Migration(migrations.Migration):
                 ('subscription', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='change_requests', to='subscriptions.subscription')),
                 ('target_plan', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='change_requests_to', to='subscriptions.subscriptionplan')),
             ],
-            options={
-                'ordering': ['-created_at'],
-            },
+            options={'ordering': ['-created_at']},
         ),
         migrations.AddIndex(
             model_name='subscriptionchangerequest',
@@ -61,6 +60,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='subscriptionchangerequest',
-            constraint=models.UniqueConstraint(condition=models.Q(('status', 'pending')), fields=('subscription',), name='one_pending_subscription_change_per_subscription'),
+            constraint=models.UniqueConstraint(condition=models.Q(status='pending'), fields=('subscription',), name='one_pending_subscription_change_per_subscription'),
         ),
     ]
