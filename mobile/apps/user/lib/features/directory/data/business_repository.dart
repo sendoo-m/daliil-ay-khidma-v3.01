@@ -105,6 +105,15 @@ final class BusinessRepository {
     required double latitude,
     required double longitude,
     required double radiusKm,
+    String query = '',
+    int? categoryId,
+    int? governorateId,
+    int? cityId,
+    int? districtId,
+    String? businessType,
+    double? minRating,
+    bool featuredOnly = false,
+    CancelToken? cancelToken,
   }) async {
     final response = await _dio.get<List<dynamic>>(
       'businesses/nearby/',
@@ -112,7 +121,16 @@ final class BusinessRepository {
         'latitude': latitude,
         'longitude': longitude,
         'radius_km': radiusKm,
+        if (query.trim().isNotEmpty) 'search': query.trim(),
+        if (categoryId != null) 'category': categoryId,
+        if (governorateId != null) 'governorate': governorateId,
+        if (cityId != null) 'city': cityId,
+        if (districtId != null) 'district': districtId,
+        if (businessType != null) 'business_type': businessType,
+        if (minRating != null) 'min_rating': minRating,
+        if (featuredOnly) 'is_featured': true,
       },
+      cancelToken: cancelToken,
     );
     return (response.data ?? const [])
         .cast<Map<String, dynamic>>()
