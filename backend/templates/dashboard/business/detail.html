@@ -1,220 +1,63 @@
 {% extends 'dashboard/base.html' %}
+{% load i18n %}{% get_current_language as LANGUAGE_CODE %}
 
-{% block title %}{{ business.name_ar }}{% endblock %}
+{% block title %}{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ business.name_ar }}{% else %}{{ business.name_en }}{% endif %}{% endblock %}
 
 {% block extra_css %}
 <style>
-    .business-cover {
-        min-height: 230px;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        object-fit: cover;
-    }
-    .business-logo {
-        width: 104px;
-        height: 104px;
-        object-fit: cover;
-        border: 5px solid #fff;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, .12);
-    }
-    .detail-label {
-        min-width: 115px;
-        color: #6c757d;
-    }
-    .gallery-image {
-        width: 100%;
-        height: 180px;
-        object-fit: cover;
-    }
+    .business-cover{min-height:240px;background:linear-gradient(135deg,#667eea,#764ba2);object-fit:cover}.business-logo{width:108px;height:108px;object-fit:cover;border:5px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,.12)}.detail-label{min-width:115px;color:#6c757d}.gallery-image{width:100%;height:180px;object-fit:cover}.profile-hero{border-radius:20px;overflow:hidden}.profile-status{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.profile-status-card{padding:16px;border-radius:14px;background:#f8f9ff;border:1px solid #e7e9fb}.profile-status-card .label{color:#64748b;font-size:.78rem}.profile-status-card strong{display:block;margin-top:4px}.quick-action{border:1px solid #e5e7eb;border-radius:14px;padding:14px;text-decoration:none;color:#1f2937;display:flex;align-items:center;gap:12px;transition:.2s}.quick-action:hover{border-color:#667eea;background:#f8f9ff;color:#667eea;transform:translateY(-1px)}.quick-icon{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;display:flex;align-items:center;justify-content:center}.social-links a{width:40px;height:40px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;background:#f8f9ff;border:1px solid #e5e7eb;text-decoration:none}.plan-card-mini{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:16px;padding:18px}.plan-card-mini .muted{color:rgba(255,255,255,.78)}
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-2">
-                <li class="breadcrumb-item"><a href="{% url 'dashboard:business_list' %}">محلاتي</a></li>
-                <li class="breadcrumb-item active" aria-current="page">{{ business.name_ar }}</li>
-            </ol>
-        </nav>
-        <h1 class="h3 fw-bold mb-0">تفاصيل المحل</h1>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb mb-2"><li class="breadcrumb-item"><a href="{% url 'dashboard:owner_dashboard' %}">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}لوحة التحكم{% else %}Dashboard{% endif %}</a></li><li class="breadcrumb-item"><a href="{% url 'dashboard:business_list' %}">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}محلاتي{% else %}My businesses{% endif %}</a></li><li class="breadcrumb-item active">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ business.name_ar }}{% else %}{{ business.name_en }}{% endif %}</li></ol></nav>
+        <h1 class="h3 fw-bold mb-0">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}ملف النشاط{% else %}Business profile{% endif %}</h1>
     </div>
-    <div class="d-flex gap-2">
-        <a href="{% url 'dashboard:business_list' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-right me-1"></i> رجوع
-        </a>
-        <a href="{% url 'dashboard:business_update' business.slug %}" class="btn btn-primary">
-            <i class="fas fa-edit me-1"></i> تعديل البيانات
-        </a>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'dashboard:business_list' %}" class="btn btn-outline-secondary"><i class="fas fa-arrow-right me-1"></i> {% if LANGUAGE_CODE|slice:':2' == 'ar' %}رجوع{% else %}Back{% endif %}</a>
+        <a href="{% url 'dashboard:business_update' business.slug %}" class="btn btn-primary"><i class="fas fa-edit me-1"></i> {% if LANGUAGE_CODE|slice:':2' == 'ar' %}تعديل البيانات{% else %}Edit profile{% endif %}</a>
     </div>
 </div>
 
-<div class="card overflow-hidden mb-4">
-    {% if business.cover_image %}
-        <img src="{{ business.cover_image.url }}" class="business-cover w-100" alt="غلاف {{ business.name_ar }}">
-    {% else %}
-        <div class="business-cover d-flex align-items-center justify-content-center text-white">
-            <i class="fas fa-store fa-5x opacity-50"></i>
-        </div>
-    {% endif %}
+<div class="card profile-hero overflow-hidden mb-4">
+    {% if business.cover_image %}<img src="{{ business.cover_image.url }}" class="business-cover w-100" alt="{% if LANGUAGE_CODE|slice:':2' == 'ar' %}غلاف {{ business.name_ar }}{% else %}{{ business.name_en }} cover{% endif %}">{% else %}<div class="business-cover d-flex align-items-center justify-content-center text-white"><i class="fas fa-store fa-5x opacity-50"></i></div>{% endif %}
     <div class="card-body p-4">
         <div class="d-flex flex-column flex-md-row align-items-md-center gap-3">
-            {% if business.logo %}
-                <img src="{{ business.logo.url }}" class="business-logo rounded-circle" alt="شعار {{ business.name_ar }}">
-            {% else %}
-                <div class="business-logo rounded-circle bg-light d-flex align-items-center justify-content-center">
-                    <i class="fas fa-store fa-2x text-muted"></i>
-                </div>
-            {% endif %}
+            {% if business.logo %}<img src="{{ business.logo.url }}" class="business-logo rounded-circle" alt="{% if LANGUAGE_CODE|slice:':2' == 'ar' %}شعار {{ business.name_ar }}{% else %}{{ business.name_en }} logo{% endif %}">{% else %}<div class="business-logo rounded-circle bg-light d-flex align-items-center justify-content-center"><i class="fas fa-store fa-2x text-muted"></i></div>{% endif %}
             <div class="flex-grow-1">
-                <h2 class="h4 fw-bold mb-1">{{ business.name_ar }}</h2>
-                <div class="text-muted mb-2">{{ business.name_en }}</div>
-                <div class="d-flex flex-wrap gap-2">
-                    <span class="badge bg-light text-dark">{{ business.business_type_icon }} {{ business.get_business_type_display }}</span>
-                    {% if business.is_verified %}
-                        <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> موثّق</span>
-                    {% else %}
-                        <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i> بانتظار التوثيق</span>
-                    {% endif %}
-                    {% if business.is_active %}
-                        <span class="badge bg-primary">نشط</span>
-                    {% else %}
-                        <span class="badge bg-secondary">غير نشط</span>
-                    {% endif %}
-                </div>
+                <h2 class="h4 fw-bold mb-1">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ business.name_ar }}{% else %}{{ business.name_en }}{% endif %}</h2>
+                <div class="text-muted mb-2">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ business.name_en }}{% else %}{{ business.name_ar }}{% endif %}</div>
+                <div class="d-flex flex-wrap gap-2"><span class="badge bg-light text-dark">{{ business.business_type_icon }} {{ business.get_business_type_display }}</span>{% if business.is_verified %}<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> {% if LANGUAGE_CODE|slice:':2' == 'ar' %}موثّق{% else %}Verified{% endif %}</span>{% else %}<span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i> {% if LANGUAGE_CODE|slice:':2' == 'ar' %}بانتظار التوثيق{% else %}Pending verification{% endif %}</span>{% endif %}{% if business.is_active %}<span class="badge bg-primary">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}نشط{% else %}Active{% endif %}</span>{% else %}<span class="badge bg-secondary">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}غير نشط{% else %}Inactive{% endif %}</span>{% endif %}</div>
             </div>
         </div>
     </div>
 </div>
+
+<div class="profile-status mb-4">
+    <div class="profile-status-card"><div class="label">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}المشاهدات{% else %}Views{% endif %}</div><strong>{{ business.view_count|default:0 }}</strong></div>
+    <div class="profile-status-card"><div class="label">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}التفاعلات{% else %}Clicks{% endif %}</div><strong>{{ business.click_count|default:0 }}</strong></div>
+    <div class="profile-status-card"><div class="label">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}حالة النشاط{% else %}Business status{% endif %}</div><strong>{% if business.is_active %}{% if LANGUAGE_CODE|slice:':2' == 'ar' %}نشط{% else %}Active{% endif %}{% else %}{% if LANGUAGE_CODE|slice:':2' == 'ar' %}موقوف{% else %}Suspended{% endif %}{% endif %}</strong></div>
+    <div class="profile-status-card"><div class="label">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}التوثيق{% else %}Verification{% endif %}</div><strong>{% if business.is_verified %}{% if LANGUAGE_CODE|slice:':2' == 'ar' %}موثّق{% else %}Verified{% endif %}{% else %}{% if LANGUAGE_CODE|slice:':2' == 'ar' %}قيد المراجعة{% else %}Under review{% endif %}{% endif %}</strong></div>
+</div>
+
+<div class="card mb-4"><div class="card-header bg-white py-3"><h2 class="h6 fw-bold mb-0"><i class="fas fa-bolt text-warning me-2"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}إدارة سريعة{% else %}Quick management{% endif %}</h2></div><div class="card-body"><div class="row g-3"><div class="col-md-4"><a class="quick-action" href="{% url 'dashboard:product_list' %}?business={{ business.id }}"><span class="quick-icon"><i class="fas fa-box"></i></span><span><strong>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}المنتجات والخدمات{% else %}Products & services{% endif %}</strong><small class="d-block text-muted">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}إدارة الكتالوج وملف Excel{% else %}Catalog and Excel tools{% endif %}</small></span></a></div><div class="col-md-4"><a class="quick-action" href="{% url 'dashboard:deal_list' %}"><span class="quick-icon"><i class="fas fa-tags"></i></span><span><strong>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}العروض{% else %}Deals{% endif %}</strong><small class="d-block text-muted">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}إنشاء وإدارة العروض{% else %}Create and manage deals{% endif %}</small></span></a></div><div class="col-md-4"><a class="quick-action" href="{% url 'subscriptions:my_subscription' %}"><span class="quick-icon"><i class="fas fa-gem"></i></span><span><strong>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الاشتراك{% else %}Subscription{% endif %}</strong><small class="d-block text-muted">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الخطة والحدود والترقية{% else %}Plan, limits and changes{% endif %}</small></span></a></div></div></div></div>
 
 <div class="row g-4">
     <div class="col-lg-8">
-        <div class="card mb-4">
-            <div class="card-header bg-white py-3">
-                <h2 class="h6 fw-bold mb-0"><i class="fas fa-align-right text-primary me-2"></i>وصف المحل</h2>
-            </div>
-            <div class="card-body">
-                <p class="mb-3" style="white-space: pre-line;">{{ business.description_ar }}</p>
-                {% if business.description_en %}
-                    <hr>
-                    <p class="text-muted mb-0" dir="ltr" style="white-space: pre-line;">{{ business.description_en }}</p>
-                {% endif %}
-            </div>
-        </div>
-
-        {% if business.images.all %}
-        <div class="card mb-4">
-            <div class="card-header bg-white py-3">
-                <h2 class="h6 fw-bold mb-0"><i class="fas fa-images text-primary me-2"></i>صور المحل</h2>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    {% for item in business.images.all %}
-                    <div class="col-md-6">
-                        <figure class="border rounded overflow-hidden mb-0 h-100">
-                            <img src="{{ item.image.url }}" class="gallery-image" alt="{{ item.caption_ar|default:business.name_ar }}">
-                            {% if item.caption_ar or item.caption_en %}
-                            <figcaption class="p-3 small">
-                                <div>{{ item.caption_ar }}</div>
-                                {% if item.caption_en %}<div class="text-muted mt-1" dir="ltr">{{ item.caption_en }}</div>{% endif %}
-                            </figcaption>
-                            {% endif %}
-                        </figure>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        <div class="card mb-4">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                <h2 class="h6 fw-bold mb-0"><i class="fas fa-box text-success me-2"></i>أحدث المنتجات والخدمات</h2>
-                <a href="{% url 'dashboard:product_list' %}" class="small text-decoration-none">عرض الكل</a>
-            </div>
-            <div class="card-body p-0">
-                {% for product in products %}
-                <div class="d-flex justify-content-between align-items-center gap-3 p-3 {% if not forloop.last %}border-bottom{% endif %}">
-                    <div>
-                        <strong>{{ product.name_ar }}</strong>
-                        <div class="small text-muted">{{ product.get_product_type_display }}</div>
-                    </div>
-                    <div class="text-nowrap fw-bold text-primary">{{ product.price }} ج.م</div>
-                </div>
-                {% empty %}
-                <div class="text-center text-muted py-4">لا توجد منتجات أو خدمات مضافة بعد.</div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                <h2 class="h6 fw-bold mb-0"><i class="fas fa-tags text-danger me-2"></i>أحدث العروض</h2>
-                <a href="{% url 'dashboard:deal_list' %}" class="small text-decoration-none">عرض الكل</a>
-            </div>
-            <div class="card-body p-0">
-                {% for deal in deals %}
-                <div class="d-flex justify-content-between align-items-center gap-3 p-3 {% if not forloop.last %}border-bottom{% endif %}">
-                    <div>
-                        <strong>{{ deal.title_ar }}</strong>
-                        <div class="small text-muted">حتى {{ deal.end_date|date:'Y/m/d' }}</div>
-                    </div>
-                    {% if deal.is_active %}<span class="badge bg-success">نشط</span>{% else %}<span class="badge bg-secondary">غير نشط</span>{% endif %}
-                </div>
-                {% empty %}
-                <div class="text-center text-muted py-4">لا توجد عروض مضافة بعد.</div>
-                {% endfor %}
-            </div>
-        </div>
+        <div class="card mb-4"><div class="card-header bg-white py-3"><h2 class="h6 fw-bold mb-0"><i class="fas fa-align-right text-primary me-2"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}وصف النشاط{% else %}Description{% endif %}</h2></div><div class="card-body"><p class="mb-3" style="white-space:pre-line;">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ business.description_ar }}{% else %}{{ business.description_en|default:business.description_ar }}{% endif %}</p>{% if business.description_ar and business.description_en %}<hr><p class="text-muted mb-0" {% if LANGUAGE_CODE|slice:':2' == 'ar' %}dir="ltr"{% else %}dir="rtl"{% endif %} style="white-space:pre-line;">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ business.description_en }}{% else %}{{ business.description_ar }}{% endif %}</p>{% endif %}</div></div>
+        {% if business.images.all %}<div class="card mb-4"><div class="card-header bg-white py-3"><h2 class="h6 fw-bold mb-0"><i class="fas fa-images text-primary me-2"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}معرض الصور{% else %}Gallery{% endif %}</h2></div><div class="card-body"><div class="row g-3">{% for item in business.images.all %}<div class="col-md-6"><figure class="border rounded overflow-hidden mb-0 h-100"><img src="{{ item.image.url }}" class="gallery-image" alt="{{ item.caption_ar|default:business.name_ar }}">{% if item.caption_ar or item.caption_en %}<figcaption class="p-3 small"><div>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ item.caption_ar }}{% else %}{{ item.caption_en|default:item.caption_ar }}{% endif %}</div></figcaption>{% endif %}</figure></div>{% endfor %}</div></div></div>{% endif %}
+        <div class="card mb-4"><div class="card-header bg-white py-3 d-flex justify-content-between align-items-center"><h2 class="h6 fw-bold mb-0"><i class="fas fa-box text-success me-2"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}أحدث المنتجات والخدمات{% else %}Latest products & services{% endif %}</h2><a href="{% url 'dashboard:product_list' %}?business={{ business.id }}" class="small text-decoration-none">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}عرض الكل{% else %}View all{% endif %}</a></div><div class="card-body p-0">{% for product in products %}<div class="d-flex justify-content-between align-items-center gap-3 p-3 {% if not forloop.last %}border-bottom{% endif %}"><div><strong>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ product.name_ar }}{% else %}{{ product.name_en|default:product.name_ar }}{% endif %}</strong><div class="small text-muted">{{ product.get_product_type_display }}</div></div><div class="text-nowrap fw-bold text-primary">{{ product.price }} {% if LANGUAGE_CODE|slice:':2' == 'ar' %}ج.م{% else %}EGP{% endif %}</div></div>{% empty %}<div class="text-center text-muted py-4">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}لا توجد منتجات أو خدمات مضافة بعد.{% else %}No products or services yet.{% endif %}</div>{% endfor %}</div></div>
+        <div class="card"><div class="card-header bg-white py-3 d-flex justify-content-between align-items-center"><h2 class="h6 fw-bold mb-0"><i class="fas fa-tags text-danger me-2"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}أحدث العروض{% else %}Latest deals{% endif %}</h2><a href="{% url 'dashboard:deal_list' %}" class="small text-decoration-none">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}عرض الكل{% else %}View all{% endif %}</a></div><div class="card-body p-0">{% for deal in deals %}<div class="d-flex justify-content-between align-items-center gap-3 p-3 {% if not forloop.last %}border-bottom{% endif %}"><div><strong>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ deal.title_ar }}{% else %}{{ deal.title_en|default:deal.title_ar }}{% endif %}</strong><div class="small text-muted">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}حتى{% else %}Until{% endif %} {{ deal.end_date|date:'Y/m/d' }}</div></div>{% if deal.is_active %}<span class="badge bg-success">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}نشط{% else %}Active{% endif %}</span>{% else %}<span class="badge bg-secondary">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}غير نشط{% else %}Inactive{% endif %}</span>{% endif %}</div>{% empty %}<div class="text-center text-muted py-4">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}لا توجد عروض مضافة بعد.{% else %}No deals yet.{% endif %}</div>{% endfor %}</div></div>
     </div>
-
     <div class="col-lg-4">
-        <div class="card mb-4">
-            <div class="card-header bg-white py-3">
-                <h2 class="h6 fw-bold mb-0"><i class="fas fa-info-circle text-primary me-2"></i>البيانات الأساسية</h2>
-            </div>
-            <div class="card-body">
-                <div class="d-flex mb-3"><span class="detail-label">التصنيف</span><strong>{{ business.category.name_ar }}</strong></div>
-                <div class="d-flex mb-3"><span class="detail-label">المحافظة</span><span>{{ business.governorate.name_ar }}</span></div>
-                <div class="d-flex mb-3"><span class="detail-label">المدينة</span><span>{{ business.city.name_ar }}</span></div>
-                <div class="d-flex"><span class="detail-label">الحي</span><span>{{ business.district.name_ar }}</span></div>
-            </div>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-header bg-white py-3">
-                <h2 class="h6 fw-bold mb-0"><i class="fas fa-map-marker-alt text-danger me-2"></i>العنوان</h2>
-            </div>
-            <div class="card-body">
-                <p class="mb-3">{{ business.address_ar }}</p>
-                {% if business.location_url %}
-                    <a href="{{ business.location_url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-map me-1"></i> فتح الموقع على الخريطة
-                    </a>
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-header bg-white py-3">
-                <h2 class="h6 fw-bold mb-0"><i class="fas fa-address-book text-primary me-2"></i>التواصل</h2>
-            </div>
-            <div class="card-body">
-                <div class="d-flex mb-3"><span class="detail-label">الهاتف</span><a href="tel:{{ business.phone }}">{{ business.phone }}</a></div>
-                {% if business.whatsapp %}<div class="d-flex mb-3"><span class="detail-label">واتساب</span><span>{{ business.whatsapp }}</span></div>{% endif %}
-                {% if business.email %}<div class="d-flex mb-3"><span class="detail-label">البريد</span><a href="mailto:{{ business.email }}" class="text-break">{{ business.email }}</a></div>{% endif %}
-                {% if business.website %}<div class="d-flex"><span class="detail-label">الموقع</span><a href="{{ business.website }}" target="_blank" rel="noopener">زيارة الموقع</a></div>{% endif %}
-            </div>
-        </div>
-
-        {% if business.working_hours_ar %}
-        <div class="card">
-            <div class="card-header bg-white py-3">
-                <h2 class="h6 fw-bold mb-0"><i class="fas fa-clock text-primary me-2"></i>مواعيد العمل</h2>
-            </div>
-            <div class="card-body" style="white-space: pre-line;">{{ business.working_hours_ar }}</div>
-        </div>
-        {% endif %}
+        {% if business.subscription %}<div class="plan-card-mini mb-4"><div class="d-flex justify-content-between align-items-start"><div><div class="muted small">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الخطة الحالية{% else %}Current plan{% endif %}</div><h3 class="h5 fw-bold mt-1 mb-0">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ business.subscription.plan.display_name_ar }}{% else %}{{ business.subscription.plan.display_name_en }}{% endif %}</h3></div><i class="fas fa-crown fa-lg"></i></div><div class="mt-3 small muted">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}حتى{% else %}Until{% endif %} {{ business.subscription.end_date|date:'Y/m/d' }}</div><a href="{% url 'subscriptions:my_subscription' %}" class="btn btn-light btn-sm mt-3 w-100 fw-bold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}إدارة الاشتراك{% else %}Manage subscription{% endif %}</a></div>{% endif %}
+        <div class="card mb-4"><div class="card-header bg-white py-3"><h2 class="h6 fw-bold mb-0"><i class="fas fa-info-circle text-primary me-2"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}البيانات الأساسية{% else %}Business information{% endif %}</h2></div><div class="card-body"><div class="d-flex mb-3"><span class="detail-label">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}التصنيف{% else %}Category{% endif %}</span><strong>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ business.category.name_ar }}{% else %}{{ business.category.name_en|default:business.category.name_ar }}{% endif %}</strong></div><div class="d-flex mb-3"><span class="detail-label">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}المحافظة{% else %}Governorate{% endif %}</span><span>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ business.governorate.name_ar }}{% else %}{{ business.governorate.name_en|default:business.governorate.name_ar }}{% endif %}</span></div><div class="d-flex mb-3"><span class="detail-label">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}المدينة{% else %}City{% endif %}</span><span>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ business.city.name_ar }}{% else %}{{ business.city.name_en|default:business.city.name_ar }}{% endif %}</span></div><div class="d-flex"><span class="detail-label">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الحي{% else %}District{% endif %}</span><span>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ business.district.name_ar }}{% else %}{{ business.district.name_en|default:business.district.name_ar }}{% endif %}</span></div></div></div>
+        <div class="card mb-4"><div class="card-header bg-white py-3"><h2 class="h6 fw-bold mb-0"><i class="fas fa-map-marker-alt text-danger me-2"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}العنوان والموقع{% else %}Address & location{% endif %}</h2></div><div class="card-body"><p class="mb-3">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ business.address_ar }}{% else %}{{ business.address_en|default:business.address_ar }}{% endif %}</p>{% if business.location_url %}<a href="{{ business.location_url }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm"><i class="fas fa-map me-1"></i> {% if LANGUAGE_CODE|slice:':2' == 'ar' %}فتح الخريطة{% else %}Open map{% endif %}</a>{% endif %}</div></div>
+        <div class="card mb-4"><div class="card-header bg-white py-3"><h2 class="h6 fw-bold mb-0"><i class="fas fa-address-book text-primary me-2"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}التواصل{% else %}Contact{% endif %}</h2></div><div class="card-body"><div class="d-flex mb-3"><span class="detail-label">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الهاتف{% else %}Phone{% endif %}</span><a href="tel:{{ business.phone }}">{{ business.phone }}</a></div>{% if business.whatsapp %}<div class="d-flex mb-3"><span class="detail-label">WhatsApp</span><span>{{ business.whatsapp }}</span></div>{% endif %}{% if business.email %}<div class="d-flex mb-3"><span class="detail-label">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}البريد{% else %}Email{% endif %}</span><a href="mailto:{{ business.email }}" class="text-break">{{ business.email }}</a></div>{% endif %}{% if business.website %}<div class="d-flex"><span class="detail-label">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الموقع{% else %}Website{% endif %}</span><a href="{{ business.website }}" target="_blank" rel="noopener">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}زيارة الموقع{% else %}Visit{% endif %}</a></div>{% endif %}</div></div>
+        {% if business.facebook or business.instagram or business.twitter or business.tiktok %}<div class="card mb-4"><div class="card-header bg-white py-3"><h2 class="h6 fw-bold mb-0"><i class="fas fa-share-alt text-primary me-2"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}التواصل الاجتماعي{% else %}Social media{% endif %}</h2></div><div class="card-body social-links d-flex gap-2">{% if business.facebook %}<a href="{{ business.facebook }}" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>{% endif %}{% if business.instagram %}<a href="{{ business.instagram }}" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>{% endif %}{% if business.twitter %}<a href="{{ business.twitter }}" target="_blank" rel="noopener" aria-label="Twitter"><i class="fab fa-x-twitter"></i></a>{% endif %}{% if business.tiktok %}<a href="{{ business.tiktok }}" target="_blank" rel="noopener" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>{% endif %}</div></div>{% endif %}
+        {% if business.working_hours_ar or business.working_hours_en %}<div class="card"><div class="card-header bg-white py-3"><h2 class="h6 fw-bold mb-0"><i class="fas fa-clock text-primary me-2"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}مواعيد العمل{% else %}Working hours{% endif %}</h2></div><div class="card-body" style="white-space:pre-line;">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ business.working_hours_ar }}{% else %}{{ business.working_hours_en|default:business.working_hours_ar }}{% endif %}</div></div>{% endif %}
     </div>
 </div>
 {% endblock %}
