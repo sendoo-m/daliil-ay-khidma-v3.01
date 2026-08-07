@@ -12,6 +12,7 @@ import '../../directory/presentation/business_detail_page.dart';
 import '../data/location_service.dart';
 
 const _mapStyle = 'https://tiles.openfreemap.org/styles/liberty';
+const _resultCardExtent = 320.0;
 
 class MapDiscoveryPage extends ConsumerStatefulWidget {
   const MapDiscoveryPage({super.key});
@@ -22,16 +23,19 @@ class MapDiscoveryPage extends ConsumerStatefulWidget {
 
 class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
   final _searchController = TextEditingController();
+  final _resultsController = ScrollController();
   final Map<Circle, Business> _businessByCircle = {};
 
   MapLibreMapController? _mapController;
   UserCoordinates? _coordinates;
+  UserCoordinates? _pendingAreaCenter;
   List<Business> _visibleItems = const [];
   Business? _selected;
   Timer? _searchDebounce;
   CancelToken? _searchCancelToken;
   bool _loading = false;
   bool _styleLoaded = false;
+  bool _suppressNextCameraIdle = false;
   double _radius = 10;
   double? _minimumRating;
   bool _featuredOnly = false;
@@ -54,6 +58,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
     _searchDebounce?.cancel();
     _searchCancelToken?.cancel('Map search disposed');
     _searchController.dispose();
+    _resultsController.dispose();
     super.dispose();
   }
 
@@ -87,9 +92,24 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                   right: 0,
                   child: LinearProgressIndicator(),
                 ),
-              if (_message != null)
+              if (_pendingAreaCenter != null)
                 Positioned(
                   top: 154,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: FilledButton.icon(
+                      onPressed: _loading ? null : _searchThisArea,
+                      icon: const Icon(Icons.refresh_rounded, size: 19),
+                      label: Text(
+                        _tr('ابحث في هذه المنطقة', 'Search this area'),
+                      ),
+                    ),
+                  ),
+                ),
+              if (_message != null)
+                Positioned(
+                  top: _pendingAreaCenter == null ? 154 : 208,
                   left: 16,
                   right: 16,
                   child: _MessageCard(message: _message!),
@@ -102,6 +122,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                   child: SizedBox(
                     height: 164,
                     child: ListView.separated(
+                      controller: _resultsController,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       scrollDirection: Axis.horizontal,
                       itemCount: _visibleItems.length,
@@ -184,6 +205,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
         _mapController = controller;
         controller.onCircleTapped.add(_onCircleTapped);
       },
+      onCameraIdle: _onCameraIdle,
       onStyleLoadedCallback: () {
         _styleLoaded = true;
         _refreshMarkers();
@@ -195,12 +217,14 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
     setState(() {
       _loading = true;
       _message = null;
+      _pendingAreaCenter = null;
     });
 
     try {
       final coordinates = await ref.read(locationServiceProvider).current();
       if (!mounted) return;
       setState(() => _coordinates = coordinates);
+      await _moveCameraTo(coordinates, zoom: _zoomForRadius(_radius));
       await _fetchNearby(coordinates);
     } on LocationException catch (error) {
       if (!mounted) return;
@@ -240,6 +264,37 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
       return;
     }
     await _fetchNearby(coordinates);
+  }
+
+  Future<void> _searchThisArea() async {
+    final center = _pendingAreaCenter;
+    if (center == null) return;
+    setState(() {
+      _coordinates = center;
+      _pendingAreaCenter = null;
+    });
+    await _fetchNearby(center);
+  }
+
+  void _onCameraIdle() {
+    if (_suppressNextCameraIdle) {
+      _suppressNextCameraIdle = false;
+      return;
+    }
+    final target = _mapController?.cameraPosition?.target;
+    final current = _coordinates;
+    if (!mounted || target == null || current == null) return;
+
+    final latitudeDelta = (target.latitude - current.latitude).abs();
+    final longitudeDelta = (target.longitude - current.longitude).abs();
+    if (latitudeDelta < 0.0005 && longitudeDelta < 0.0005) return;
+
+    setState(() {
+      _pendingAreaCenter = UserCoordinates(
+        latitude: target.latitude,
+        longitude: target.longitude,
+      );
+    });
   }
 
   Future<void> _fetchNearby(UserCoordinates coordinates) async {
@@ -282,6 +337,9 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                   ))
             : null;
       });
+      if (_resultsController.hasClients) {
+        _resultsController.jumpTo(0);
+      }
       await _refreshMarkers();
     } on DioException catch (error) {
       if (CancelToken.isCancel(error) || !mounted) return;
@@ -428,8 +486,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
 
   Future<void> _refreshMarkers() async {
     final controller = _mapController;
-    final coordinates = _coordinates;
-    if (!_styleLoaded || controller == null || coordinates == null) return;
+    if (!_styleLoaded || controller == null) return;
 
     await controller.clearCircles();
     _businessByCircle.clear();
@@ -446,30 +503,63 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
       );
       _businessByCircle[circle] = business;
     }
-
-    await controller.animateCamera(
-      CameraUpdate.newLatLngZoom(
-        LatLng(coordinates.latitude, coordinates.longitude),
-        _zoomForRadius(_radius),
-      ),
-    );
   }
 
   void _onCircleTapped(Circle circle) {
     final business = _businessByCircle[circle];
-    if (business != null) _selectBusiness(business);
+    if (business != null) {
+      _selectBusiness(business, scrollToCard: true);
+    }
   }
 
-  Future<void> _selectBusiness(Business business) async {
+  Future<void> _selectBusiness(
+    Business business, {
+    bool scrollToCard = false,
+  }) async {
     setState(() => _selected = business);
     await _refreshMarkers();
+
+    if (scrollToCard) {
+      final index = _visibleItems.indexWhere((item) => item.id == business.id);
+      if (index >= 0 && _resultsController.hasClients) {
+        final target = (index * _resultCardExtent).clamp(
+          0.0,
+          _resultsController.position.maxScrollExtent,
+        );
+        await _resultsController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    }
+
     if (_mapController != null && business.hasCoordinates) {
-      await _mapController!.animateCamera(
-        CameraUpdate.newLatLng(
-          LatLng(business.latitude!, business.longitude!),
+      await _moveCameraTo(
+        UserCoordinates(
+          latitude: business.latitude!,
+          longitude: business.longitude!,
         ),
       );
     }
+  }
+
+  Future<void> _moveCameraTo(
+    UserCoordinates coordinates, {
+    double? zoom,
+  }) async {
+    final controller = _mapController;
+    if (controller == null) return;
+    _suppressNextCameraIdle = true;
+    final update = zoom == null
+        ? CameraUpdate.newLatLng(
+            LatLng(coordinates.latitude, coordinates.longitude),
+          )
+        : CameraUpdate.newLatLngZoom(
+            LatLng(coordinates.latitude, coordinates.longitude),
+            zoom,
+          );
+    await controller.animateCamera(update);
   }
 
   void _openDetails(Business business) => Navigator.of(context).push(
