@@ -23,6 +23,7 @@ final class Business {
     this.districtName = '',
     this.cityName = '',
     this.governorateName = '',
+    this.businessType = '',
     this.totalReviews = 0,
     this.isVerified = false,
     this.isFeatured = false,
@@ -63,6 +64,7 @@ final class Business {
         districtName: _localizedName(json['district']),
         cityName: _localizedName(json['city']),
         governorateName: _localizedName(json['governorate']),
+        businessType: json['business_type'] as String? ?? '',
         totalReviews: json['total_reviews'] as int? ?? 0,
         isVerified: json['is_verified'] as bool? ?? false,
         isFeatured: json['is_featured'] as bool? ?? false,
@@ -101,6 +103,7 @@ final class Business {
   final String districtName;
   final String cityName;
   final String governorateName;
+  final String businessType;
   final int totalReviews;
   final bool isVerified;
   final bool isFeatured;
