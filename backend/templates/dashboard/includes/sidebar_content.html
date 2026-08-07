@@ -3,56 +3,53 @@
     <div class="sidebar-logo"><i class="fas fa-store"></i></div>
     <div class="sidebar-user">
         <h6>{{ user.get_full_name|default:user.username }}</h6>
-        <small>{% trans 'Business Owner' %}</small>
+        <small>{% if LANGUAGE_CODE == 'ar' %}صاحب نشاط{% else %}Business Owner{% endif %}</small>
     </div>
 </div>
 
 <nav class="nav flex-column">
-    <div class="sidebar-section-title">إدارة النشاط</div>
-    <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'dashboard:index' %}">
-        <i class="fas fa-tachometer-alt"></i><span>{% trans 'Dashboard' %}</span>
+    <div class="sidebar-section-title">{% if LANGUAGE_CODE == 'ar' %}إدارة النشاط{% else %}Business Management{% endif %}</div>
+    <a class="nav-link {% if request.resolver_match.url_name == 'owner_dashboard' %}active{% endif %}" href="{% url 'dashboard:owner_dashboard' %}">
+        <i class="fas fa-tachometer-alt"></i><span>{% if LANGUAGE_CODE == 'ar' %}الرئيسية{% else %}Dashboard{% endif %}</span>
     </a>
     <a class="nav-link {% if 'business' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:business_list' %}">
-        <i class="fas fa-store"></i><span>{% trans 'My Businesses' %}</span>
+        <i class="fas fa-store"></i><span>{% if LANGUAGE_CODE == 'ar' %}أنشطتي{% else %}My Businesses{% endif %}</span>
     </a>
     <a class="nav-link {% if 'product' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:product_list' %}">
-        <i class="fas fa-box"></i><span>{% trans 'My Products' %}</span>
+        <i class="fas fa-box"></i><span>{% if LANGUAGE_CODE == 'ar' %}المنتجات والخدمات{% else %}Products & Services{% endif %}</span>
     </a>
     <a class="nav-link {% if 'deal' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:deal_list' %}">
-        <i class="fas fa-tags"></i><span>{% trans 'My Deals' %}</span>
+        <i class="fas fa-tags"></i><span>{% if LANGUAGE_CODE == 'ar' %}العروض{% else %}Deals{% endif %}</span>
     </a>
     <a class="nav-link {% if 'review' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:review_list' %}">
-        <i class="fas fa-star"></i><span>{% trans 'Reviews' %}</span>
+        <i class="fas fa-star"></i><span>{% if LANGUAGE_CODE == 'ar' %}التقييمات{% else %}Reviews{% endif %}</span>
     </a>
     <a class="nav-link {% if 'notifications' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:notifications' %}">
-        <i class="fas fa-chart-bar"></i><span>{% trans 'Statistics' %}</span>
+        <i class="fas fa-bell"></i><span>{% if LANGUAGE_CODE == 'ar' %}الإشعارات{% else %}Notifications{% endif %}</span>
     </a>
 
     <div class="sidebar-divider"></div>
-    <div class="sidebar-section-title">الاشتراك والفوترة</div>
+    <div class="sidebar-section-title">{% if LANGUAGE_CODE == 'ar' %}الاشتراك والفوترة{% else %}Subscription & Billing{% endif %}</div>
     <a class="nav-link subscription-link {% if request.resolver_match.namespace == 'subscriptions' and request.resolver_match.url_name == 'my_subscription' %}active{% endif %}" href="{% url 'subscriptions:my_subscription' %}">
-        <i class="fas fa-gem"></i><span>اشتراكي الحالي</span>
-        <span class="side-badge">إدارة</span>
+        <i class="fas fa-gem"></i><span>{% if LANGUAGE_CODE == 'ar' %}اشتراكي الحالي{% else %}My Subscription{% endif %}</span>
+        <span class="side-badge">{% if LANGUAGE_CODE == 'ar' %}إدارة{% else %}Manage{% endif %}</span>
     </a>
     <a class="nav-link subscription-link {% if request.resolver_match.namespace == 'subscriptions' and request.resolver_match.url_name != 'my_subscription' %}active{% endif %}" href="{% url 'subscriptions:pricing_comparison' %}">
-        <i class="fas fa-crown"></i><span>الأسعار والباقات</span>
-        <span class="side-badge">ترقية</span>
+        <i class="fas fa-crown"></i><span>{% if LANGUAGE_CODE == 'ar' %}الأسعار والباقات{% else %}Pricing & Plans{% endif %}</span>
+        <span class="side-badge">{% if LANGUAGE_CODE == 'ar' %}تغيير{% else %}Change{% endif %}</span>
     </a>
     <a class="nav-link" href="{% url 'subscriptions:plans_list' %}">
-        <i class="fas fa-layer-group"></i><span>كل الخطط</span>
+        <i class="fas fa-layer-group"></i><span>{% if LANGUAGE_CODE == 'ar' %}كل الخطط{% else %}All Plans{% endif %}</span>
     </a>
 
     {% if user.is_staff %}
     <div class="sidebar-divider"></div>
-    <div class="sidebar-section-title">الإدارة</div>
-    <a class="nav-link" href="{% url 'admin:subscriptions_subscriptionplan_changelist' %}" target="_blank">
-        <i class="fas fa-list-check"></i><span>إدارة خطط الاشتراك</span>
+    <div class="sidebar-section-title">{% if LANGUAGE_CODE == 'ar' %}الإدارة{% else %}Administration{% endif %}</div>
+    <a class="nav-link" href="{% url 'dashboard:admin_subscriptions_home' %}">
+        <i class="fas fa-receipt"></i><span>{% if LANGUAGE_CODE == 'ar' %}إدارة الاشتراكات{% else %}Manage Subscriptions{% endif %}</span>
     </a>
-    <a class="nav-link" href="{% url 'admin:subscriptions_subscription_changelist' %}" target="_blank">
-        <i class="fas fa-receipt"></i><span>إدارة الاشتراكات</span>
-    </a>
-    <a class="nav-link" href="{% url 'admin:index' %}" target="_blank">
-        <i class="fas fa-shield-alt"></i><span>{% trans 'Admin Panel' %}</span>
+    <a class="nav-link" href="{% url 'dashboard:admin_home' %}">
+        <i class="fas fa-shield-alt"></i><span>{% if LANGUAGE_CODE == 'ar' %}لوحة الإدارة{% else %}Admin Dashboard{% endif %}</span>
     </a>
     {% endif %}
 </nav>

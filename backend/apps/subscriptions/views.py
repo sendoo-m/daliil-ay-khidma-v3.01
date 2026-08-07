@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -9,7 +10,13 @@ from django.utils.translation import get_language
 from django.views.decorators.http import require_POST
 
 from apps.directory.models import Business
-from .models import Subscription, SubscriptionPlan
+from .models import Subscription, SubscriptionChangeRequest, SubscriptionPlan
+from .services import (
+    build_change_preview,
+    change_type,
+    notify_staff_new_request,
+    validate_keep_selection,
+)
 
 
 def _user_business(user):
@@ -41,12 +48,21 @@ def pricing_comparison(request):
 def my_subscription(request):
     business = _user_business(request.user)
     subscription = None
+    pending_change = None
     if business:
         subscription = Subscription.objects.select_related('plan').filter(business=business).first()
+        if subscription:
+            pending_change = (
+                SubscriptionChangeRequest.objects.select_related('current_plan', 'target_plan')
+                .filter(subscription=subscription, status='pending')
+                .order_by('-created_at')
+                .first()
+            )
     plans = SubscriptionPlan.objects.filter(is_active=True).order_by('order')
     return render(request, 'subscriptions/my_subscription.html', {
         'business': business,
         'subscription': subscription,
+        'pending_change': pending_change,
         'plans': plans,
     })
 
@@ -56,10 +72,17 @@ def subscribe(request, plan_name):
     business = _user_business(request.user)
     if not business:
         messages.error(request, _message('يجب إنشاء نشاط تجاري أولاً قبل الاشتراك.', 'Create a business before subscribing.'))
-        return redirect('dashboard:dashboard')
+        return redirect('dashboard:business_create')
 
     plan = get_object_or_404(SubscriptionPlan, name=plan_name, is_active=True)
     existing_sub = Subscription.objects.filter(business=business).first()
+
+    # أي تغيير بعد إنشاء أول اشتراك يمر من Workflow الموافقة، بلا استثناء.
+    if existing_sub:
+        if existing_sub.plan_id == plan.id:
+            messages.info(request, _message('هذه هي خطتك الحالية بالفعل.', 'This is already your current plan.'))
+            return redirect('subscriptions:my_subscription')
+        return redirect('subscriptions:upgrade', plan_name=plan.name)
 
     if request.method == 'POST':
         duration = request.POST.get('duration', 'monthly')
@@ -68,23 +91,14 @@ def subscribe(request, plan_name):
         end_date = start_date + timedelta(days=duration_days.get(duration, 30))
         amount = plan.get_price(duration)
 
-        if existing_sub:
-            subscription = existing_sub
-            subscription.plan = plan
-            subscription.start_date = start_date
-            subscription.end_date = end_date
-            subscription.amount_paid = amount
-            subscription.status = 'pending'
-            subscription.save()
-        else:
-            subscription = Subscription.objects.create(
-                business=business,
-                plan=plan,
-                start_date=start_date,
-                end_date=end_date,
-                amount_paid=amount,
-                status='pending',
-            )
+        subscription = Subscription.objects.create(
+            business=business,
+            plan=plan,
+            start_date=start_date,
+            end_date=end_date,
+            amount_paid=amount,
+            status='pending',
+        )
 
         messages.success(request, _message(
             f'تم إنشاء طلب الاشتراك في {plan.display_name_ar}. يرجى إتمام الدفع.',
@@ -162,27 +176,109 @@ def toggle_auto_renew(request):
 
 @login_required
 def upgrade_subscription(request, plan_name):
+    """واجهة ويب موحدة للترقية والتخفيض؛ لا تغيّر الخطة مباشرة أبدًا."""
     business = _user_business(request.user)
-    current_sub = Subscription.objects.filter(business=business).select_related('plan').first() if business else None
+    current_sub = (
+        Subscription.objects.filter(business=business)
+        .select_related('plan', 'business')
+        .first()
+        if business
+        else None
+    )
     if not current_sub:
         messages.error(request, _message('يجب أن يكون لديك اشتراك حالي.', 'You need a current subscription.'))
         return redirect('subscriptions:plans_list')
 
     new_plan = get_object_or_404(SubscriptionPlan, name=plan_name, is_active=True)
-    if new_plan.price_monthly <= current_sub.plan.price_monthly:
-        messages.warning(request, _message('يرجى اختيار خطة أعلى.', 'Please choose a higher plan.'))
-        return redirect('subscriptions:plans_list')
+    if new_plan.id == current_sub.plan_id:
+        messages.info(request, _message('هذه هي خطتك الحالية بالفعل.', 'This is already your current plan.'))
+        return redirect('subscriptions:my_subscription')
 
-    if request.method == 'POST':
-        current_sub.plan = new_plan
-        current_sub.save(update_fields=['plan', 'updated_at'])
-        messages.success(request, _message(
-            f'تمت الترقية إلى {new_plan.display_name_ar}.',
-            f'Your subscription was upgraded to {new_plan.display_name_en}.',
+    pending = SubscriptionChangeRequest.objects.filter(
+        subscription=current_sub,
+        status='pending',
+    ).first()
+    if pending:
+        messages.warning(request, _message(
+            'لديك طلب تغيير خطة قيد المراجعة بالفعل. انتظر قرار الإدارة قبل إرسال طلب آخر.',
+            'You already have a plan change under review. Wait for the admin decision before sending another request.',
         ))
         return redirect('subscriptions:my_subscription')
 
-    return render(request, 'subscriptions/upgrade.html', {'current_sub': current_sub, 'new_plan': new_plan})
+    billing_period = request.POST.get('billing_period') or request.GET.get('billing_period') or 'monthly'
+    if billing_period not in dict(SubscriptionPlan.DURATION_CHOICES):
+        billing_period = 'monthly'
+
+    preview = build_change_preview(
+        owner=request.user,
+        subscription=current_sub,
+        target_plan=new_plan,
+        billing_period=billing_period,
+    )
+
+    if request.method == 'POST':
+        try:
+            keep_business_ids = [int(value) for value in request.POST.getlist('keep_business_ids')]
+            keep_product_ids = [int(value) for value in request.POST.getlist('keep_product_ids')]
+        except ValueError:
+            messages.error(request, _message('اختيارات غير صالحة.', 'Invalid selection.'))
+            return redirect('subscriptions:upgrade', plan_name=new_plan.name)
+
+        # لو الخطة بلا حد (0 = unlimited)، إبقاء كل العناصر الفعالة هو الاختيار الطبيعي.
+        if new_plan.max_businesses == 0:
+            keep_business_ids = [item['id'] for item in preview['businesses'] if item['is_active']]
+        if new_plan.max_products == 0:
+            keep_product_ids = [item['id'] for item in preview['products'] if item['is_available']]
+
+        try:
+            keep_business_ids, keep_product_ids = validate_keep_selection(
+                owner=request.user,
+                target_plan=new_plan,
+                keep_business_ids=keep_business_ids,
+                keep_product_ids=keep_product_ids,
+            )
+        except ValueError as exc:
+            messages.error(request, str(exc))
+            return render(request, 'subscriptions/upgrade.html', {
+                'current_sub': current_sub,
+                'new_plan': new_plan,
+                'preview': preview,
+                'billing_period': billing_period,
+            })
+
+        try:
+            change_request = SubscriptionChangeRequest.objects.create(
+                owner=request.user,
+                subscription=current_sub,
+                current_plan=current_sub.plan,
+                target_plan=new_plan,
+                change_type=change_type(current_sub.plan, new_plan),
+                billing_period=billing_period,
+                keep_business_ids=keep_business_ids,
+                keep_product_ids=keep_product_ids,
+                preview=preview,
+                requested_amount=new_plan.get_price(billing_period),
+            )
+        except IntegrityError:
+            messages.warning(request, _message(
+                'يوجد طلب تغيير خطة قيد المراجعة بالفعل.',
+                'A pending plan change request already exists.',
+            ))
+            return redirect('subscriptions:my_subscription')
+
+        notify_staff_new_request(change_request)
+        messages.success(request, _message(
+            'تم إرسال طلب تغيير الخطة للإدارة. لن يتم إيقاف أي نشاط أو منتج قبل الموافقة.',
+            'Your plan change request was sent for review. Nothing will be suspended before approval.',
+        ))
+        return redirect('subscriptions:my_subscription')
+
+    return render(request, 'subscriptions/upgrade.html', {
+        'current_sub': current_sub,
+        'new_plan': new_plan,
+        'preview': preview,
+        'billing_period': billing_period,
+    })
 
 
 def get_plan_price(request, plan_name, duration):

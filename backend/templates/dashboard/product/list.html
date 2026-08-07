@@ -1,218 +1,58 @@
 {% extends 'dashboard/base.html' %}
-{% load static %}
-{% load i18n %}
-{% load humanize %}
+{% load i18n humanize %}
 
-{% block title %}{% trans 'My Products' %}{% endblock %}
+{% block title %}{% if LANGUAGE_CODE == 'ar' %}المنتجات والخدمات{% else %}Products & Services{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+.catalog-hero{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:20px;padding:1.5rem}
+.catalog-stat{border-radius:15px;background:#fff;padding:1rem;box-shadow:0 4px 15px rgba(15,23,42,.06)}
+.catalog-stat strong{font-size:1.55rem;display:block}
+.product-card{overflow:hidden;height:100%}.product-card img,.product-placeholder{height:190px;object-fit:cover}.product-placeholder{display:flex;align-items:center;justify-content:center;background:#f4f6fb;color:#94a3b8}
+.excel-card{border:1px solid #dfe4ff;background:linear-gradient(135deg,#fbfcff,#f4f2ff)}
+</style>
+{% endblock %}
 
 {% block content %}
-
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="page-title">
-        <i class="fas fa-box me-2"></i>
-        {% trans 'My Products & Services' %}
-    </h2>
-    <a href="{% url 'dashboard:product_create' %}" class="btn btn-primary">
-        <i class="fas fa-plus me-2"></i>
-        {% trans 'Add New Product' %}
-    </a>
+<div class="catalog-hero mb-4 d-flex justify-content-between align-items-center gap-3 flex-wrap">
+  <div><h2 class="fw-bold mb-1"><i class="fas fa-boxes-stacked me-2"></i>{% if LANGUAGE_CODE == 'ar' %}المنتجات والخدمات{% else %}Products & Services{% endif %}</h2><p class="mb-0 opacity-75">{% if LANGUAGE_CODE == 'ar' %}إدارة الكتالوج يدويًا أو تحديث مئات المنتجات بملف Excel واحد.{% else %}Manage your catalog manually or update hundreds of items with one Excel file.{% endif %}</p></div>
+  <a href="{% url 'dashboard:product_create' %}" class="btn btn-light fw-bold"><i class="fas fa-plus me-1"></i>{% if LANGUAGE_CODE == 'ar' %}إضافة منتج{% else %}Add Product{% endif %}</a>
 </div>
 
-<!-- Filters -->
-<div class="card mb-4">
-    <div class="card-body">
-        <form method="get" class="row g-3">
-            <div class="col-md-3">
-                <select name="business" class="form-select">
-                    <option value="">{% trans 'All Businesses' %}</option>
-                    {% for business in businesses %}
-                        <option value="{{ business.id }}" {% if request.GET.business == business.id|stringformat:"s" %}selected{% endif %}>
-                            {{ business.name_ar }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <select name="type" class="form-select">
-                    <option value="">{% trans 'All Types' %}</option>
-                    <option value="product" {% if request.GET.type == 'product' %}selected{% endif %}>{% trans 'Product' %}</option>
-                    <option value="service" {% if request.GET.type == 'service' %}selected{% endif %}>{% trans 'Service' %}</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <select name="status" class="form-select">
-                    <option value="">{% trans 'All Status' %}</option>
-                    <option value="available" {% if request.GET.status == 'available' %}selected{% endif %}>{% trans 'Available' %}</option>
-                    <option value="unavailable" {% if request.GET.status == 'unavailable' %}selected{% endif %}>{% trans 'Unavailable' %}</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <input type="text" name="search" class="form-control" placeholder="{% trans 'Search...' %}" value="{{ request.GET.search }}">
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="fas fa-search"></i> {% trans 'Filter' %}
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Statistics -->
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card stat-card">
-            <div class="card-body text-center text-white">
-                <i class="fas fa-box fa-2x mb-2"></i>
-                <h3 class="mb-0">{{ total_count }}</h3>
-                <p class="mb-0">{% trans 'Total Products' %}</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card success">
-            <div class="card-body text-center text-white">
-                <i class="fas fa-check-circle fa-2x mb-2"></i>
-                <h3 class="mb-0">{{ available_count }}</h3>
-                <p class="mb-0">{% trans 'Available' %}</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card warning">
-            <div class="card-body text-center text-white">
-                <i class="fas fa-cubes fa-2x mb-2"></i>
-                <h3 class="mb-0">{{ products_count }}</h3>
-                <p class="mb-0">{% trans 'Products' %}</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card stat-card info">
-            <div class="card-body text-center text-white">
-                <i class="fas fa-tools fa-2x mb-2"></i>
-                <h3 class="mb-0">{{ services_count }}</h3>
-                <p class="mb-0">{% trans 'Services' %}</p>
-            </div>
-        </div>
-    </div>
+  <div class="col-6 col-lg-3"><div class="catalog-stat"><strong>{{ total_count }}</strong><small class="text-muted">{% if LANGUAGE_CODE == 'ar' %}الإجمالي{% else %}Total{% endif %}</small></div></div>
+  <div class="col-6 col-lg-3"><div class="catalog-stat"><strong class="text-success">{{ available_count }}</strong><small class="text-muted">{% if LANGUAGE_CODE == 'ar' %}متاح{% else %}Available{% endif %}</small></div></div>
+  <div class="col-6 col-lg-3"><div class="catalog-stat"><strong>{{ products_count }}</strong><small class="text-muted">{% if LANGUAGE_CODE == 'ar' %}منتجات{% else %}Products{% endif %}</small></div></div>
+  <div class="col-6 col-lg-3"><div class="catalog-stat"><strong>{{ services_count }}</strong><small class="text-muted">{% if LANGUAGE_CODE == 'ar' %}خدمات{% else %}Services{% endif %}</small></div></div>
 </div>
 
-<!-- Products List -->
-{% if products %}
-<div class="row g-4">
-    {% for product in products %}
-    <div class="col-md-6 col-lg-4">
-        <div class="card h-100">
-            {% if product.image %}
-            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name_ar }}" style="height: 200px; object-fit: cover;">
-            {% else %}
-            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                <i class="fas fa-{% if product.product_type == 'service' %}tools{% else %}box{% endif %} fa-3x text-muted"></i>
-            </div>
-            {% endif %}
-            
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h5 class="card-title mb-0">{{ product.name_ar }}</h5>
-                    {% if product.is_featured %}
-                        <span class="badge bg-warning"><i class="fas fa-star"></i></span>
-                    {% endif %}
-                </div>
-                
-                <p class="text-muted small mb-2">
-                    <i class="fas fa-store me-1"></i>
-                    {{ product.business.name_ar }}
-                </p>
-                
-                {% if product.description_ar %}
-                <p class="card-text small">{{ product.description_ar|truncatewords:15 }}</p>
-                {% endif %}
-                
-                <div class="d-flex justify-content-between align-items-center mt-3">
-                    <div>
-                        {% if product.price %}
-                        <strong class="text-primary">{{ product.price|floatformat:2 }} {% trans 'EGP' %}</strong>
-                        {% endif %}
-                    </div>
-                    <div>
-                        {% if product.is_available %}
-                            <span class="badge bg-success">{% trans 'Available' %}</span>
-                        {% else %}
-                            <span class="badge bg-secondary">{% trans 'Unavailable' %}</span>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <div class="badge-type-{{ product.product_type }} badge mt-2">
-                    {% if product.product_type == 'product' %}
-                        <i class="fas fa-box me-1"></i> {% trans 'Product' %}
-                    {% else %}
-                        <i class="fas fa-tools me-1"></i> {% trans 'Service' %}
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="card-footer bg-white">
-                <div class="btn-group w-100" role="group">
-                    <a href="{% url 'dashboard:product_update' product.slug %}" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-edit"></i> {% trans 'Edit' %}
-                    </a>
-                    <a href="{% url 'dashboard:product_delete' product.slug %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('{% trans 'Are you sure?' %}')">
-                        <i class="fas fa-trash"></i> {% trans 'Delete' %}
-                    </a>
-                </div>
-            </div>
-        </div>
+<div class="card excel-card mb-4"><div class="card-body">
+  <div class="d-flex align-items-start gap-3 flex-wrap"><div class="fs-2 text-success"><i class="fas fa-file-excel"></i></div><div class="flex-grow-1"><h5 class="fw-bold mb-1">{% if LANGUAGE_CODE == 'ar' %}إدارة جماعية بملف Excel{% else %}Bulk management with Excel{% endif %}</h5><p class="text-muted mb-3">{% if LANGUAGE_CODE == 'ar' %}نزّل منتجات النشاط، عدّل الملف، ثم ارفعه. الصف الذي يحمل معرّفًا يتم تحديثه، والصف الجديد تتم إضافته. إذا وُجد خطأ فلن يتم حفظ أي صف.{% else %}Export, edit and upload. Existing IDs are updated, new rows are created, and any validation error prevents partial imports.{% endif %}</p>
+    <div class="row g-2 align-items-end">
+      <div class="col-md-4"><label class="form-label">{% if LANGUAGE_CODE == 'ar' %}النشاط{% else %}Business{% endif %}</label><select id="excelBusiness" class="form-select">{% for business in businesses %}<option value="{{ business.id }}">{{ business.name_ar|default:business.name_en }}</option>{% endfor %}</select></div>
+      <div class="col-md-3 d-grid"><a id="excelExport" href="?export=xlsx{% if businesses.0 %}&business={{ businesses.0.id }}{% endif %}" class="btn btn-outline-success"><i class="fas fa-download me-1"></i>{% if LANGUAGE_CODE == 'ar' %}تنزيل Excel{% else %}Download Excel{% endif %}</a></div>
+      <div class="col-md-5"><form method="post" enctype="multipart/form-data" class="row g-2">{% csrf_token %}<input type="hidden" name="action" value="bulk_import"><input type="hidden" id="importBusiness" name="business" value="{% if businesses.0 %}{{ businesses.0.id }}{% endif %}"><div class="col-8"><input class="form-control" type="file" name="bulk_file" accept=".xlsx,.xlsm,.csv" required></div><div class="col-4 d-grid"><button class="btn btn-success"><i class="fas fa-upload me-1"></i>{% if LANGUAGE_CODE == 'ar' %}رفع{% else %}Upload{% endif %}</button></div></form></div>
     </div>
-    {% endfor %}
-</div>
+  </div></div>
+  {% if bulk_report and bulk_report.error_count %}<div class="alert alert-danger mt-3 mb-0"><strong>{% if LANGUAGE_CODE == 'ar' %}الملف يحتاج تعديل قبل الحفظ{% else %}Fix these rows before importing{% endif %}</strong><div class="table-responsive mt-2"><table class="table table-sm mb-0"><thead><tr><th>{% if LANGUAGE_CODE == 'ar' %}الصف{% else %}Row{% endif %}</th><th>{% if LANGUAGE_CODE == 'ar' %}المنتج{% else %}Item{% endif %}</th><th>{% if LANGUAGE_CODE == 'ar' %}المشكلة{% else %}Problem{% endif %}</th></tr></thead><tbody>{% for error in bulk_report.errors %}{% for problem in error.problems %}<tr><td>{{ error.row }}</td><td>{{ error.name }}</td><td>{{ problem.field }} — {{ problem.message }}</td></tr>{% endfor %}{% endfor %}</tbody></table></div></div>{% endif %}
+</div></div>
 
-<!-- Pagination -->
-{% if products.has_other_pages %}
-<nav class="mt-4">
-    <ul class="pagination justify-content-center">
-        {% if products.has_previous %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ products.previous_page_number }}{% if request.GET.business %}&business={{ request.GET.business }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
-                <i class="fas fa-chevron-right"></i>
-            </a>
-        </li>
-        {% endif %}
-        
-        {% for num in products.paginator.page_range %}
-            {% if products.number == num %}
-            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-            {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ num }}{% if request.GET.business %}&business={{ request.GET.business }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ num }}</a>
-            </li>
-            {% endif %}
-        {% endfor %}
-        
-        {% if products.has_next %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ products.next_page_number }}{% if request.GET.business %}&business={{ request.GET.business }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
-                <i class="fas fa-chevron-left"></i>
-            </a>
-        </li>
-        {% endif %}
-    </ul>
-</nav>
-{% endif %}
+<div class="card mb-4"><div class="card-body"><form method="get" class="row g-3 align-items-end">
+  <div class="col-lg-3"><label class="form-label">{% if LANGUAGE_CODE == 'ar' %}النشاط{% else %}Business{% endif %}</label><select name="business" class="form-select"><option value="">{% if LANGUAGE_CODE == 'ar' %}كل الأنشطة{% else %}All Businesses{% endif %}</option>{% for business in businesses %}<option value="{{ business.id }}" {% if request.GET.business == business.id|stringformat:'s' %}selected{% endif %}>{{ business.name_ar|default:business.name_en }}</option>{% endfor %}</select></div>
+  <div class="col-lg-2"><label class="form-label">{% if LANGUAGE_CODE == 'ar' %}النوع{% else %}Type{% endif %}</label><select name="type" class="form-select"><option value="">{% if LANGUAGE_CODE == 'ar' %}الكل{% else %}All{% endif %}</option><option value="product" {% if request.GET.type == 'product' %}selected{% endif %}>{% if LANGUAGE_CODE == 'ar' %}منتج{% else %}Product{% endif %}</option><option value="service" {% if request.GET.type == 'service' %}selected{% endif %}>{% if LANGUAGE_CODE == 'ar' %}خدمة{% else %}Service{% endif %}</option></select></div>
+  <div class="col-lg-2"><label class="form-label">{% if LANGUAGE_CODE == 'ar' %}الحالة{% else %}Status{% endif %}</label><select name="status" class="form-select"><option value="">{% if LANGUAGE_CODE == 'ar' %}الكل{% else %}All{% endif %}</option><option value="available" {% if request.GET.status == 'available' %}selected{% endif %}>{% if LANGUAGE_CODE == 'ar' %}متاح{% else %}Available{% endif %}</option><option value="unavailable" {% if request.GET.status == 'unavailable' %}selected{% endif %}>{% if LANGUAGE_CODE == 'ar' %}غير متاح{% else %}Unavailable{% endif %}</option></select></div>
+  <div class="col-lg-3"><label class="form-label">{% if LANGUAGE_CODE == 'ar' %}بحث{% else %}Search{% endif %}</label><input name="search" value="{{ request.GET.search }}" class="form-control"></div><div class="col-lg-2 d-grid"><button class="btn btn-primary"><i class="fas fa-search me-1"></i>{% if LANGUAGE_CODE == 'ar' %}تطبيق{% else %}Apply{% endif %}</button></div>
+</form></div></div>
 
-{% else %}
-<div class="card">
-    <div class="card-body text-center py-5">
-        <i class="fas fa-box fa-4x text-muted mb-3"></i>
-        <h4>{% trans 'No products found' %}</h4>
-        <p class="text-muted">{% trans 'Start by adding your first product or service' %}</p>
-        <a href="{% url 'dashboard:product_create' %}" class="btn btn-primary mt-3">
-            <i class="fas fa-plus me-2"></i>
-            {% trans 'Add New Product' %}
-        </a>
-    </div>
-</div>
-{% endif %}
+{% if products %}<div class="row g-4">{% for product in products %}<div class="col-md-6 col-xl-4"><div class="card product-card">
+  {% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name_ar }}">{% else %}<div class="product-placeholder"><i class="fas fa-{% if product.product_type == 'service' %}tools{% else %}box{% endif %} fa-3x"></i></div>{% endif %}
+  <div class="card-body"><div class="d-flex justify-content-between gap-2"><h5 class="fw-bold">{{ product.name_ar|default:product.name_en }}</h5>{% if product.is_available %}<span class="badge bg-success align-self-start">{% if LANGUAGE_CODE == 'ar' %}متاح{% else %}Available{% endif %}</span>{% else %}<span class="badge bg-secondary align-self-start">{% if LANGUAGE_CODE == 'ar' %}متوقف{% else %}Unavailable{% endif %}</span>{% endif %}</div><div class="small text-muted mb-2"><i class="fas fa-store me-1"></i>{{ product.business.name_ar|default:product.business.name_en }}</div><p class="small text-muted">{{ product.description_ar|default:product.description_en|truncatewords:16 }}</p>{% if product.price %}<div class="fw-bold text-primary">{{ product.price|floatformat:2 }} {% if LANGUAGE_CODE == 'ar' %}ج.م{% else %}EGP{% endif %}</div>{% endif %}</div>
+  <div class="card-footer bg-white d-flex gap-2"><a href="{% url 'dashboard:product_update' product.slug %}" class="btn btn-sm btn-outline-primary flex-grow-1"><i class="fas fa-edit"></i> {% if LANGUAGE_CODE == 'ar' %}تعديل{% else %}Edit{% endif %}</a><a href="{% url 'dashboard:product_delete' product.slug %}" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></a></div>
+</div></div>{% endfor %}</div>{% else %}<div class="card"><div class="card-body text-center py-5"><i class="fas fa-box fa-4x text-muted mb-3"></i><h4>{% if LANGUAGE_CODE == 'ar' %}لا توجد منتجات{% else %}No products found{% endif %}</h4><a href="{% url 'dashboard:product_create' %}" class="btn btn-primary mt-2">{% if LANGUAGE_CODE == 'ar' %}إضافة أول منتج{% else %}Add first product{% endif %}</a></div></div>{% endif %}
 
+{% if products.has_other_pages %}<nav class="mt-4"><ul class="pagination justify-content-center">{% if products.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ products.previous_page_number }}">‹</a></li>{% endif %}<li class="page-item active"><span class="page-link">{{ products.number }} / {{ products.paginator.num_pages }}</span></li>{% if products.has_next %}<li class="page-item"><a class="page-link" href="?page={{ products.next_page_number }}">›</a></li>{% endif %}</ul></nav>{% endif %}
 {% endblock %}
+
+{% block extra_js %}<script>
+(function(){const select=document.getElementById('excelBusiness');const exportLink=document.getElementById('excelExport');const importInput=document.getElementById('importBusiness');if(!select)return;function sync(){const id=select.value;exportLink.href='?export=xlsx&business='+encodeURIComponent(id);importInput.value=id;}select.addEventListener('change',sync);sync();})();
+</script>{% endblock %}
