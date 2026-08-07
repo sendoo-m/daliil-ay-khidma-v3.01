@@ -30,6 +30,12 @@ from apps.api.views.merchant import (
     MerchantDealViewSet, MerchantReviewViewSet, MerchantProductImageViewSet,
     MerchantProductBulkView,
 )
+from apps.api.views.onboarding import (
+    MerchantOnboardingView,
+    MerchantOnboardingPlanView,
+    MerchantOnboardingBusinessView,
+    MerchantOnboardingPaymentView,
+)
 from apps.administration.views import (
     AdminSessionView, PermissionCatalogView,
     RoleViewSet, StaffProfileViewSet, AuditLogViewSet,
@@ -116,6 +122,12 @@ urlpatterns = [
     path('merchant/session/',     MerchantSessionView.as_view(),        name='merchant_session'),
     path('merchant/dashboard/',   MerchantDashboardView.as_view(),      name='merchant_dashboard'),
     path('merchant/products/bulk/', MerchantProductBulkView.as_view(),  name='merchant_products_bulk'),
+
+    # ── Merchant onboarding ────────────────────────────
+    path('onboarding/', MerchantOnboardingView.as_view(), name='merchant_onboarding'),
+    path('onboarding/select-plan/', MerchantOnboardingPlanView.as_view(), name='merchant_onboarding_plan'),
+    path('onboarding/attach-business/', MerchantOnboardingBusinessView.as_view(), name='merchant_onboarding_business'),
+    path('onboarding/payment/', MerchantOnboardingPaymentView.as_view(), name='merchant_onboarding_payment'),
 
     # ── التصفّح العام ──
     path('browse/directories/',   browse.directories,           name='browse_directories'),
