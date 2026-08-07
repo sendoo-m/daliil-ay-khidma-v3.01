@@ -1,171 +1,100 @@
 {% extends 'dashboard/base.html' %}
-{% load static %}
+{% load i18n %}{% get_current_language as LANGUAGE_CODE %}
 
-{% block title %}محلاتي{% endblock %}
+{% block title %}{% if LANGUAGE_CODE|slice:':2' == 'ar' %}أنشطتي{% else %}My Businesses{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+.business-list-hero{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:22px;padding:1.5rem;box-shadow:0 12px 30px rgba(102,126,234,.18)}
+.metric-card{border:0;border-radius:16px;box-shadow:0 5px 18px rgba(15,23,42,.06);height:100%}.metric-icon{width:44px;height:44px;border-radius:13px;background:#eef2ff;color:#667eea;display:flex;align-items:center;justify-content:center}
+.business-card{border:0;border-radius:20px;overflow:hidden;box-shadow:0 6px 22px rgba(15,23,42,.08);transition:.2s ease;height:100%}.business-card:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(15,23,42,.12)}
+.business-cover{height:145px;object-fit:cover;background:linear-gradient(135deg,#eef2ff,#f5f3ff)}.business-logo{width:68px;height:68px;border-radius:18px;object-fit:cover;border:4px solid #fff;box-shadow:0 4px 14px rgba(15,23,42,.12);margin-top:-34px;background:#fff}
+.business-mini-stat{background:#f8fafc;border-radius:12px;padding:.65rem;text-align:center}.business-mini-stat strong{display:block;color:#334155}.plan-pill{display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .65rem;border-radius:999px;background:#f3f0ff;color:#6546b9;font-size:.78rem;font-weight:700}
+.filter-card{border:0;border-radius:18px;box-shadow:0 4px 16px rgba(15,23,42,.06)}.empty-state{padding:4rem 1rem;text-align:center}.empty-state i{font-size:3.5rem;color:#cbd5e1}
+</style>
+{% endblock %}
 
 {% block content %}
-
-<!-- Page Header -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="page-title">
-        <i class="fas fa-store"></i> محلاتي
-    </h1>
-    <a href="{% url 'dashboard:business_create' %}" class="btn btn-primary">
-        <i class="fas fa-plus"></i> إضافة محل
-    </a>
+<div class="business-list-hero mb-4">
+  <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="fas fa-store me-2"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}أنشطتي التجارية{% else %}My Businesses{% endif %}</h2>
+      <p class="mb-0 opacity-75">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}إدارة بيانات أنشطتك، حالتها، منتجاتها واشتراكاتها من مكان واحد.{% else %}Manage business profiles, status, catalog and subscriptions in one place.{% endif %}</p>
+    </div>
+    {% if can_create_business %}
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'dashboard:business_create' %}" class="btn btn-light fw-bold"><i class="fas fa-plus me-1"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}إضافة محل{% else %}Add business{% endif %}</a>
+        <a href="{% url 'dashboard:business_create_craft' %}" class="btn btn-outline-light fw-bold"><i class="fas fa-tools me-1"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}إضافة حرفة{% else %}Add craft{% endif %}</a>
+      </div>
+    {% else %}
+      <a href="{% url 'subscriptions:my_subscription' %}" class="btn btn-warning fw-bold"><i class="fas fa-crown me-1"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}ترقية الخطة لإضافة نشاط{% else %}Upgrade to add a business{% endif %}</a>
+    {% endif %}
+  </div>
 </div>
 
-<!-- Filter & Search -->
-<div class="card mb-4">
-    <div class="card-body">
-        <form method="get" class="row g-3">
-            <div class="col-md-3">
-                <select name="type" class="form-select">
-                    <option value="">جميع الأنواع</option>
-                    <option value="shop">🏪 محل تجاري</option>
-                    <option value="craft">🔧 حرفة</option>
-                    <option value="public">🏛️ خدمة عامة</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select name="status" class="form-select">
-                    <option value="">جميع الحالات</option>
-                    <option value="active">نشط</option>
-                    <option value="inactive">غير نشط</option>
-                    <option value="verified">موثق</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <input type="search" name="search" class="form-control" placeholder="بحث...">
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search"></i> بحث</button>
-            </div>
-        </form>
-    </div>
+{% if current_subscription %}
+<div class="alert alert-light border rounded-4 d-flex justify-content-between align-items-center gap-3 flex-wrap mb-4">
+  <div><i class="fas fa-gem text-primary me-2"></i><strong>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الخطة الحالية:{% else %}Current plan:{% endif %}</strong> {% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ current_subscription.plan.display_name_ar }}{% else %}{{ current_subscription.plan.display_name_en }}{% endif %}</div>
+  <div class="small text-muted">
+    {% if business_limit %}{{ business_limit_used }} / {{ business_limit }} {% if LANGUAGE_CODE|slice:':2' == 'ar' %}أنشطة نشطة{% else %}active businesses{% endif %}{% else %}{% if LANGUAGE_CODE|slice:':2' == 'ar' %}عدد الأنشطة غير محدود{% else %}Unlimited businesses{% endif %}{% endif %}
+    · <a href="{% url 'subscriptions:my_subscription' %}" class="text-decoration-none">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}إدارة الاشتراك{% else %}Manage subscription{% endif %}</a>
+  </div>
 </div>
-
-<!-- Stats -->
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body text-center">
-                <h3 class="text-primary">{{ total_count }}</h3>
-                <p class="mb-0">إجمالي المحلات</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body text-center">
-                <h3 class="text-success">{{ active_count }}</h3>
-                <p class="mb-0">محلات نشطة</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body text-center">
-                <h3 class="text-info">{{ verified_count }}</h3>
-                <p class="mb-0">محلات موثقة</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Businesses List -->
-<div class="row g-4">
-    {% for business in businesses %}
-    <div class="col-md-6 col-lg-4">
-        <div class="card h-100">
-            {% if business.logo %}
-            <img src="{{ business.logo.url }}" class="card-img-top" alt="{{ business.name_ar }}" style="height: 200px; object-fit: cover;">
-            {% else %}
-            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                <i class="fas fa-store fa-4x text-muted"></i>
-            </div>
-            {% endif %}
-            
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h5 class="card-title mb-0">{{ business.name_ar }}</h5>
-                    <div>
-                        {% if business.is_verified %}
-                        <i class="fas fa-check-circle text-success" title="موثق"></i>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <p class="card-text small text-muted mb-2">
-                    <i class="fas fa-folder me-1"></i> {{ business.category.name_ar }}
-                </p>
-                
-                <span class="badge badge-type-{{ business.business_type }} mb-3">
-                    {{ business.business_type_icon }} {{ business.get_business_type_display }}
-                </span>
-                
-                <div class="d-flex justify-content-between align-items-center small text-muted mb-3">
-                    <span><i class="fas fa-eye"></i> {{ business.view_count }}</span>
-                    <span><i class="fas fa-mouse-pointer"></i> {{ business.click_count }}</span>
-                    <span>
-                        {% if business.is_active %}
-                        <span class="badge bg-success">نشط</span>
-                        {% else %}
-                        <span class="badge bg-secondary">غير نشط</span>
-                        {% endif %}
-                    </span>
-                </div>
-                
-                <div class="d-flex gap-2">
-                    <a href="{% url 'dashboard:business_detail' business.slug %}" class="btn btn-sm btn-info flex-fill">
-                        <i class="fas fa-eye"></i> عرض
-                    </a>
-                    <a href="{% url 'dashboard:business_update' business.slug %}" class="btn btn-sm btn-primary flex-fill">
-                        <i class="fas fa-edit"></i> تعديل
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% empty %}
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body text-center py-5">
-                <i class="fas fa-store fa-4x text-muted mb-3"></i>
-                <h5>لا توجد محلات</h5>
-                <p class="text-muted">ابدأ بإضافة محلك الأول</p>
-                <a href="{% url 'dashboard:business_create' %}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> إضافة محل
-                </a>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-
-<!-- Pagination -->
-{% if businesses.has_other_pages %}
-<nav class="mt-4">
-    <ul class="pagination justify-content-center">
-        {% if businesses.has_previous %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ businesses.previous_page_number }}">السابق</a>
-        </li>
-        {% endif %}
-        
-        {% for num in businesses.paginator.page_range %}
-        <li class="page-item {% if businesses.number == num %}active{% endif %}">
-            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-        </li>
-        {% endfor %}
-        
-        {% if businesses.has_next %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ businesses.next_page_number }}">التالي</a>
-        </li>
-        {% endif %}
-    </ul>
-</nav>
 {% endif %}
 
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3"><div class="card metric-card"><div class="card-body d-flex align-items-center gap-3"><div class="metric-icon"><i class="fas fa-layer-group"></i></div><div><div class="fs-3 fw-bold">{{ total_count }}</div><small class="text-muted">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}إجمالي الأنشطة{% else %}Total{% endif %}</small></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card metric-card"><div class="card-body d-flex align-items-center gap-3"><div class="metric-icon"><i class="fas fa-circle-check"></i></div><div><div class="fs-3 fw-bold text-success">{{ active_count }}</div><small class="text-muted">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}نشط{% else %}Active{% endif %}</small></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card metric-card"><div class="card-body d-flex align-items-center gap-3"><div class="metric-icon"><i class="fas fa-badge-check"></i></div><div><div class="fs-3 fw-bold text-info">{{ verified_count }}</div><small class="text-muted">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}موثق{% else %}Verified{% endif %}</small></div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card metric-card"><div class="card-body d-flex align-items-center gap-3"><div class="metric-icon"><i class="fas fa-pause-circle"></i></div><div><div class="fs-3 fw-bold text-secondary">{{ inactive_count }}</div><small class="text-muted">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}متوقف{% else %}Inactive{% endif %}</small></div></div></div></div>
+</div>
+
+<div class="card filter-card mb-4"><div class="card-body">
+  <form method="get" class="row g-3 align-items-end">
+    <div class="col-lg-3 col-md-6"><label class="form-label small fw-bold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}النوع{% else %}Type{% endif %}</label><select name="type" class="form-select"><option value="">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}كل الأنواع{% else %}All types{% endif %}</option><option value="shop" {% if selected_type == 'shop' %}selected{% endif %}>🏪 {% if LANGUAGE_CODE|slice:':2' == 'ar' %}محل تجاري{% else %}Business{% endif %}</option><option value="craft" {% if selected_type == 'craft' %}selected{% endif %}>🔧 {% if LANGUAGE_CODE|slice:':2' == 'ar' %}حرفة{% else %}Craft{% endif %}</option></select></div>
+    <div class="col-lg-3 col-md-6"><label class="form-label small fw-bold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الحالة{% else %}Status{% endif %}</label><select name="status" class="form-select"><option value="">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}كل الحالات{% else %}All statuses{% endif %}</option><option value="active" {% if selected_status == 'active' %}selected{% endif %}>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}نشط{% else %}Active{% endif %}</option><option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}متوقف{% else %}Inactive{% endif %}</option><option value="verified" {% if selected_status == 'verified' %}selected{% endif %}>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}موثق{% else %}Verified{% endif %}</option><option value="unverified" {% if selected_status == 'unverified' %}selected{% endif %}>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}غير موثق{% else %}Unverified{% endif %}</option></select></div>
+    <div class="col-lg-4"><label class="form-label small fw-bold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}بحث{% else %}Search{% endif %}</label><input type="search" name="search" value="{{ search_query }}" class="form-control" placeholder="{% if LANGUAGE_CODE|slice:':2' == 'ar' %}اسم النشاط، الهاتف أو التصنيف...{% else %}Name, phone or category...{% endif %}"></div>
+    <div class="col-lg-2 d-grid"><button class="btn btn-primary" type="submit"><i class="fas fa-search me-1"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}تصفية{% else %}Filter{% endif %}</button></div>
+  </form>
+</div></div>
+
+<div class="row g-4">
+{% for business in businesses %}
+  <div class="col-md-6 col-xl-4">
+    <article class="business-card card">
+      {% if business.cover_image %}<img class="business-cover w-100" src="{{ business.cover_image.url }}" alt="{{ business.name_ar }}">{% else %}<div class="business-cover d-flex align-items-center justify-content-center"><i class="fas fa-store fa-3x text-primary opacity-25"></i></div>{% endif %}
+      <div class="card-body pt-0">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          {% if business.logo %}<img class="business-logo" src="{{ business.logo.url }}" alt="{{ business.name_ar }}">{% else %}<div class="business-logo d-flex align-items-center justify-content-center"><i class="fas fa-store text-primary"></i></div>{% endif %}
+          <div class="d-flex gap-1 mt-3">
+            {% if business.is_verified %}<span class="badge bg-success"><i class="fas fa-check-circle"></i> {% if LANGUAGE_CODE|slice:':2' == 'ar' %}موثق{% else %}Verified{% endif %}</span>{% endif %}
+            {% if business.is_active %}<span class="badge bg-primary">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}نشط{% else %}Active{% endif %}</span>{% else %}<span class="badge bg-secondary">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}متوقف{% else %}Inactive{% endif %}</span>{% endif %}
+          </div>
+        </div>
+        <h5 class="fw-bold mt-3 mb-1">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ business.name_ar }}{% else %}{{ business.name_en|default:business.name_ar }}{% endif %}</h5>
+        <div class="small text-muted mb-2"><i class="fas fa-folder me-1"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ business.category.name_ar|default:'—' }}{% else %}{{ business.category.name_en|default:business.category.name_ar|default:'—' }}{% endif %}</div>
+        {% if business.subscription %}<span class="plan-pill"><i class="fas fa-crown"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}{{ business.subscription.plan.display_name_ar }}{% else %}{{ business.subscription.plan.display_name_en }}{% endif %}</span>{% else %}<span class="plan-pill"><i class="fas fa-circle-exclamation"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}بدون اشتراك{% else %}No subscription{% endif %}</span>{% endif %}
+
+        <div class="row g-2 mt-3">
+          <div class="col-4"><div class="business-mini-stat"><strong>{{ business.products_count }}</strong><small class="text-muted">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}منتج{% else %}Products{% endif %}</small></div></div>
+          <div class="col-4"><div class="business-mini-stat"><strong>{{ business.deals_count }}</strong><small class="text-muted">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}عرض{% else %}Deals{% endif %}</small></div></div>
+          <div class="col-4"><div class="business-mini-stat"><strong>{{ business.reviews_count }}</strong><small class="text-muted">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}تقييم{% else %}Reviews{% endif %}</small></div></div>
+        </div>
+        <div class="d-flex justify-content-between small text-muted mt-3"><span><i class="fas fa-eye me-1"></i>{{ business.view_count|default:0 }}</span><span><i class="fas fa-mouse-pointer me-1"></i>{{ business.click_count|default:0 }}</span><span><i class="fas fa-clock me-1"></i>{{ business.updated_at|date:'Y-m-d' }}</span></div>
+      </div>
+      <div class="card-footer bg-white border-0 pb-3"><div class="d-grid gap-2"><div class="btn-group"><a href="{% url 'dashboard:business_detail' business.slug %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}إدارة{% else %}Manage{% endif %}</a><a href="{% url 'dashboard:business_update' business.slug %}" class="btn btn-sm btn-primary"><i class="fas fa-edit me-1"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}تعديل{% else %}Edit{% endif %}</a></div><div class="btn-group"><a href="{% url 'dashboard:product_list' %}?business={{ business.id }}" class="btn btn-sm btn-light"><i class="fas fa-box me-1"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}المنتجات{% else %}Products{% endif %}</a><a href="{% url 'dashboard:review_list' %}?business={{ business.id }}" class="btn btn-sm btn-light"><i class="fas fa-star me-1"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}التقييمات{% else %}Reviews{% endif %}</a></div></div></div>
+    </article>
+  </div>
+{% empty %}
+  <div class="col-12"><div class="card border-0 rounded-4"><div class="empty-state"><i class="fas fa-store mb-3"></i><h4 class="fw-bold">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}لا توجد أنشطة مطابقة{% else %}No businesses found{% endif %}</h4><p class="text-muted">{% if search_query or selected_status or selected_type %}{% if LANGUAGE_CODE|slice:':2' == 'ar' %}غيّر البحث أو الفلاتر لعرض نتائج أخرى.{% else %}Try changing your search or filters.{% endif %}{% else %}{% if LANGUAGE_CODE|slice:':2' == 'ar' %}ابدأ بإضافة نشاطك الأول.{% else %}Start by adding your first business.{% endif %}{% endif %}</p>{% if can_create_business %}<a href="{% url 'dashboard:business_create' %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}إضافة نشاط{% else %}Add business{% endif %}</a>{% endif %}</div></div></div>
+{% endfor %}
+</div>
+
+{% if businesses.has_other_pages %}
+<nav class="mt-4" aria-label="Pagination"><ul class="pagination justify-content-center">
+{% if businesses.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ businesses.previous_page_number }}&type={{ selected_type }}&status={{ selected_status }}&search={{ search_query|urlencode }}">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}السابق{% else %}Previous{% endif %}</a></li>{% endif %}
+{% for num in businesses.paginator.page_range %}{% if num == businesses.number %}<li class="page-item active"><span class="page-link">{{ num }}</span></li>{% elif num > businesses.number|add:'-3' and num < businesses.number|add:'3' %}<li class="page-item"><a class="page-link" href="?page={{ num }}&type={{ selected_type }}&status={{ selected_status }}&search={{ search_query|urlencode }}">{{ num }}</a></li>{% endif %}{% endfor %}
+{% if businesses.has_next %}<li class="page-item"><a class="page-link" href="?page={{ businesses.next_page_number }}&type={{ selected_type }}&status={{ selected_status }}&search={{ search_query|urlencode }}">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}التالي{% else %}Next{% endif %}</a></li>{% endif %}
+</ul></nav>
+{% endif %}
 {% endblock %}
