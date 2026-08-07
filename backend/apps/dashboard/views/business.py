@@ -1,63 +1,15 @@
-"""
-Business Management Views
-"""
+"""Owner business management views."""
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-
-from apps.directory.models import Business
-from apps.dashboard.forms import BusinessForm
-
-
-@login_required
-def business_list(request):
-    """قائمة محلات المستخدم"""
-    businesses = Business.objects.filter(
-        owner=request.user
-    ).select_related(
-        'category', 'district__city__governorate'
-    ).order_by('-created_at')
-    
-    # Filter by type
-    business_type = request.GET.get('type')
-    if business_type:
-        businesses = businesses.filter(business_type=business_type)
-    
-    # Filter by status
-    status = request.GET.get('status')
-    if status == 'active':
-        businesses = businesses.filter(is_active=True)
-    elif status == 'inactive':
-        businesses = businesses.filter(is_active=False)
-    elif status == 'verified':
-        businesses = businesses.filter(is_verified=True)
-    
-    # Search
-    search = request.GET.get('search')
-    if search:
-        businesses = businesses.filter(
-            models.Q(name_en__icontains=search) |
-            models.Q(name_ar__icontains=search)
-        )
-    
-    # Pagination
-    paginator = Paginator(businesses, 10)
-    page = request.GET.get('page')
-    businesses = paginator.get_page(page)
-    
-    context = {
-        'businesses': businesses,
-        'total_count': Business.objects.filter(owner=request.user).count(),
-        'active_count': Business.objects.filter(owner=request.user, is_active=True).count(),
-        'verified_count': Business.objects.filter(owner=request.user, is_verified=True).count(),
-    }
-    
-    return render(request, 'dashboard/business/list.html', context)
+from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404, redirect, render
 
 from apps.dashboard.forms.business_create import BusinessCreateForm, BusinessImageFormSet
+from apps.directory.models import Business
 from apps.directory.models.location import Governorate
+from apps.subscriptions.models import Subscription
 
 
 BUSINESS_FORM_SECTIONS = {
@@ -77,22 +29,46 @@ BUSINESS_FORM_SECTIONS = {
 }
 
 
+def _active_owner_subscription(user):
+    """Return the most relevant active subscription for owner-level limits."""
+    return (
+        Subscription.objects.filter(
+            business__owner=user,
+            status='active',
+        )
+        .select_related('plan', 'business')
+        .order_by('-end_date')
+        .first()
+    )
+
+
+def _can_create_business(user):
+    """Check the current plan's owner-level business limit."""
+    subscription = _active_owner_subscription(user)
+    if not subscription:
+        return True, None, None
+
+    limit = subscription.plan.max_businesses
+    active_count = Business.objects.filter(owner=user, is_active=True).count()
+    if limit and active_count >= limit:
+        return False, subscription, limit
+    return True, subscription, limit
+
+
 def _business_form_error_section(form, formset):
-    """إرجاع أول مرحلة تحتوي خطأ حتى يفتحها المعالج تلقائياً."""
+    """Return the first wizard section containing an error."""
     error_fields = set(form.errors)
     for section, fields in BUSINESS_FORM_SECTIONS.items():
         if error_fields & fields:
             return section
 
-    # أخطاء الصور أو الـ management form تخص مرحلة معرض الصور.
     if formset.non_form_errors() or any(form_errors for form_errors in formset.errors):
         return 5
-
     return 1
 
 
 def _save_business_images(formset, business):
-    """حفظ صور المعرض ومنح الصور الجديدة ترتيباً تلقائياً."""
+    """Save gallery images and assign deterministic order to new images."""
     formset.instance = business
     images = formset.save(commit=False)
 
@@ -112,67 +88,154 @@ def _save_business_images(formset, business):
 
 
 @login_required
-def business_create(request, business_type='shop'):
-    """إنشاء محل جديد - shop أو craft"""
+def business_list(request):
+    """Owner Business List V2."""
+    owner_businesses = Business.objects.filter(owner=request.user)
+    businesses = (
+        owner_businesses
+        .select_related(
+            'category',
+            'district__city__governorate',
+            'subscription__plan',
+        )
+        .annotate(
+            products_count=Count('products', distinct=True),
+            deals_count=Count('deals', distinct=True),
+            reviews_count=Count('reviews', distinct=True),
+        )
+        .order_by('-is_active', '-updated_at')
+    )
 
-    # التحقق من النوع
+    business_type = request.GET.get('type', '').strip()
+    if business_type:
+        businesses = businesses.filter(business_type=business_type)
+
+    status = request.GET.get('status', '').strip()
+    if status == 'active':
+        businesses = businesses.filter(is_active=True)
+    elif status == 'inactive':
+        businesses = businesses.filter(is_active=False)
+    elif status == 'verified':
+        businesses = businesses.filter(is_verified=True)
+    elif status == 'unverified':
+        businesses = businesses.filter(is_verified=False)
+
+    search = request.GET.get('search', '').strip()
+    if search:
+        businesses = businesses.filter(
+            Q(name_en__icontains=search)
+            | Q(name_ar__icontains=search)
+            | Q(phone__icontains=search)
+            | Q(category__name_ar__icontains=search)
+            | Q(category__name_en__icontains=search)
+        )
+
+    paginator = Paginator(businesses, 12)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    can_create, current_subscription, business_limit = _can_create_business(request.user)
+    active_count = owner_businesses.filter(is_active=True).count()
+
+    context = {
+        'businesses': page_obj,
+        'total_count': owner_businesses.count(),
+        'active_count': active_count,
+        'verified_count': owner_businesses.filter(is_verified=True).count(),
+        'inactive_count': owner_businesses.filter(is_active=False).count(),
+        'search_query': search,
+        'selected_type': business_type,
+        'selected_status': status,
+        'can_create_business': can_create,
+        'current_subscription': current_subscription,
+        'business_limit': business_limit,
+        'business_limit_used': active_count,
+    }
+    return render(request, 'dashboard/business/list.html', context)
+
+
+@login_required
+def business_create(request, business_type='shop'):
+    """Create a shop/craft while respecting the active plan limit."""
     if business_type not in ['shop', 'craft']:
         return redirect('dashboard:business_list')
 
-    # العناوين حسب النوع
+    can_create, subscription, limit = _can_create_business(request.user)
+    if not can_create:
+        messages.warning(
+            request,
+            'وصلت للحد الأقصى من الأنشطة المسموح بها في خطتك الحالية. '
+            'يمكنك ترقية الخطة أو إدارة الأنشطة الحالية أولًا.',
+        )
+        return redirect('subscriptions:my_subscription')
+
     titles = {
-        'shop':  {'ar': 'إضافة محل تجاري جديد',    'icon': '🏪'},
-        'craft': {'ar': 'إضافة حرفة / مهنة حرة',   'icon': '🔧'},
+        'shop': {'ar': 'إضافة محل تجاري جديد', 'en': 'Add a new business', 'icon': '🏪'},
+        'craft': {'ar': 'إضافة حرفة / مهنة حرة', 'en': 'Add a craft / profession', 'icon': '🔧'},
     }
 
     if request.method == 'POST':
-        form     = BusinessCreateForm(request.POST, request.FILES,
-                                      business_type=business_type, user=request.user)
-        formset  = BusinessImageFormSet(request.POST, request.FILES)
-
+        form = BusinessCreateForm(
+            request.POST,
+            request.FILES,
+            business_type=business_type,
+            user=request.user,
+        )
+        formset = BusinessImageFormSet(request.POST, request.FILES)
         form_is_valid = form.is_valid()
         formset_is_valid = formset.is_valid()
 
         if form_is_valid and formset_is_valid:
-            business              = form.save(commit=False)
-            business.owner        = request.user
+            # Check again on POST to avoid a stale tab bypassing the plan limit.
+            can_create_now, _, _ = _can_create_business(request.user)
+            if not can_create_now:
+                messages.warning(request, 'تم الوصول إلى حد الأنشطة في الخطة الحالية.')
+                return redirect('subscriptions:my_subscription')
+
+            business = form.save(commit=False)
+            business.owner = request.user
             business.business_type = business_type
             business.save()
-
-            # حفظ الصور وترتيبها تلقائياً حسب إضافتها
             _save_business_images(formset, business)
-
             messages.success(request, f'✅ تم إضافة "{business.name_ar}" بنجاح!')
             return redirect('dashboard:business_detail', slug=business.slug)
 
         error_section = _business_form_error_section(form, formset)
-        messages.error(request, 'تعذر حفظ المحل. راجع الأخطاء الموضحة في النموذج.')
+        messages.error(request, 'لم يتم حفظ المحل. راجع الأخطاء الموضحة في النموذج.')
     else:
-        form    = BusinessCreateForm(business_type=business_type, user=request.user)
+        form = BusinessCreateForm(business_type=business_type, user=request.user)
         formset = BusinessImageFormSet()
         error_section = 1
 
     return render(request, 'dashboard/business/form.html', {
-        'form':          form,
-        'formset':       formset,
+        'form': form,
+        'formset': formset,
         'business_type': business_type,
-        'title':         titles[business_type],
-        'governorates':  Governorate.objects.filter(is_active=True).order_by('name_ar'),
-        'action':        'create',
+        'title': titles[business_type],
+        'governorates': Governorate.objects.filter(is_active=True).order_by('name_ar'),
+        'action': 'create',
         'error_section': error_section,
+        'current_subscription': subscription,
+        'business_limit': limit,
     })
 
 
 @login_required
 def business_update(request, slug):
-    """تعديل محل"""
+    """Update an owner business using the existing multi-step editor."""
     business = get_object_or_404(Business, slug=slug, owner=request.user)
 
     if request.method == 'POST':
-        form    = BusinessCreateForm(request.POST, request.FILES,
-                                     instance=business, user=request.user)
-        formset = BusinessImageFormSet(request.POST, request.FILES, instance=business)
-
+        form = BusinessCreateForm(
+            request.POST,
+            request.FILES,
+            instance=business,
+            user=request.user,
+        )
+        formset = BusinessImageFormSet(
+            request.POST,
+            request.FILES,
+            instance=business,
+        )
         form_is_valid = form.is_valid()
         formset_is_valid = formset.is_valid()
 
@@ -185,107 +248,57 @@ def business_update(request, slug):
         error_section = _business_form_error_section(form, formset)
         messages.error(request, 'تعذر حفظ التعديلات. راجع الأخطاء الموضحة في النموذج.')
     else:
-        form    = BusinessCreateForm(instance=business, user=request.user)
+        form = BusinessCreateForm(instance=business, user=request.user)
         formset = BusinessImageFormSet(instance=business)
         error_section = 1
 
+    subscription = getattr(business, 'subscription', None)
     return render(request, 'dashboard/business/form.html', {
-        'form':          form,
-        'formset':       formset,
-        'business':      business,
+        'form': form,
+        'formset': formset,
+        'business': business,
         'business_type': business.business_type,
-        'title':         {'ar': f'تعديل: {business.name_ar}', 'icon': '✏️'},
-        'governorates':  Governorate.objects.filter(is_active=True).order_by('name_ar'),
-        'action':        'update',
+        'title': {
+            'ar': f'تعديل: {business.name_ar}',
+            'en': f'Edit: {business.name_en}',
+            'icon': '✏️',
+        },
+        'governorates': Governorate.objects.filter(is_active=True).order_by('name_ar'),
+        'action': 'update',
         'error_section': error_section,
+        'current_subscription': subscription,
     })
 
 
 @login_required
 def business_detail(request, slug):
-    """تفاصيل المحل"""
+    """Business Profile V2 detail page."""
     business = get_object_or_404(
         Business.objects.select_related(
-            'category', 'district__city__governorate'
+            'category',
+            'district__city__governorate',
+            'subscription__plan',
         ).prefetch_related('images'),
         slug=slug,
-        owner=request.user
+        owner=request.user,
     )
-    
-    # Get business products
-    from apps.products.models import Product
-    products = Product.objects.filter(business=business)[:5]
-    
-    # Get business deals
-    from apps.deals.models import Deal
-    deals = Deal.objects.filter(business=business)[:5]
-    
-    context = {
+
+    products = business.products.order_by('-created_at')[:5]
+    deals = business.deals.order_by('-created_at')[:5]
+    return render(request, 'dashboard/business/detail.html', {
         'business': business,
         'products': products,
         'deals': deals,
-    }
-    
-    return render(request, 'dashboard/business/detail.html', context)
+    })
 
 
 @login_required
 def business_delete(request, slug):
-    """حذف محل"""
+    """Delete a business owned by the authenticated user."""
     business = get_object_or_404(Business, slug=slug, owner=request.user)
-    
     if request.method == 'POST':
         business_name = business.name_ar
         business.delete()
         messages.success(request, f'تم حذف {business_name} بنجاح!')
         return redirect('dashboard:business_list')
-    
-    context = {
-        'business': business,
-    }
-    
-    return render(request, 'dashboard/business/delete.html', context)
-
-# @login_required
-# def business_create(request):
-#     """إضافة محل جديد"""
-#     if request.method == 'POST':
-#         form = BusinessForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             business = form.save(commit=False)
-#             business.owner = request.user
-#             business.save()
-#             messages.success(request, 'تم إضافة المحل بنجاح!')
-#             return redirect('dashboard:business_detail', slug=business.slug)
-#     else:
-#         form = BusinessForm()
-    
-#     context = {
-#         'form': form,
-#         'title': 'إضانفة محل جديد',
-#     }
-    
-#     return render(request, 'dashboard/business/form.html', context)
-
-
-# @login_required
-# def business_update(request, slug):
-#     """تعديل محل"""
-#     business = get_object_or_404(Business, slug=slug, owner=request.user)
-    
-#     if request.method == 'POST':
-#         form = BusinessForm(request.POST, request.FILES, instance=business)
-#         if form.is_valid():
-#             form.save()
-#             messages.success(request, 'تم تحديث المحل بنجاح!')
-#             return redirect('dashboard:business_detail', slug=business.slug)
-#     else:
-#         form = BusinessForm(instance=business)
-    
-#     context = {
-#         'form': form,
-#         'business': business,
-#         'title': f'تعديل {business.name_ar}',
-#     }
-    
-#     return render(request, 'dashboard/business/form.html', context)
+    return render(request, 'dashboard/business/delete.html', {'business': business})
