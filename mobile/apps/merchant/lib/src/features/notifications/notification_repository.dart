@@ -1,3 +1,4 @@
+import 'package:dalil_core/dalil_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../shared/providers.dart';
@@ -86,7 +87,7 @@ final merchantUnreadNotificationsProvider = FutureProvider.autoDispose<int>((ref
 final class MerchantNotificationRepository {
   const MerchantNotificationRepository(this._api);
 
-  final dynamic _api;
+  final ApiClient _api;
 
   Future<List<MerchantNotification>> list({
     String language = 'ar',
