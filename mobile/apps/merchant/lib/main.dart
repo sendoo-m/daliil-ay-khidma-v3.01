@@ -6,6 +6,7 @@ import 'src/app/theme.dart';
 import 'src/features/analytics/analytics_page.dart';
 import 'src/features/auth/login_page.dart';
 import 'src/features/home/home_page.dart';
+import 'src/features/onboarding/onboarding_wizard.dart';
 import 'src/features/home/shop_page.dart';
 import 'src/features/notifications/notification_repository.dart';
 import 'src/features/notifications/notifications_page.dart';
@@ -71,8 +72,35 @@ class _Shell extends ConsumerStatefulWidget {
 class _ShellState extends ConsumerState<_Shell> {
   int _index = 0;
 
+  /// يُخفي الرحلة بعد أن يختار التاجر "كمّل بعدين" — لجلسة واحدة فقط.
+  /// لا نحفظه: الخادم يقرر متى تنتهي الرحلة، والتطبيق لا يحتفظ برأي
+  /// موازٍ قد يتعارض معه.
+  bool _skippedSetup = false;
+
+  /// يترجم وجهة الخطوة إلى رقم التبويب.
+  void _goToTab(String target) {
+    setState(() {
+      _skippedSetup = true;
+      _index = switch (target) {
+        'products' || 'deals' => 2,
+        'shop' => 4,
+        _ => 0,
+      };
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    // التاجر الذي لم يجهّز نشاطه يرى الرحلة لا اللوحة: لوحة فاضية
+    // بأصفار لا تقول له ماذا يفعل، والرحلة تقول.
+    final setup = ref.watch(onboardingProvider).valueOrNull;
+    if (!_skippedSetup && setup != null && !setup.isComplete) {
+      return OnboardingWizard(
+        onFinish: () => setState(() => _skippedSetup = true),
+        onGoTo: _goToTab,
+      );
+    }
+
     final shop = ref.watch(currentShopProvider);
     final unread = ref.watch(merchantUnreadNotificationsProvider).valueOrNull ?? 0;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
