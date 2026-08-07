@@ -18,6 +18,7 @@ class SubscriptionCenterPage extends ConsumerStatefulWidget {
 class _SubscriptionCenterPageState
     extends ConsumerState<SubscriptionCenterPage> {
   String _period = 'monthly';
+  bool _openingChange = false;
 
   bool get _isArabic =>
       Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
@@ -29,6 +30,7 @@ class _SubscriptionCenterPageState
     final shop = ref.watch(currentShopProvider);
     final subscription = ref.watch(currentMerchantSubscriptionProvider);
     final plans = ref.watch(merchantPlansProvider);
+    final pending = ref.watch(merchantPendingPlanChangeProvider);
 
     return Scaffold(
       backgroundColor: Shop.paper,
@@ -39,14 +41,7 @@ class _SubscriptionCenterPageState
       ),
       body: RefreshIndicator(
         color: Shop.jade,
-        onRefresh: () async {
-          ref.invalidate(currentMerchantSubscriptionProvider);
-          ref.invalidate(merchantPlansProvider);
-          await Future.wait([
-            ref.read(currentMerchantSubscriptionProvider.future),
-            ref.read(merchantPlansProvider.future),
-          ]);
-        },
+        onRefresh: _refresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.lg, Gap.lg, Gap.xl),
@@ -57,7 +52,7 @@ class _SubscriptionCenterPageState
             ),
             const SizedBox(height: Gap.lg),
             subscription.when(
-              loading: () => const _LoadingCard(height: 220),
+              loading: () => const _LoadingCard(height: 190),
               error: (error, _) => ShopError(
                 failure: ApiFailure.from(error),
                 onRetry: () =>
@@ -68,6 +63,19 @@ class _SubscriptionCenterPageState
                   : _CurrentPlanCard(
                       subscription: current,
                       isArabic: _isArabic,
+                    ),
+            ),
+            pending.when(
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+              data: (request) => request == null
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.only(top: Gap.md),
+                      child: _PendingRequestCard(
+                        request: request,
+                        isArabic: _isArabic,
+                      ),
                     ),
             ),
             const SizedBox(height: Gap.xl),
@@ -82,9 +90,9 @@ class _SubscriptionCenterPageState
             plans.when(
               loading: () => const Column(
                 children: [
-                  _LoadingCard(height: 250),
+                  _LoadingCard(height: 240),
                   SizedBox(height: Gap.md),
-                  _LoadingCard(height: 250),
+                  _LoadingCard(height: 240),
                 ],
               ),
               error: (error, _) => ShopError(
@@ -97,6 +105,8 @@ class _SubscriptionCenterPageState
                     title: _tr('لا توجد خطط متاحة', 'No plans available'),
                   );
                 }
+                final current = subscription.valueOrNull;
+                final hasPending = pending.valueOrNull != null;
                 return Column(
                   children: [
                     for (final plan in items) ...[
@@ -104,9 +114,11 @@ class _SubscriptionCenterPageState
                         plan: plan,
                         period: _period,
                         isArabic: _isArabic,
-                        currentPlanId:
-                            subscription.valueOrNull?.plan.id,
-                        onChoose: () => _showWebOnlyInfo(plan),
+                        currentPlanId: current?.plan.id,
+                        blocked: hasPending || _openingChange,
+                        onChoose: current == null
+                            ? null
+                            : () => _startChange(current, plan),
                       ),
                       const SizedBox(height: Gap.md),
                     ],
@@ -114,340 +126,512 @@ class _SubscriptionCenterPageState
                 );
               },
             ),
-            const SizedBox(height: Gap.sm),
-            _SystemNote(isArabic: _isArabic),
+            _ApprovalNote(isArabic: _isArabic),
           ],
         ),
       ),
     );
   }
 
-  void _showWebOnlyInfo(MerchantPlan plan) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(Gap.lg, 0, Gap.lg, Gap.xl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Icon(
-                Icons.payments_outlined,
-                size: 42,
-                color: Shop.jade,
+  Future<void> _refresh() async {
+    ref.invalidate(currentMerchantSubscriptionProvider);
+    ref.invalidate(merchantPlansProvider);
+    ref.invalidate(merchantPendingPlanChangeProvider);
+    await Future.wait([
+      ref.read(currentMerchantSubscriptionProvider.future),
+      ref.read(merchantPlansProvider.future),
+      ref.read(merchantPendingPlanChangeProvider.future),
+    ]);
+  }
+
+  Future<void> _startChange(
+    MerchantSubscription subscription,
+    MerchantPlan target,
+  ) async {
+    if (_openingChange || subscription.plan.id == target.id) return;
+    setState(() => _openingChange = true);
+    try {
+      final preview = await ref
+          .read(merchantSubscriptionRepositoryProvider)
+          .previewChange(
+            subscriptionId: subscription.id,
+            targetPlanId: target.id,
+            billingPeriod: _period,
+          );
+      if (!mounted) return;
+      final submitted = await Navigator.of(context).push<bool>(
+        MaterialPageRoute<bool>(
+          builder: (_) => PlanChangeReviewPage(
+            subscription: subscription,
+            targetPlan: target,
+            preview: preview,
+          ),
+        ),
+      );
+      if (submitted == true && mounted) {
+        await _refresh();
+      }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ApiFailure.from(error).message)),
+      );
+    } finally {
+      if (mounted) setState(() => _openingChange = false);
+    }
+  }
+}
+
+class PlanChangeReviewPage extends ConsumerStatefulWidget {
+  const PlanChangeReviewPage({
+    super.key,
+    required this.subscription,
+    required this.targetPlan,
+    required this.preview,
+  });
+
+  final MerchantSubscription subscription;
+  final MerchantPlan targetPlan;
+  final PlanChangePreview preview;
+
+  @override
+  ConsumerState<PlanChangeReviewPage> createState() =>
+      _PlanChangeReviewPageState();
+}
+
+class _PlanChangeReviewPageState
+    extends ConsumerState<PlanChangeReviewPage> {
+  final Set<int> _businessIds = {};
+  final Set<int> _productIds = {};
+  bool _submitting = false;
+
+  bool get _isArabic =>
+      Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
+  String _tr(String ar, String en) => _isArabic ? ar : en;
+
+  PlanChangePreview get _preview => widget.preview;
+
+  @override
+  void initState() {
+    super.initState();
+    final activeBusinesses =
+        _preview.businesses.where((item) => item.isActive).toList();
+    final businessLimit = _preview.maxBusinesses == 0
+        ? activeBusinesses.length
+        : _preview.maxBusinesses;
+    _businessIds.addAll(activeBusinesses.take(businessLimit).map((e) => e.id));
+
+    final availableProducts = _preview.products
+        .where(
+          (item) => item.isAvailable && _businessIds.contains(item.businessId),
+        )
+        .toList();
+    final productLimit = _preview.maxProducts == 0
+        ? availableProducts.length
+        : _preview.maxProducts;
+    _productIds.addAll(availableProducts.take(productLimit).map((e) => e.id));
+  }
+
+  int get _requiredBusinesses {
+    if (!_preview.needsBusinessSelection) return _businessIds.length;
+    return _preview.maxBusinesses;
+  }
+
+  int get _requiredProducts {
+    if (!_preview.needsProductSelection) return _productIds.length;
+    return _preview.maxProducts;
+  }
+
+  bool get _selectionValid {
+    final businessesValid = !_preview.needsBusinessSelection ||
+        _businessIds.length == _preview.maxBusinesses;
+    final productsValid = !_preview.needsProductSelection ||
+        _productIds.length == _preview.maxProducts;
+    return businessesValid && productsValid;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDowngrade = _preview.changeType == 'downgrade';
+    return Scaffold(
+      backgroundColor: Shop.paper,
+      appBar: AppBar(
+        backgroundColor: Shop.sign,
+        foregroundColor: Colors.white,
+        title: Text(
+          isDowngrade
+              ? _tr('مراجعة تخفيض الخطة', 'Review downgrade')
+              : _tr('مراجعة تغيير الخطة', 'Review plan change'),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.lg, Gap.lg, 110),
+        children: [
+          _ChangeSummary(
+            current: widget.subscription.plan,
+            target: widget.targetPlan,
+            preview: _preview,
+            isArabic: _isArabic,
+          ),
+          if (isDowngrade &&
+              (_preview.businessesToSuspend > 0 ||
+                  _preview.productsToSuspend > 0 ||
+                  _preview.disabledFeatures.isNotEmpty)) ...[
+            const SizedBox(height: Gap.md),
+            _ImpactWarning(preview: _preview, isArabic: _isArabic),
+          ],
+          if (_preview.needsBusinessSelection) ...[
+            const SizedBox(height: Gap.xl),
+            _SelectionHeading(
+              title: _tr(
+                'اختار المحلات اللي هتفضل شغالة',
+                'Choose businesses to keep active',
               ),
-              const SizedBox(height: Gap.md),
-              Text(
-                _tr(
-                  'إدارة ${plan.displayName(true)}',
-                  'Manage ${plan.displayName(false)}',
-                ),
-                style: Theme.of(context).textTheme.titleLarge,
-                textAlign: TextAlign.center,
+              selected: _businessIds.length,
+              requiredCount: _requiredBusinesses,
+              isArabic: _isArabic,
+            ),
+            const SizedBox(height: Gap.sm),
+            for (final business
+                in _preview.businesses.where((item) => item.isActive)) ...[
+              _SelectCard(
+                title: business.name(_isArabic),
+                subtitle: _tr('نشاط حالي', 'Current business'),
+                selected: _businessIds.contains(business.id),
+                onTap: () => _toggleBusiness(business),
+                icon: Icons.storefront_outlined,
               ),
               const SizedBox(height: Gap.sm),
-              Text(
-                _tr(
-                  'الـAPI الحالي يعرض الاشتراكات والخطط فقط، ولا يحتوي حتى الآن على عملية دفع أو ترقية من التطبيق. لذلك لن ننفذ زر دفع شكلي. إتمام الترقية أو التجديد متاح حاليًا من لوحة النشاط على الويب.',
-                  'The current API exposes plans and subscriptions as read-only and does not yet provide in-app payment or upgrade actions. Renewal and upgrades are currently completed from the web dashboard.',
-                ),
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: Gap.lg),
-              FilledButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(_tr('تمام', 'Got it')),
-              ),
             ],
+          ],
+          if (_preview.needsProductSelection) ...[
+            const SizedBox(height: Gap.xl),
+            _SelectionHeading(
+              title: _tr(
+                'اختار المنتجات اللي هتفضل ظاهرة',
+                'Choose products to keep visible',
+              ),
+              selected: _productIds.length,
+              requiredCount: _requiredProducts,
+              isArabic: _isArabic,
+            ),
+            const SizedBox(height: Gap.sm),
+            for (final product in _preview.products.where(
+              (item) =>
+                  item.isAvailable && _businessIds.contains(item.businessId),
+            )) ...[
+              _SelectCard(
+                title: product.name(_isArabic),
+                subtitle: _businessName(product.businessId),
+                selected: _productIds.contains(product.id),
+                onTap: () => _toggleProduct(product),
+                icon: Icons.inventory_2_outlined,
+              ),
+              const SizedBox(height: Gap.sm),
+            ],
+          ],
+          const SizedBox(height: Gap.xl),
+          _NoImmediateChangeNote(isArabic: _isArabic),
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.all(Gap.lg),
+        child: FilledButton.icon(
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(54),
+            backgroundColor: Shop.jade,
+          ),
+          onPressed: _submitting || !_selectionValid ? null : _confirmAndSubmit,
+          icon: _submitting
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.send_rounded),
+          label: Text(
+            _submitting
+                ? _tr('جاري الإرسال...', 'Sending...')
+                : _tr('إرسال الطلب للإدارة', 'Send request for approval'),
           ),
         ),
       ),
     );
+  }
+
+  String _businessName(int id) {
+    for (final business in _preview.businesses) {
+      if (business.id == id) return business.name(_isArabic);
+    }
+    return '';
+  }
+
+  void _toggleBusiness(PlanChangeBusiness business) {
+    setState(() {
+      if (_businessIds.contains(business.id)) {
+        if (!_preview.needsBusinessSelection) return;
+        _businessIds.remove(business.id);
+        final removedProducts = _preview.products
+            .where((item) => item.businessId == business.id)
+            .map((item) => item.id)
+            .toSet();
+        _productIds.removeAll(removedProducts);
+      } else {
+        if (_preview.maxBusinesses > 0 &&
+            _businessIds.length >= _preview.maxBusinesses) {
+          return;
+        }
+        _businessIds.add(business.id);
+      }
+    });
+  }
+
+  void _toggleProduct(PlanChangeProduct product) {
+    setState(() {
+      if (_productIds.contains(product.id)) {
+        _productIds.remove(product.id);
+      } else {
+        if (_preview.maxProducts > 0 &&
+            _productIds.length >= _preview.maxProducts) {
+          return;
+        }
+        _productIds.add(product.id);
+      }
+    });
+  }
+
+  Future<void> _confirmAndSubmit() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_tr('تأكيد طلب تغيير الخطة', 'Confirm plan change request')),
+        content: Text(
+          _tr(
+            'الطلب هيروح للإدارة للمراجعة. مش هيتوقف أي محل أو منتج قبل موافقة الإدارة وتطبيق الخطة الجديدة.',
+            'The request will be reviewed by administration. No business or product will be suspended before approval and activation of the new plan.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(_tr('رجوع', 'Back')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(_tr('تأكيد وإرسال', 'Confirm & send')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _submitting = true);
+    try {
+      await ref.read(merchantSubscriptionRepositoryProvider).requestChange(
+            subscriptionId: widget.subscription.id,
+            targetPlanId: widget.targetPlan.id,
+            billingPeriod: _preview.billingPeriod,
+            keepBusinessIds: _businessIds,
+            keepProductIds: _productIds,
+          );
+      ref.invalidate(merchantPendingPlanChangeProvider);
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          icon: const Icon(Icons.hourglass_top_rounded, color: Shop.brass),
+          title: Text(_tr('تم إرسال الطلب', 'Request sent')),
+          content: Text(
+            _tr(
+              'طلبك وصل للإدارة وبقى بانتظار المراجعة. هيوصلك إشعار أول ما يتم القبول أو الرفض.',
+              'Your request is now pending review. You will receive a notification once it is approved or rejected.',
+            ),
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(_tr('تمام', 'Done')),
+            ),
+          ],
+        ),
+      );
+      if (mounted) Navigator.pop(context, true);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ApiFailure.from(error).message)),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 }
 
 class _Hero extends StatelessWidget {
   const _Hero({required this.shopName, required this.isArabic});
-
   final String shopName;
-  final bool isArabic;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(Gap.lg),
-      decoration: BoxDecoration(
-        color: Shop.sign,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: const Icon(
-              Icons.workspace_premium_rounded,
-              color: Colors.white,
-              size: 31,
-            ),
-          ),
-          const SizedBox(width: Gap.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isArabic ? 'اشتراك $shopName' : '$shopName subscription',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-                const SizedBox(height: Gap.xs),
-                Text(
-                  isArabic
-                      ? 'تابع خطتك الحالية واعرف حدودها وقارنها بباقي الخطط.'
-                      : 'Track your current plan, limits and available upgrades.',
-                  style: const TextStyle(
-                    color: Color(0xFFC8D6D0),
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CurrentPlanCard extends StatelessWidget {
-  const _CurrentPlanCard({required this.subscription, required this.isArabic});
-
-  final MerchantSubscription subscription;
-  final bool isArabic;
-
-  String _tr(String ar, String en) => isArabic ? ar : en;
-
-  @override
-  Widget build(BuildContext context) {
-    final tone = subscription.isActive ? Shop.jade : Shop.clay;
-    final status = switch (subscription.status) {
-      'active' => _tr('نشط', 'Active'),
-      'pending' => _tr('بانتظار الدفع', 'Pending payment'),
-      'expired' => _tr('منتهي', 'Expired'),
-      'cancelled' => _tr('ملغي', 'Cancelled'),
-      _ => subscription.status,
-    };
-
-    return Container(
-      padding: const EdgeInsets.all(Gap.lg),
-      decoration: BoxDecoration(
-        color: Shop.surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Shop.rule),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _tr('خطتك الحالية', 'Current plan'),
-                      style: Theme.of(context).textTheme.labelLarge,
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      subscription.plan.displayName(isArabic),
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                  ],
-                ),
-              ),
-              _StatusChip(label: status, tone: tone),
-            ],
-          ),
-          if (subscription.isExpiringSoon) ...[
-            const SizedBox(height: Gap.md),
-            Container(
-              padding: const EdgeInsets.all(Gap.md),
-              decoration: BoxDecoration(
-                color: Shop.brassWash,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.schedule_rounded, color: Shop.brass),
-                  const SizedBox(width: Gap.sm),
-                  Expanded(
-                    child: Text(
-                      _tr(
-                        'اشتراكك ينتهي خلال ${subscription.daysRemaining} أيام.',
-                        'Your subscription expires in ${subscription.daysRemaining} days.',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          const SizedBox(height: Gap.lg),
-          _ProgressDays(subscription: subscription, isArabic: isArabic),
-          const SizedBox(height: Gap.lg),
-          Wrap(
-            spacing: Gap.sm,
-            runSpacing: Gap.sm,
-            children: [
-              _InfoTile(
-                icon: Icons.calendar_today_outlined,
-                label: _tr('البداية', 'Started'),
-                value: _date(subscription.startDate),
-              ),
-              _InfoTile(
-                icon: Icons.event_available_outlined,
-                label: _tr('النهاية', 'Ends'),
-                value: _date(subscription.endDate),
-              ),
-              _InfoTile(
-                icon: Icons.payments_outlined,
-                label: _tr('المدفوع', 'Paid'),
-                value: '${_money(subscription.amountPaid)} ${_tr('ج.م', 'EGP')}',
-              ),
-              _InfoTile(
-                icon: Icons.autorenew_rounded,
-                label: _tr('التجديد التلقائي', 'Auto renew'),
-                value: subscription.autoRenew
-                    ? _tr('مفعّل', 'Enabled')
-                    : _tr('غير مفعّل', 'Off'),
-              ),
-            ],
-          ),
-          if (subscription.paymentMethod.isNotEmpty ||
-              subscription.transactionId.isNotEmpty) ...[
-            const SizedBox(height: Gap.lg),
-            const Divider(height: 1),
-            const SizedBox(height: Gap.md),
-            if (subscription.paymentMethod.isNotEmpty)
-              _DetailRow(
-                label: _tr('وسيلة الدفع', 'Payment method'),
-                value: subscription.paymentMethod,
-              ),
-            if (subscription.transactionId.isNotEmpty)
-              _DetailRow(
-                label: _tr('رقم العملية', 'Transaction ID'),
-                value: subscription.transactionId,
-              ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _date(DateTime? value) {
-    if (value == null) return '—';
-    String two(int number) => number.toString().padLeft(2, '0');
-    return '${value.year}/${two(value.month)}/${two(value.day)}';
-  }
-
-  String _money(double value) {
-    if (value == value.roundToDouble()) return value.toInt().toString();
-    return value.toStringAsFixed(2);
-  }
-}
-
-class _ProgressDays extends StatelessWidget {
-  const _ProgressDays({required this.subscription, required this.isArabic});
-
-  final MerchantSubscription subscription;
-  final bool isArabic;
-
-  @override
-  Widget build(BuildContext context) {
-    final start = subscription.startDate;
-    final end = subscription.endDate;
-    double progress = 0;
-    if (start != null && end != null && end.isAfter(start)) {
-      final total = end.difference(start).inSeconds;
-      final used = DateTime.now().difference(start).inSeconds;
-      progress = (used / total).clamp(0, 1).toDouble();
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                isArabic ? 'مدة الاشتراك' : 'Subscription period',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-            ),
-            Text(
-              isArabic
-                  ? '${subscription.daysRemaining} يوم متبقي'
-                  : '${subscription.daysRemaining} days left',
-              style: const TextStyle(
-                color: Shop.jade,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: Gap.sm),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(Radii.pill),
-          child: LinearProgressIndicator(
-            value: progress,
-            minHeight: 8,
-            color: subscription.isExpiringSoon ? Shop.brass : Shop.jade,
-            backgroundColor: Shop.rule,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _NoSubscription extends StatelessWidget {
-  const _NoSubscription({required this.isArabic});
   final bool isArabic;
 
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(Gap.lg),
         decoration: BoxDecoration(
+          color: Shop.sign,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .12),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Icon(
+                Icons.workspace_premium_rounded,
+                color: Colors.white,
+                size: 31,
+              ),
+            ),
+            const SizedBox(width: Gap.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isArabic ? 'اشتراك $shopName' : '$shopName subscription',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  const SizedBox(height: Gap.xs),
+                  Text(
+                    isArabic
+                        ? 'غيّر خطتك براحتك واعرف تأثير التغيير قبل ما تأكد.'
+                        : 'Compare plans and see the exact impact before you confirm.',
+                    style: const TextStyle(color: Color(0xFFC8D6D0), height: 1.5),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _CurrentPlanCard extends StatelessWidget {
+  const _CurrentPlanCard({required this.subscription, required this.isArabic});
+  final MerchantSubscription subscription;
+  final bool isArabic;
+  String _tr(String ar, String en) => isArabic ? ar : en;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(Gap.lg),
+        decoration: BoxDecoration(
           color: Shop.surface,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(color: Shop.rule),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.layers_clear_outlined, size: 42, color: Shop.brass),
-            const SizedBox(height: Gap.md),
-            Text(
-              isArabic ? 'لا يوجد اشتراك مسجل لهذا النشاط' : 'No subscription for this business',
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(_tr('خطتك الحالية', 'Current plan')),
+                      const SizedBox(height: 3),
+                      Text(
+                        subscription.plan.displayName(isArabic),
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                    ],
+                  ),
+                ),
+                _Badge(
+                  label: subscription.isActive
+                      ? _tr('نشط', 'Active')
+                      : subscription.status,
+                  tone: subscription.isActive ? Shop.jade : Shop.brass,
+                ),
+              ],
             ),
-            const SizedBox(height: Gap.xs),
-            Text(
-              isArabic
-                  ? 'قارن الخطط المتاحة بالأسفل واختر الأنسب لنشاطك.'
-                  : 'Compare the available plans below and choose what fits your business.',
-              style: Theme.of(context).textTheme.bodySmall,
-              textAlign: TextAlign.center,
+            const SizedBox(height: Gap.md),
+            Wrap(
+              spacing: Gap.sm,
+              runSpacing: Gap.sm,
+              children: [
+                _MiniMetric(
+                  label: _tr('الأيام المتبقية', 'Days left'),
+                  value: '${subscription.daysRemaining}',
+                ),
+                _MiniMetric(
+                  label: _tr('المنتجات', 'Products'),
+                  value: subscription.plan.maxProducts == 0
+                      ? '∞'
+                      : '${subscription.plan.maxProducts}',
+                ),
+                _MiniMetric(
+                  label: _tr('المحلات', 'Businesses'),
+                  value: subscription.plan.maxBusinesses == 0
+                      ? '∞'
+                      : '${subscription.plan.maxBusinesses}',
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+}
+
+class _PendingRequestCard extends StatelessWidget {
+  const _PendingRequestCard({required this.request, required this.isArabic});
+  final MerchantPlanChangeRequest request;
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(Gap.md),
+        decoration: BoxDecoration(
+          color: Shop.brassWash,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Shop.brass.withValues(alpha: .35)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.hourglass_top_rounded, color: Shop.brass),
+            const SizedBox(width: Gap.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isArabic ? 'طلب تغيير قيد المراجعة' : 'Plan change under review',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${request.currentPlan.displayName(isArabic)} → '
+                    '${request.targetPlan.displayName(isArabic)}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    isArabic
+                        ? 'لن تتغير أي بيانات أو مزايا قبل اعتماد الإدارة.'
+                        : 'Nothing changes until administration approves the request.',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -460,7 +644,6 @@ class _BillingSelector extends StatelessWidget {
     required this.isArabic,
     required this.onChanged,
   });
-
   final String selected;
   final bool isArabic;
   final ValueChanged<String> onChanged;
@@ -498,15 +681,15 @@ class _PlanCard extends StatelessWidget {
     required this.period,
     required this.isArabic,
     required this.currentPlanId,
+    required this.blocked,
     required this.onChoose,
   });
-
   final MerchantPlan plan;
   final String period;
   final bool isArabic;
   final int? currentPlanId;
-  final VoidCallback onChoose;
-
+  final bool blocked;
+  final VoidCallback? onChoose;
   String _tr(String ar, String en) => isArabic ? ar : en;
 
   @override
@@ -538,7 +721,7 @@ class _PlanCard extends StatelessWidget {
                     ),
                     if (current)
                       Text(
-                        _tr('خطتك الحالية', 'Your current plan'),
+                        _tr('خطتك الحالية', 'Current plan'),
                         style: const TextStyle(
                           color: Shop.jade,
                           fontWeight: FontWeight.w700,
@@ -557,46 +740,45 @@ class _PlanCard extends StatelessWidget {
               ),
               Text(
                 '${_money(price)} ${_tr('ج.م', 'EGP')}',
-                style: MerchantTheme.figure(size: 22, color: Shop.jade),
+                style: MerchantTheme.figure(size: 21, color: Shop.jade),
               ),
             ],
           ),
-          if (plan.description(isArabic).isNotEmpty) ...[
-            const SizedBox(height: Gap.sm),
-            Text(
-              plan.description(isArabic),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
           const SizedBox(height: Gap.md),
           _Feature(
+            text: plan.maxBusinesses == 0
+                ? _tr('محلات غير محدودة', 'Unlimited businesses')
+                : _tr('${plan.maxBusinesses} محل', '${plan.maxBusinesses} businesses'),
+          ),
+          _Feature(
             text: plan.maxProducts == 0
-                ? _tr('منتجات وخدمات غير محدودة', 'Unlimited products and services')
+                ? _tr('منتجات غير محدودة', 'Unlimited products')
                 : _tr('${plan.maxProducts} منتج أو خدمة', '${plan.maxProducts} products or services'),
           ),
           _Feature(
-            text: _tr(
-              '${plan.maxImagesPerProduct} صورة لكل منتج',
-              '${plan.maxImagesPerProduct} images per product',
-            ),
+            text: _tr('إنشاء العروض', 'Create deals'),
+            enabled: plan.canCreateDeals,
           ),
           _Feature(
-            text: _tr(
-              '${plan.maxBusinessImages} صور لمعرض النشاط',
-              '${plan.maxBusinessImages} business gallery images',
-            ),
+            text: _tr('التحليلات', 'Analytics'),
+            enabled: plan.hasAnalytics,
           ),
-          _Feature(text: _tr('إظهار الأسعار', 'Display prices'), enabled: plan.canShowPrices),
-          _Feature(text: _tr('إنشاء العروض', 'Create deals'), enabled: plan.canCreateDeals),
-          _Feature(text: _tr('التحليلات', 'Analytics'), enabled: plan.hasAnalytics),
-          _Feature(text: _tr('أولوية في البحث', 'Search priority'), enabled: plan.featuredInSearch),
-          _Feature(text: _tr('شارة التوثيق', 'Verified badge'), enabled: plan.hasVerifiedBadge),
+          _Feature(
+            text: _tr('أولوية في البحث', 'Search priority'),
+            enabled: plan.featuredInSearch,
+          ),
           const SizedBox(height: Gap.md),
           OutlinedButton.icon(
-            onPressed: current ? null : onChoose,
-            icon: Icon(current ? Icons.check_circle_outline : Icons.arrow_forward_rounded),
+            onPressed: current || blocked ? null : onChoose,
+            icon: Icon(
+              current ? Icons.check_circle_outline : Icons.swap_horiz_rounded,
+            ),
             label: Text(
-              current ? _tr('الخطة الحالية', 'Current plan') : _tr('اختيار الخطة', 'Choose plan'),
+              current
+                  ? _tr('الخطة الحالية', 'Current plan')
+                  : blocked
+                      ? _tr('يوجد طلب قيد المراجعة', 'Request already pending')
+                      : _tr('طلب تغيير للخطة', 'Request plan change'),
             ),
           ),
         ],
@@ -604,10 +786,323 @@ class _PlanCard extends StatelessWidget {
     );
   }
 
-  String _money(double value) {
-    if (value == value.roundToDouble()) return value.toInt().toString();
-    return value.toStringAsFixed(2);
+  String _money(double value) => value == value.roundToDouble()
+      ? value.toInt().toString()
+      : value.toStringAsFixed(2);
+}
+
+class _ChangeSummary extends StatelessWidget {
+  const _ChangeSummary({
+    required this.current,
+    required this.target,
+    required this.preview,
+    required this.isArabic,
+  });
+  final MerchantPlan current;
+  final MerchantPlan target;
+  final PlanChangePreview preview;
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(Gap.lg),
+        decoration: BoxDecoration(
+          color: Shop.sign,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(child: _PlanName(plan: current, isArabic: isArabic)),
+                const Icon(Icons.arrow_forward_rounded, color: Shop.brass),
+                Expanded(child: _PlanName(plan: target, isArabic: isArabic)),
+              ],
+            ),
+            const SizedBox(height: Gap.md),
+            const Divider(color: Color(0xFF49675C)),
+            const SizedBox(height: Gap.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: _HeroValue(
+                    label: isArabic ? 'المحلات' : 'Businesses',
+                    value: preview.maxBusinesses == 0 ? '∞' : '${preview.maxBusinesses}',
+                  ),
+                ),
+                Expanded(
+                  child: _HeroValue(
+                    label: isArabic ? 'المنتجات' : 'Products',
+                    value: preview.maxProducts == 0 ? '∞' : '${preview.maxProducts}',
+                  ),
+                ),
+                Expanded(
+                  child: _HeroValue(
+                    label: isArabic ? 'السعر' : 'Price',
+                    value: '${_money(preview.price)}',
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+  String _money(double value) => value == value.roundToDouble()
+      ? value.toInt().toString()
+      : value.toStringAsFixed(2);
+}
+
+class _PlanName extends StatelessWidget {
+  const _PlanName({required this.plan, required this.isArabic});
+  final MerchantPlan plan;
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) => Text(
+        plan.displayName(isArabic),
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+          fontSize: 17,
+        ),
+      );
+}
+
+class _HeroValue extends StatelessWidget {
+  const _HeroValue({required this.label, required this.value});
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        children: [
+          Text(value, style: MerchantTheme.figure(size: 20, color: Colors.white)),
+          const SizedBox(height: 2),
+          Text(label, style: const TextStyle(color: Color(0xFF9DB5AB), fontSize: 11)),
+        ],
+      );
+}
+
+class _ImpactWarning extends StatelessWidget {
+  const _ImpactWarning({required this.preview, required this.isArabic});
+  final PlanChangePreview preview;
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = <String>[];
+    if (preview.businessesToSuspend > 0) {
+      lines.add(
+        isArabic
+            ? 'سيتم إيقاف ${preview.businessesToSuspend} محل بعد الموافقة.'
+            : '${preview.businessesToSuspend} business(es) will be suspended after approval.',
+      );
+    }
+    if (preview.productsToSuspend > 0) {
+      lines.add(
+        isArabic
+            ? 'سيتم إيقاف ${preview.productsToSuspend} منتج/خدمة بعد الموافقة.'
+            : '${preview.productsToSuspend} product(s) will be suspended after approval.',
+      );
+    }
+    for (final feature in preview.disabledFeatures) {
+      final value = '${feature[isArabic ? 'ar' : 'en'] ?? ''}';
+      if (value.isNotEmpty) {
+        lines.add(isArabic ? 'ستتوقف ميزة: $value.' : 'Feature disabled: $value.');
+      }
+    }
+    return Container(
+      padding: const EdgeInsets.all(Gap.md),
+      decoration: BoxDecoration(
+        color: Shop.clay.withValues(alpha: .08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Shop.clay.withValues(alpha: .25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Shop.clay),
+              const SizedBox(width: Gap.sm),
+              Text(
+                isArabic ? 'تأثير التخفيض' : 'Downgrade impact',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+            ],
+          ),
+          const SizedBox(height: Gap.sm),
+          for (final line in lines)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 5),
+              child: Text('• $line'),
+            ),
+          Text(
+            isArabic
+                ? 'لن نحذف أي بيانات، ويمكن استعادة العناصر عند الترقية لاحقًا.'
+                : 'No data will be deleted. Suspended items can be restored after a future upgrade.',
+            style: const TextStyle(color: Shop.jade, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
   }
+}
+
+class _SelectionHeading extends StatelessWidget {
+  const _SelectionHeading({
+    required this.title,
+    required this.selected,
+    required this.requiredCount,
+    required this.isArabic,
+  });
+  final String title;
+  final int selected;
+  final int requiredCount;
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          Expanded(child: Text(title, style: Theme.of(context).textTheme.titleMedium)),
+          _Badge(
+            label: '$selected / $requiredCount',
+            tone: selected == requiredCount ? Shop.jade : Shop.brass,
+          ),
+        ],
+      );
+}
+
+class _SelectCard extends StatelessWidget {
+  const _SelectCard({
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+    required this.icon,
+  });
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(Radii.card),
+          child: Container(
+            padding: const EdgeInsets.all(Gap.md),
+            decoration: BoxDecoration(
+              color: selected ? Shop.jadeWash : Shop.surface,
+              borderRadius: BorderRadius.circular(Radii.card),
+              border: Border.all(color: selected ? Shop.jade : Shop.rule),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: selected ? Shop.jade : Shop.inkSoft),
+                const SizedBox(width: Gap.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: Theme.of(context).textTheme.titleSmall),
+                      if (subtitle.isNotEmpty)
+                        Text(subtitle, style: Theme.of(context).textTheme.labelSmall),
+                    ],
+                  ),
+                ),
+                Icon(
+                  selected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                  color: selected ? Shop.jade : Shop.inkFaint,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+class _NoImmediateChangeNote extends StatelessWidget {
+  const _NoImmediateChangeNote({required this.isArabic});
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(Gap.md),
+        decoration: BoxDecoration(
+          color: Shop.jadeWash,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.shield_outlined, color: Shop.jade),
+            const SizedBox(width: Gap.sm),
+            Expanded(
+              child: Text(
+                isArabic
+                    ? 'اختياراتك هنا تحفظ كجزء من الطلب فقط. الإيقاف أو التفعيل يحصل بعد موافقة الإدارة، وتوصلك النتيجة في الإشعارات.'
+                    : 'Your selections are saved with the request only. Activation or suspension happens after admin approval, and you will be notified of the result.',
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _ApprovalNote extends StatelessWidget {
+  const _ApprovalNote({required this.isArabic});
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(Gap.md),
+        decoration: BoxDecoration(
+          color: Shop.brassWash,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.admin_panel_settings_outlined, color: Shop.brass),
+            const SizedBox(width: Gap.sm),
+            Expanded(
+              child: Text(
+                isArabic
+                    ? 'تغيير الخطة لا يتم فورًا. بعد اختيارك ترسل الطلب للإدارة للمراجعة وتأكيد الدفع، ثم يتم تطبيق حدود الخطة تلقائيًا.'
+                    : 'Plan changes are not immediate. Your request is reviewed by administration, payment is confirmed when needed, then the new plan limits are applied automatically.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _NoSubscription extends StatelessWidget {
+  const _NoSubscription({required this.isArabic});
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(Gap.lg),
+        decoration: BoxDecoration(
+          color: Shop.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Shop.rule),
+        ),
+        child: Text(
+          isArabic
+              ? 'لا يوجد اشتراك مسجل لهذا النشاط.'
+              : 'No subscription is registered for this business.',
+          textAlign: TextAlign.center,
+        ),
+      );
 }
 
 class _Feature extends StatelessWidget {
@@ -640,107 +1135,46 @@ class _Feature extends StatelessWidget {
       );
 }
 
-class _InfoTile extends StatelessWidget {
-  const _InfoTile({required this.icon, required this.label, required this.value});
-
-  final IconData icon;
+class _MiniMetric extends StatelessWidget {
+  const _MiniMetric({required this.label, required this.value});
   final String label;
   final String value;
 
   @override
   Widget build(BuildContext context) => Container(
-        width: 145,
-        padding: const EdgeInsets.all(Gap.md),
+        width: 128,
+        padding: const EdgeInsets.all(Gap.sm),
         decoration: BoxDecoration(
           color: Shop.paper,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(13),
           border: Border.all(color: Shop.rule),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 19, color: Shop.jade),
-            const SizedBox(height: Gap.sm),
             Text(label, style: Theme.of(context).textTheme.labelSmall),
             const SizedBox(height: 2),
-            Text(value, style: Theme.of(context).textTheme.titleSmall),
+            Text(value, style: MerchantTheme.figure(size: 18, color: Shop.sign)),
           ],
         ),
       );
 }
 
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({required this.label, required this.value});
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            Expanded(child: Text(label, style: Theme.of(context).textTheme.bodySmall)),
-            const SizedBox(width: Gap.md),
-            Flexible(
-              child: Text(
-                value,
-                textAlign: TextAlign.end,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-      );
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.label, required this.tone});
+class _Badge extends StatelessWidget {
+  const _Badge({required this.label, required this.tone});
   final String label;
   final Color tone;
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: tone.withValues(alpha: .1),
           borderRadius: BorderRadius.circular(Radii.pill),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            color: tone,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      );
-}
-
-class _SystemNote extends StatelessWidget {
-  const _SystemNote({required this.isArabic});
-  final bool isArabic;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(Gap.md),
-        decoration: BoxDecoration(
-          color: Shop.brassWash,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(Icons.info_outline_rounded, color: Shop.brass),
-            const SizedBox(width: Gap.sm),
-            Expanded(
-              child: Text(
-                isArabic
-                    ? 'سجل الاشتراك الحالي يعرض مبلغ العملية ووسيلة الدفع ورقمها إن كانت مسجلة. لا يوجد حتى الآن نموذج فواتير مستقل أو API دفع داخل التطبيق.'
-                    : 'The current subscription record shows the paid amount, payment method and transaction ID when available. There is not yet a separate invoice model or in-app payment API.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-          ],
+          style: TextStyle(color: tone, fontWeight: FontWeight.w700, fontSize: 12),
         ),
       );
 }
