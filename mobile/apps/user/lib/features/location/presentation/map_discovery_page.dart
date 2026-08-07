@@ -39,13 +39,18 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
   double _radius = 10;
   double? _minimumRating;
   bool _featuredOnly = false;
+  int? _categoryId;
+  String? _businessType;
   String? _message;
   int _requestRevision = 0;
 
   bool get _isArabic => Localizations.localeOf(context).languageCode == 'ar';
   String _tr(String ar, String en) => _isArabic ? ar : en;
   int get _filterCount =>
-      (_minimumRating == null ? 0 : 1) + (_featuredOnly ? 1 : 0);
+      (_minimumRating == null ? 0 : 1) +
+      (_featuredOnly ? 1 : 0) +
+      (_categoryId == null ? 0 : 1) +
+      (_businessType == null ? 0 : 1);
 
   @override
   void initState() {
@@ -85,6 +90,21 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                   onFilters: _showFilters,
                 ),
               ),
+              Positioned(
+                top: 148,
+                left: 0,
+                right: 0,
+                child: _MapQuickFilters(
+                  isArabic: _isArabic,
+                  businessType: _businessType,
+                  categoryId: _categoryId,
+                  categories:
+                      ref.watch(homeProvider).valueOrNull?.categories ?? const [],
+                  onBusinessTypeChanged: _setBusinessType,
+                  onCategoryChanged: _setCategory,
+                  onClear: _clearQuickFilters,
+                ),
+              ),
               if (_loading)
                 const Positioned(
                   top: 0,
@@ -94,7 +114,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                 ),
               if (_pendingAreaCenter != null)
                 Positioned(
-                  top: 154,
+                  top: 204,
                   left: 0,
                   right: 0,
                   child: Center(
@@ -109,7 +129,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                 ),
               if (_message != null)
                 Positioned(
-                  top: _pendingAreaCenter == null ? 154 : 208,
+                  top: _pendingAreaCenter == null ? 204 : 258,
                   left: 16,
                   right: 16,
                   child: _MessageCard(message: _message!),
@@ -266,6 +286,25 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
     await _fetchNearby(coordinates);
   }
 
+  Future<void> _setBusinessType(String? value) async {
+    setState(() => _businessType = value);
+    await _searchNow();
+  }
+
+  Future<void> _setCategory(int? value) async {
+    setState(() => _categoryId = value);
+    await _searchNow();
+  }
+
+  Future<void> _clearQuickFilters() async {
+    if (_businessType == null && _categoryId == null) return;
+    setState(() {
+      _businessType = null;
+      _categoryId = null;
+    });
+    await _searchNow();
+  }
+
   Future<void> _searchThisArea() async {
     final center = _pendingAreaCenter;
     if (center == null) return;
@@ -316,6 +355,8 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
             longitude: coordinates.longitude,
             radiusKm: _radius,
             query: _searchController.text,
+            categoryId: _categoryId,
+            businessType: _businessType,
             minRating: _minimumRating,
             featuredOnly: _featuredOnly,
             cancelToken: cancelToken,
@@ -574,6 +615,117 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
         <= 20 => 11,
         _ => 10,
       };
+}
+
+class _MapQuickFilters extends StatelessWidget {
+  const _MapQuickFilters({
+    required this.isArabic,
+    required this.businessType,
+    required this.categoryId,
+    required this.categories,
+    required this.onBusinessTypeChanged,
+    required this.onCategoryChanged,
+    required this.onClear,
+  });
+
+  final bool isArabic;
+  final String? businessType;
+  final int? categoryId;
+  final List<Map<String, dynamic>> categories;
+  final ValueChanged<String?> onBusinessTypeChanged;
+  final ValueChanged<int?> onCategoryChanged;
+  final VoidCallback onClear;
+
+  String _categoryName(Map<String, dynamic> category) {
+    final ar = category['name_ar']?.toString() ?? '';
+    final en = category['name_en']?.toString() ?? '';
+    return isArabic ? (ar.isNotEmpty ? ar : en) : (en.isNotEmpty ? en : ar);
+  }
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        height: 48,
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          scrollDirection: Axis.horizontal,
+          children: [
+            _QuickFilterChip(
+              label: isArabic ? 'الكل' : 'All',
+              icon: Icons.explore_outlined,
+              selected: businessType == null && categoryId == null,
+              onSelected: onClear,
+            ),
+            _QuickFilterChip(
+              label: isArabic ? 'محلات' : 'Shops',
+              icon: Icons.storefront_outlined,
+              selected: businessType == 'shop',
+              onSelected: () =>
+                  onBusinessTypeChanged(businessType == 'shop' ? null : 'shop'),
+            ),
+            _QuickFilterChip(
+              label: isArabic ? 'حرف ومهن' : 'Crafts',
+              icon: Icons.handyman_outlined,
+              selected: businessType == 'craft',
+              onSelected: () => onBusinessTypeChanged(
+                businessType == 'craft' ? null : 'craft',
+              ),
+            ),
+            _QuickFilterChip(
+              label: isArabic ? 'خدمات عامة' : 'Public',
+              icon: Icons.account_balance_outlined,
+              selected: businessType == 'public',
+              onSelected: () => onBusinessTypeChanged(
+                businessType == 'public' ? null : 'public',
+              ),
+            ),
+            ...categories.take(8).map((category) {
+              final id = int.tryParse(category['id']?.toString() ?? '');
+              if (id == null) return const SizedBox.shrink();
+              return _QuickFilterChip(
+                label: _categoryName(category),
+                icon: Icons.category_outlined,
+                selected: categoryId == id,
+                onSelected: () => onCategoryChanged(categoryId == id ? null : id),
+              );
+            }),
+          ],
+        ),
+      );
+}
+
+class _QuickFilterChip extends StatelessWidget {
+  const _QuickFilterChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsetsDirectional.only(end: 8),
+        child: FilterChip(
+          selected: selected,
+          showCheckmark: false,
+          avatar: Icon(icon, size: 17),
+          label: Text(label),
+          onSelected: (_) => onSelected(),
+          backgroundColor: AppColors.surface,
+          selectedColor: AppColors.primarySoft,
+          side: BorderSide(
+            color: selected ? AppColors.primary : AppColors.border,
+          ),
+          labelStyle: TextStyle(
+            color: selected ? AppColors.primary : null,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      );
 }
 
 class _MapToolbar extends StatelessWidget {
