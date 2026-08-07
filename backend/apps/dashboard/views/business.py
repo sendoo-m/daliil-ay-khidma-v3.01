@@ -99,8 +99,7 @@ def business_list(request):
             'subscription__plan',
         )
         .annotate(
-            products_count=Count('products', distinct=True),
-            deals_count=Count('deals', distinct=True),
+            deals_count=Count('deal', distinct=True),
             reviews_count=Count('reviews', distinct=True),
         )
         .order_by('-is_active', '-updated_at')
@@ -185,7 +184,6 @@ def business_create(request, business_type='shop'):
         formset_is_valid = formset.is_valid()
 
         if form_is_valid and formset_is_valid:
-            # Check again on POST to avoid a stale tab bypassing the plan limit.
             can_create_now, _, _ = _can_create_business(request.user)
             if not can_create_now:
                 messages.warning(request, 'تم الوصول إلى حد الأنشطة في الخطة الحالية.')
