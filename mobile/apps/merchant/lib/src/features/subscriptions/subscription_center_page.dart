@@ -210,58 +210,113 @@ class _PlanChangeReviewPageState
   String _tr(String ar, String en) => _isArabic ? ar : en;
 
   PlanChangePreview get _preview => widget.preview;
+  bool get _isDowngrade => _preview.changeType == 'downgrade';
 
-  @override
-  void initState() {
-    super.initState();
-    final activeBusinesses =
-        _preview.businesses.where((item) => item.isActive).toList();
-    final businessLimit = _preview.maxBusinesses == 0
-        ? activeBusinesses.length
-        : _preview.maxBusinesses;
-    _businessIds.addAll(activeBusinesses.take(businessLimit).map((e) => e.id));
+  List<PlanChangeBusiness> get _activeBusinesses =>
+      _preview.businesses.where((item) => item.isActive).toList();
 
-    final availableProducts = _preview.products
-        .where(
-          (item) => item.isAvailable && _businessIds.contains(item.businessId),
-        )
-        .toList();
-    final productLimit = _preview.maxProducts == 0
-        ? availableProducts.length
-        : _preview.maxProducts;
-    _productIds.addAll(availableProducts.take(productLimit).map((e) => e.id));
+  List<PlanChangeProduct> get _availableProductsForKeptBusinesses =>
+      _preview.products
+          .where(
+            (item) =>
+                item.isAvailable && _businessIds.contains(item.businessId),
+          )
+          .toList();
+
+  bool get _needsBusinessSelection =>
+      _isDowngrade &&
+      _preview.maxBusinesses > 0 &&
+      _activeBusinesses.length > _preview.maxBusinesses;
+
+  bool get _needsProductSelection {
+    final available = _availableProductsForKeptBusinesses.length;
+    return _isDowngrade &&
+        _preview.maxProducts > 0 &&
+        available > _preview.maxProducts;
   }
 
-  int get _requiredBusinesses {
-    if (!_preview.needsBusinessSelection) return _businessIds.length;
-    return _preview.maxBusinesses;
-  }
+  int get _requiredBusinesses => _needsBusinessSelection
+      ? _preview.maxBusinesses
+      : _activeBusinesses.length;
 
   int get _requiredProducts {
-    if (!_preview.needsProductSelection) return _productIds.length;
-    return _preview.maxProducts;
+    final available = _availableProductsForKeptBusinesses.length;
+    if (!_needsProductSelection) return available;
+    return available < _preview.maxProducts ? available : _preview.maxProducts;
+  }
+
+  int get _dynamicProductsToSuspend {
+    if (!_needsProductSelection) return 0;
+    return _availableProductsForKeptBusinesses.length - _requiredProducts;
   }
 
   bool get _selectionValid {
-    final businessesValid = !_preview.needsBusinessSelection ||
-        _businessIds.length == _preview.maxBusinesses;
-    final productsValid = !_preview.needsProductSelection ||
-        _productIds.length == _preview.maxProducts;
+    final businessesValid =
+        !_needsBusinessSelection || _businessIds.length == _requiredBusinesses;
+    final productsValid =
+        !_needsProductSelection || _productIds.length == _requiredProducts;
     return businessesValid && productsValid;
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    if (!_isDowngrade) {
+      _businessIds.addAll(_activeBusinesses.map((item) => item.id));
+      _productIds.addAll(
+        _preview.products
+            .where((item) => item.isAvailable && _businessIds.contains(item.businessId))
+            .map((item) => item.id),
+      );
+      return;
+    }
+
+    final businessLimit = _preview.maxBusinesses == 0
+        ? _activeBusinesses.length
+        : (_activeBusinesses.length < _preview.maxBusinesses
+            ? _activeBusinesses.length
+            : _preview.maxBusinesses);
+    _businessIds.addAll(_activeBusinesses.take(businessLimit).map((e) => e.id));
+    _syncProductSelection();
+  }
+
+  void _syncProductSelection() {
+    final available = _availableProductsForKeptBusinesses;
+    final availableIds = available.map((item) => item.id).toSet();
+    _productIds.removeWhere((id) => !availableIds.contains(id));
+
+    if (!_needsProductSelection) {
+      _productIds
+        ..clear()
+        ..addAll(availableIds);
+      return;
+    }
+
+    final required = _requiredProducts;
+    if (_productIds.length > required) {
+      final keep = _productIds.take(required).toSet();
+      _productIds
+        ..clear()
+        ..addAll(keep);
+    }
+    for (final product in available) {
+      if (_productIds.length >= required) break;
+      _productIds.add(product.id);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isDowngrade = _preview.changeType == 'downgrade';
     return Scaffold(
       backgroundColor: Shop.paper,
       appBar: AppBar(
         backgroundColor: Shop.sign,
         foregroundColor: Colors.white,
         title: Text(
-          isDowngrade
+          _isDowngrade
               ? _tr('مراجعة تخفيض الخطة', 'Review downgrade')
-              : _tr('مراجعة تغيير الخطة', 'Review plan change'),
+              : _tr('مراجعة ترقية الخطة', 'Review upgrade'),
         ),
       ),
       body: ListView(
@@ -273,14 +328,22 @@ class _PlanChangeReviewPageState
             preview: _preview,
             isArabic: _isArabic,
           ),
-          if (isDowngrade &&
+          if (_isDowngrade &&
               (_preview.businessesToSuspend > 0 ||
-                  _preview.productsToSuspend > 0 ||
+                  _dynamicProductsToSuspend > 0 ||
                   _preview.disabledFeatures.isNotEmpty)) ...[
             const SizedBox(height: Gap.md),
-            _ImpactWarning(preview: _preview, isArabic: _isArabic),
+            _ImpactWarning(
+              preview: _preview,
+              isArabic: _isArabic,
+              productsToSuspend: _dynamicProductsToSuspend,
+            ),
           ],
-          if (_preview.needsBusinessSelection) ...[
+          if (!_isDowngrade) ...[
+            const SizedBox(height: Gap.md),
+            _UpgradeNote(isArabic: _isArabic),
+          ],
+          if (_needsBusinessSelection) ...[
             const SizedBox(height: Gap.xl),
             _SelectionHeading(
               title: _tr(
@@ -292,8 +355,7 @@ class _PlanChangeReviewPageState
               isArabic: _isArabic,
             ),
             const SizedBox(height: Gap.sm),
-            for (final business
-                in _preview.businesses.where((item) => item.isActive)) ...[
+            for (final business in _activeBusinesses) ...[
               _SelectCard(
                 title: business.name(_isArabic),
                 subtitle: _tr('نشاط حالي', 'Current business'),
@@ -304,7 +366,7 @@ class _PlanChangeReviewPageState
               const SizedBox(height: Gap.sm),
             ],
           ],
-          if (_preview.needsProductSelection) ...[
+          if (_needsProductSelection) ...[
             const SizedBox(height: Gap.xl),
             _SelectionHeading(
               title: _tr(
@@ -316,10 +378,7 @@ class _PlanChangeReviewPageState
               isArabic: _isArabic,
             ),
             const SizedBox(height: Gap.sm),
-            for (final product in _preview.products.where(
-              (item) =>
-                  item.isAvailable && _businessIds.contains(item.businessId),
-            )) ...[
+            for (final product in _availableProductsForKeptBusinesses) ...[
               _SelectCard(
                 title: product.name(_isArabic),
                 subtitle: _businessName(product.businessId),
@@ -329,6 +388,13 @@ class _PlanChangeReviewPageState
               ),
               const SizedBox(height: Gap.sm),
             ],
+          ] else if (_isDowngrade && _businessIds.isNotEmpty) ...[
+            const SizedBox(height: Gap.lg),
+            _WithinLimitNote(
+              currentProducts: _availableProductsForKeptBusinesses.length,
+              planLimit: _preview.maxProducts,
+              isArabic: _isArabic,
+            ),
           ],
           const SizedBox(height: Gap.xl),
           _NoImmediateChangeNote(isArabic: _isArabic),
@@ -369,34 +435,25 @@ class _PlanChangeReviewPageState
   }
 
   void _toggleBusiness(PlanChangeBusiness business) {
+    if (!_needsBusinessSelection) return;
     setState(() {
       if (_businessIds.contains(business.id)) {
-        if (!_preview.needsBusinessSelection) return;
         _businessIds.remove(business.id);
-        final removedProducts = _preview.products
-            .where((item) => item.businessId == business.id)
-            .map((item) => item.id)
-            .toSet();
-        _productIds.removeAll(removedProducts);
       } else {
-        if (_preview.maxBusinesses > 0 &&
-            _businessIds.length >= _preview.maxBusinesses) {
-          return;
-        }
+        if (_businessIds.length >= _requiredBusinesses) return;
         _businessIds.add(business.id);
       }
+      _syncProductSelection();
     });
   }
 
   void _toggleProduct(PlanChangeProduct product) {
+    if (!_needsProductSelection) return;
     setState(() {
       if (_productIds.contains(product.id)) {
         _productIds.remove(product.id);
       } else {
-        if (_preview.maxProducts > 0 &&
-            _productIds.length >= _preview.maxProducts) {
-          return;
-        }
+        if (_productIds.length >= _requiredProducts) return;
         _productIds.add(product.id);
       }
     });
@@ -409,8 +466,12 @@ class _PlanChangeReviewPageState
         title: Text(_tr('تأكيد طلب تغيير الخطة', 'Confirm plan change request')),
         content: Text(
           _tr(
-            'الطلب هيروح للإدارة للمراجعة. مش هيتوقف أي محل أو منتج قبل موافقة الإدارة وتطبيق الخطة الجديدة.',
-            'The request will be reviewed by administration. No business or product will be suspended before approval and activation of the new plan.',
+            _isDowngrade
+                ? 'الطلب هيروح للإدارة للمراجعة. مش هيتوقف أي محل أو منتج قبل موافقة الإدارة وتطبيق الخطة الجديدة.'
+                : 'الترقية لا تحتاج منك اختيار محلات أو منتجات. الطلب هيروح للإدارة للمراجعة وتأكيد الدفع ثم تفعيل المزايا الجديدة.',
+            _isDowngrade
+                ? 'The request will be reviewed by administration. No business or product will be suspended before approval and activation of the new plan.'
+                : 'Upgrades do not require business or product selection. Administration will review the request, confirm payment when needed, then activate the new benefits.',
           ),
         ),
         actions: [
@@ -886,9 +947,14 @@ class _HeroValue extends StatelessWidget {
 }
 
 class _ImpactWarning extends StatelessWidget {
-  const _ImpactWarning({required this.preview, required this.isArabic});
+  const _ImpactWarning({
+    required this.preview,
+    required this.isArabic,
+    required this.productsToSuspend,
+  });
   final PlanChangePreview preview;
   final bool isArabic;
+  final int productsToSuspend;
 
   @override
   Widget build(BuildContext context) {
@@ -900,11 +966,11 @@ class _ImpactWarning extends StatelessWidget {
             : '${preview.businessesToSuspend} business(es) will be suspended after approval.',
       );
     }
-    if (preview.productsToSuspend > 0) {
+    if (productsToSuspend > 0) {
       lines.add(
         isArabic
-            ? 'سيتم إيقاف ${preview.productsToSuspend} منتج/خدمة بعد الموافقة.'
-            : '${preview.productsToSuspend} product(s) will be suspended after approval.',
+            ? 'سيتم إيقاف $productsToSuspend منتج/خدمة من المحلات التي أبقيتها بعد الموافقة.'
+            : '$productsToSuspend product(s) in the kept businesses will be suspended after approval.',
       );
     }
     for (final feature in preview.disabledFeatures) {
@@ -944,6 +1010,75 @@ class _ImpactWarning extends StatelessWidget {
                 ? 'لن نحذف أي بيانات، ويمكن استعادة العناصر عند الترقية لاحقًا.'
                 : 'No data will be deleted. Suspended items can be restored after a future upgrade.',
             style: const TextStyle(color: Shop.jade, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UpgradeNote extends StatelessWidget {
+  const _UpgradeNote({required this.isArabic});
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(Gap.md),
+        decoration: BoxDecoration(
+          color: Shop.jadeWash,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Shop.jade.withValues(alpha: .24)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.trending_up_rounded, color: Shop.jade),
+            const SizedBox(width: Gap.sm),
+            Expanded(
+              child: Text(
+                isArabic
+                    ? 'دي ترقية: مش محتاج تختار محلات أو منتجات. بياناتك الحالية تفضل كما هي، وبعد موافقة الإدارة تتفتح لك الحدود والمزايا الجديدة.'
+                    : 'This is an upgrade: no business or product selection is required. Your current data stays active and the new limits and benefits unlock after approval.',
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _WithinLimitNote extends StatelessWidget {
+  const _WithinLimitNote({
+    required this.currentProducts,
+    required this.planLimit,
+    required this.isArabic,
+  });
+  final int currentProducts;
+  final int planLimit;
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) {
+    final unlimited = planLimit == 0;
+    return Container(
+      padding: const EdgeInsets.all(Gap.md),
+      decoration: BoxDecoration(
+        color: Shop.jadeWash,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle_outline_rounded, color: Shop.jade),
+          const SizedBox(width: Gap.sm),
+          Expanded(
+            child: Text(
+              isArabic
+                  ? unlimited
+                      ? 'كل المنتجات الحالية ستظل فعالة؛ الخطة الجديدة لا تضع حدًا للمنتجات.'
+                      : 'المحلات التي اخترتها فيها $currentProducts منتج/خدمة فقط، وهي داخل حد الخطة ($planLimit). مش محتاج تختار عدد إضافي.'
+                  : unlimited
+                      ? 'All current products remain active; the new plan has no product limit.'
+                      : 'Your kept businesses contain $currentProducts product(s), which is within the plan limit of $planLimit. You do not need to fill the remaining capacity.',
+            ),
           ),
         ],
       ),
