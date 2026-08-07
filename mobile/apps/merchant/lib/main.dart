@@ -6,7 +6,7 @@ import 'src/app/theme.dart';
 import 'src/features/auth/login_page.dart';
 import 'src/features/home/home_page.dart';
 import 'src/features/home/shop_page.dart';
-import 'src/features/products/deals_page.dart';
+import 'src/features/products/deals_manager_page.dart';
 import 'src/features/products/products_page.dart';
 import 'src/features/reviews/reviews_page.dart';
 import 'src/shared/providers.dart';
@@ -183,7 +183,7 @@ class _CatalogTabsState extends State<_CatalogTabs> {
           ),
         ),
         Expanded(
-          child: _showDeals ? const DealsPage() : const ProductsPage(),
+          child: _showDeals ? const DealsManagerPage() : const ProductsPage(),
         ),
       ],
     );
