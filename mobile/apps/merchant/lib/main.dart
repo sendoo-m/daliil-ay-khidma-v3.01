@@ -12,6 +12,7 @@ import 'src/features/notifications/notifications_page.dart';
 import 'src/features/products/deals_manager_page.dart';
 import 'src/features/products/products_page.dart';
 import 'src/features/reviews/reviews_page.dart';
+import 'src/features/settings/settings_page.dart';
 import 'src/features/subscriptions/subscription_center_page.dart';
 import 'src/shared/providers.dart';
 import 'src/shared/widgets.dart';
@@ -20,16 +21,17 @@ void main() {
   runApp(const ProviderScope(child: MerchantApp()));
 }
 
-class MerchantApp extends StatelessWidget {
+class MerchantApp extends ConsumerWidget {
   const MerchantApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locale = ref.watch(merchantLocaleProvider);
     return MaterialApp(
-      title: 'دليل أي خدمة — نشاطي',
+      title: 'Daliil Ay Khidma — Merchant',
       debugShowCheckedModeBanner: false,
       theme: MerchantTheme.build(),
-      locale: const Locale('ar'),
+      locale: locale,
       supportedLocales: const [Locale('ar'), Locale('en')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -37,7 +39,8 @@ class MerchantApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       builder: (context, child) => Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection:
+            locale.languageCode == 'ar' ? TextDirection.rtl : TextDirection.ltr,
         child: child ?? const SizedBox.shrink(),
       ),
       home: const _Gate(),
@@ -68,18 +71,14 @@ class _Shell extends ConsumerStatefulWidget {
 class _ShellState extends ConsumerState<_Shell> {
   int _index = 0;
 
-  static const _titles = [
-    'نشاطي',
-    'التقييمات',
-    'المنتجات والعروض',
-    'التحليلات',
-    'البيانات',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final shop = ref.watch(currentShopProvider);
     final unread = ref.watch(merchantUnreadNotificationsProvider).valueOrNull ?? 0;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final titles = isArabic
+        ? const ['نشاطي', 'التقييمات', 'المنتجات والعروض', 'التحليلات', 'البيانات']
+        : const ['Business', 'Reviews', 'Products & deals', 'Analytics', 'Profile'];
 
     return Scaffold(
       appBar: _index == 0
@@ -94,7 +93,7 @@ class _ShellState extends ConsumerState<_Shell> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    _titles[_index],
+                    titles[_index],
                     style: Theme.of(context)
                         .textTheme
                         .titleMedium
@@ -114,13 +113,19 @@ class _ShellState extends ConsumerState<_Shell> {
               ),
               actions: [
                 IconButton(
-                  tooltip: 'الاشتراك',
+                  tooltip: isArabic ? 'الإعدادات' : 'Settings',
+                  onPressed: _openSettings,
+                  icon: const Icon(Icons.settings_outlined),
+                ),
+                IconButton(
+                  tooltip: isArabic ? 'الاشتراك' : 'Subscription',
                   onPressed: _openSubscription,
                   icon: const Icon(Icons.workspace_premium_outlined),
                 ),
                 _NotificationBell(
                   unread: unread,
                   onTap: _openNotifications,
+                  tooltip: isArabic ? 'الإشعارات' : 'Notifications',
                 ),
                 const SizedBox(width: 6),
               ],
@@ -137,8 +142,17 @@ class _ShellState extends ConsumerState<_Shell> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 FloatingActionButton.small(
+                  heroTag: 'merchant-settings',
+                  tooltip: isArabic ? 'الإعدادات' : 'Settings',
+                  backgroundColor: Shop.surface,
+                  foregroundColor: Shop.sign,
+                  onPressed: _openSettings,
+                  child: const Icon(Icons.settings_outlined),
+                ),
+                const SizedBox(height: Gap.sm),
+                FloatingActionButton.small(
                   heroTag: 'merchant-subscription',
-                  tooltip: 'الاشتراك',
+                  tooltip: isArabic ? 'الاشتراك' : 'Subscription',
                   backgroundColor: Shop.brass,
                   foregroundColor: Colors.white,
                   onPressed: _openSubscription,
@@ -148,6 +162,7 @@ class _ShellState extends ConsumerState<_Shell> {
                 _HomeNotificationButton(
                   unread: unread,
                   onTap: _openNotifications,
+                  tooltip: isArabic ? 'الإشعارات' : 'Notifications',
                 ),
               ],
             )
@@ -158,31 +173,31 @@ class _ShellState extends ConsumerState<_Shell> {
         backgroundColor: Shop.surface,
         indicatorColor: Shop.jadeWash,
         height: 66,
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.storefront_outlined),
-            selectedIcon: Icon(Icons.storefront, color: Shop.jade),
-            label: 'نشاطي',
+            icon: const Icon(Icons.storefront_outlined),
+            selectedIcon: const Icon(Icons.storefront, color: Shop.jade),
+            label: isArabic ? 'نشاطي' : 'Business',
           ),
           NavigationDestination(
-            icon: Icon(Icons.star_outline_rounded),
-            selectedIcon: Icon(Icons.star_rounded, color: Shop.jade),
-            label: 'التقييمات',
+            icon: const Icon(Icons.star_outline_rounded),
+            selectedIcon: const Icon(Icons.star_rounded, color: Shop.jade),
+            label: isArabic ? 'التقييمات' : 'Reviews',
           ),
           NavigationDestination(
-            icon: Icon(Icons.inventory_2_outlined),
-            selectedIcon: Icon(Icons.inventory_2, color: Shop.jade),
-            label: 'المنتجات',
+            icon: const Icon(Icons.inventory_2_outlined),
+            selectedIcon: const Icon(Icons.inventory_2, color: Shop.jade),
+            label: isArabic ? 'المنتجات' : 'Products',
           ),
           NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights, color: Shop.jade),
-            label: 'التحليلات',
+            icon: const Icon(Icons.insights_outlined),
+            selectedIcon: const Icon(Icons.insights, color: Shop.jade),
+            label: isArabic ? 'التحليلات' : 'Analytics',
           ),
           NavigationDestination(
-            icon: Icon(Icons.tune_outlined),
-            selectedIcon: Icon(Icons.tune, color: Shop.jade),
-            label: 'البيانات',
+            icon: const Icon(Icons.tune_outlined),
+            selectedIcon: const Icon(Icons.tune, color: Shop.jade),
+            label: isArabic ? 'البيانات' : 'Profile',
           ),
         ],
       ),
@@ -204,23 +219,43 @@ class _ShellState extends ConsumerState<_Shell> {
 
   Future<void> _openSubscription() async {
     await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => const SubscriptionCenterPage()),
+    );
+  }
+
+  Future<void> _openSettings() async {
+    await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => const SubscriptionCenterPage(),
+        builder: (_) => SettingsPage(
+          onOpenNotifications: () {
+            Navigator.of(context).pop();
+            _openNotifications();
+          },
+          onOpenSubscription: () {
+            Navigator.of(context).pop();
+            _openSubscription();
+          },
+        ),
       ),
     );
   }
 }
 
 class _NotificationBell extends StatelessWidget {
-  const _NotificationBell({required this.unread, required this.onTap});
+  const _NotificationBell({
+    required this.unread,
+    required this.onTap,
+    required this.tooltip,
+  });
 
   final int unread;
   final VoidCallback onTap;
+  final String tooltip;
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      tooltip: 'الإشعارات',
+      tooltip: tooltip,
       onPressed: onTap,
       icon: Stack(
         clipBehavior: Clip.none,
@@ -239,16 +274,21 @@ class _NotificationBell extends StatelessWidget {
 }
 
 class _HomeNotificationButton extends StatelessWidget {
-  const _HomeNotificationButton({required this.unread, required this.onTap});
+  const _HomeNotificationButton({
+    required this.unread,
+    required this.onTap,
+    required this.tooltip,
+  });
 
   final int unread;
   final VoidCallback onTap;
+  final String tooltip;
 
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton.small(
       heroTag: 'merchant-notifications',
-      tooltip: 'الإشعارات',
+      tooltip: tooltip,
       backgroundColor: Shop.sign,
       foregroundColor: Colors.white,
       onPressed: onTap,
@@ -309,6 +349,7 @@ class _CatalogTabsState extends State<_CatalogTabs> {
 
   @override
   Widget build(BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     return Column(
       children: [
         Container(
@@ -323,13 +364,13 @@ class _CatalogTabsState extends State<_CatalogTabs> {
           child: Row(
             children: [
               _Tab(
-                label: 'المنتجات',
+                label: isArabic ? 'المنتجات' : 'Products',
                 active: !_showDeals,
                 onTap: () => setState(() => _showDeals = false),
               ),
               const SizedBox(width: Gap.sm),
               _Tab(
-                label: 'العروض',
+                label: isArabic ? 'العروض' : 'Deals',
                 active: _showDeals,
                 onTap: () => setState(() => _showDeals = true),
               ),
