@@ -330,8 +330,6 @@ class SubscriptionChangeRequest(models.Model):
         db_index=True,
     )
 
-    # اختيارات صاحب النشاط عند التخفيض. لا نحذف أي سجل؛ هذه هي العناصر
-    # التي يطلب إبقاءها نشطة بعد اعتماد الخطة الجديدة.
     keep_business_ids = models.JSONField(default=list, blank=True)
     keep_product_ids = models.JSONField(default=list, blank=True)
     preview = models.JSONField(default=dict, blank=True)
@@ -380,3 +378,90 @@ class SubscriptionChangeRequest(models.Model):
             f'{self.owner} | {self.current_plan.display_name_en} -> '
             f'{self.target_plan.display_name_en} ({self.status})'
         )
+
+
+class MerchantOnboarding(models.Model):
+    """Single source of truth for a user's first merchant journey."""
+
+    STATUS_CHOICES = [
+        ('draft', 'Draft / مسودة'),
+        ('plan_selected', 'Plan Selected / تم اختيار الخطة'),
+        ('business_created', 'Business Created / تم إنشاء النشاط'),
+        ('payment_pending', 'Payment Pending / بانتظار الدفع'),
+        ('admin_review', 'Admin Review / بانتظار مراجعة الإدارة'),
+        ('subscription_active', 'Subscription Active / الاشتراك مفعل'),
+        ('completed', 'Completed / مكتمل'),
+    ]
+    PAYMENT_STATUS_CHOICES = [
+        ('not_required', 'Not Required / غير مطلوب'),
+        ('pending', 'Pending / بانتظار الدفع'),
+        ('submitted', 'Submitted / تم الإرسال'),
+        ('confirmed', 'Confirmed / مؤكد'),
+        ('rejected', 'Rejected / مرفوض'),
+    ]
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='merchant_onboarding',
+    )
+    selected_plan = models.ForeignKey(
+        SubscriptionPlan,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='merchant_onboardings',
+    )
+    billing_period = models.CharField(
+        max_length=20,
+        choices=SubscriptionPlan.DURATION_CHOICES,
+        default='monthly',
+    )
+    business = models.ForeignKey(
+        Business,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='onboarding_journeys',
+    )
+    status = models.CharField(
+        max_length=24,
+        choices=STATUS_CHOICES,
+        default='draft',
+        db_index=True,
+    )
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PAYMENT_STATUS_CHOICES,
+        default='not_required',
+        db_index=True,
+    )
+    payment_method = models.CharField(max_length=50, blank=True)
+    payment_reference = models.CharField(max_length=150, blank=True)
+    payment_receipt = models.FileField(
+        upload_to='subscriptions/onboarding/receipts/%Y/%m/',
+        null=True,
+        blank=True,
+    )
+    admin_notes = models.TextField(blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Merchant Onboarding'
+        verbose_name_plural = 'Merchant Onboardings'
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f'{self.user} - {self.status}'
+
+    @property
+    def selected_price(self):
+        if not self.selected_plan:
+            return 0
+        return self.selected_plan.get_price(self.billing_period)
+
+    @property
+    def payment_required(self) -> bool:
+        return bool(self.selected_plan and self.selected_price > 0)
