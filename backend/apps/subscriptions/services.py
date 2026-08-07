@@ -20,38 +20,78 @@ _PERIOD_DAYS = {
     'annual': 365,
 }
 
+_FEATURE_FIELDS = (
+    'can_upload_images',
+    'can_show_prices',
+    'has_delivery_options',
+    'has_analytics',
+    'featured_in_search',
+    'can_create_deals',
+    'has_social_media_links',
+    'has_verified_badge',
+)
 
-def _feature_score(plan: SubscriptionPlan) -> int:
-    flags = (
-        plan.can_upload_images,
-        plan.can_show_prices,
-        plan.has_delivery_options,
-        plan.has_analytics,
-        plan.featured_in_search,
-        plan.can_create_deals,
-        plan.has_social_media_links,
-        plan.has_verified_badge,
-    )
-    return sum(1 for flag in flags if flag)
+_LIMIT_FIELDS = (
+    'max_businesses',
+    'max_products',
+    'max_images_per_product',
+    'max_business_images',
+)
+
+
+def _limit_reduced(current_value: int, target_value: int) -> bool:
+    """Return True when target is more restrictive. Zero means unlimited."""
+    if current_value == target_value:
+        return False
+    if current_value == 0:
+        return target_value > 0
+    if target_value == 0:
+        return False
+    return target_value < current_value
+
+
+def _limit_increased(current_value: int, target_value: int) -> bool:
+    """Return True when target expands capacity. Zero means unlimited."""
+    if current_value == target_value:
+        return False
+    if target_value == 0:
+        return current_value > 0
+    if current_value == 0:
+        return False
+    return target_value > current_value
 
 
 def change_type(current: SubscriptionPlan, target: SubscriptionPlan) -> str:
-    """حدد اتجاه التغيير بدون الاعتماد على اسم الخطة فقط."""
-    current_weight = (
-        float(current.price_monthly),
-        current.max_businesses,
-        current.max_products,
-        _feature_score(current),
+    """Classify by capabilities/limits first, not by price or plan name.
+
+    A plan is a downgrade if *any* hard capacity or feature is removed. This
+    prevents a higher-priced but more restrictive plan from being treated as
+    an upgrade. Only when nothing is reduced can additional capacity/features
+    make the change an upgrade. Price is used only as a final tie-breaker.
+    """
+    has_reduction = any(
+        _limit_reduced(getattr(current, field), getattr(target, field))
+        for field in _LIMIT_FIELDS
+    ) or any(
+        getattr(current, field) and not getattr(target, field)
+        for field in _FEATURE_FIELDS
     )
-    target_weight = (
-        float(target.price_monthly),
-        target.max_businesses,
-        target.max_products,
-        _feature_score(target),
+    if has_reduction:
+        return 'downgrade'
+
+    has_increase = any(
+        _limit_increased(getattr(current, field), getattr(target, field))
+        for field in _LIMIT_FIELDS
+    ) or any(
+        not getattr(current, field) and getattr(target, field)
+        for field in _FEATURE_FIELDS
     )
-    if target_weight > current_weight:
+    if has_increase:
         return 'upgrade'
-    if target_weight < current_weight:
+
+    if target.price_monthly > current.price_monthly:
+        return 'upgrade'
+    if target.price_monthly < current.price_monthly:
         return 'downgrade'
     return 'same'
 
@@ -72,18 +112,20 @@ def build_change_preview(*, owner, subscription, target_plan, billing_period='mo
         if product.is_available and product.business.is_active
     ]
 
+    current_plan = subscription.plan
+    direction = change_type(current_plan, target_plan)
     max_businesses = target_plan.max_businesses
     max_products = target_plan.max_products
-    businesses_to_suspend = (
-        max(0, len(active_businesses) - max_businesses)
-        if max_businesses > 0
-        else 0
-    )
-    products_to_suspend = (
-        max(0, len(active_products) - max_products)
-        if max_products > 0
-        else 0
-    )
+
+    # Limits are maxima, never quotas. Selection is only needed for a real
+    # downgrade where current active data exceeds the new maximum.
+    businesses_to_suspend = 0
+    products_to_suspend = 0
+    if direction == 'downgrade':
+        if max_businesses > 0:
+            businesses_to_suspend = max(0, len(active_businesses) - max_businesses)
+        if max_products > 0:
+            products_to_suspend = max(0, len(active_products) - max_products)
 
     disabled_features = []
     feature_map = {
@@ -96,13 +138,24 @@ def build_change_preview(*, owner, subscription, target_plan, billing_period='mo
         'has_social_media_links': ('روابط التواصل', 'Social links'),
         'has_verified_badge': ('شارة التوثيق', 'Verified badge'),
     }
-    current_plan = subscription.plan
-    for field, labels in feature_map.items():
-        if getattr(current_plan, field) and not getattr(target_plan, field):
-            disabled_features.append({'key': field, 'ar': labels[0], 'en': labels[1]})
+    if direction == 'downgrade':
+        for field, labels in feature_map.items():
+            if getattr(current_plan, field) and not getattr(target_plan, field):
+                disabled_features.append({'key': field, 'ar': labels[0], 'en': labels[1]})
+
+    business_selection_required = (
+        direction == 'downgrade'
+        and max_businesses > 0
+        and len(active_businesses) > max_businesses
+    )
+    product_selection_may_be_required = (
+        direction == 'downgrade'
+        and max_products > 0
+        and len(active_products) > max_products
+    )
 
     return {
-        'change_type': change_type(current_plan, target_plan),
+        'change_type': direction,
         'current_plan_id': current_plan.id,
         'target_plan_id': target_plan.id,
         'billing_period': billing_period,
@@ -112,6 +165,18 @@ def build_change_preview(*, owner, subscription, target_plan, billing_period='mo
             'max_products': max_products,
             'max_images_per_product': target_plan.max_images_per_product,
             'max_business_images': target_plan.max_business_images,
+        },
+        'selection': {
+            'business_selection_required': business_selection_required,
+            'business_keep_count': (
+                min(len(active_businesses), max_businesses)
+                if max_businesses > 0
+                else len(active_businesses)
+            ),
+            # Product selection is evaluated again after the owner chooses
+            # businesses because available products depend on those choices.
+            'product_selection_may_be_required': product_selection_may_be_required,
+            'product_keep_limit': max_products,
         },
         'impact': {
             'active_businesses': len(active_businesses),
@@ -143,6 +208,12 @@ def build_change_preview(*, owner, subscription, target_plan, billing_period='mo
 
 
 def validate_keep_selection(*, owner, target_plan, keep_business_ids, keep_product_ids):
+    """Validate ownership and upper bounds only.
+
+    Plan limits are maximums, not required quotas. Selecting fewer items than
+    the target maximum is valid; apply_change_request decides whether more
+    selection is necessary based on the actually kept businesses.
+    """
     business_ids = set(
         Business.objects.filter(owner=owner, id__in=keep_business_ids)
         .values_list('id', flat=True)
@@ -280,6 +351,7 @@ def apply_change_request(change_request, *, reviewer):
 
     owner = request.owner
     target_plan = request.target_plan
+    direction = change_type(request.current_plan, target_plan)
     _restore_suspended_by_previous_changes(owner)
 
     active_businesses = list(
@@ -288,14 +360,19 @@ def apply_change_request(change_request, *, reviewer):
     active_business_ids = {item.id for item in active_businesses}
     keep_business_ids = set(request.keep_business_ids)
 
-    if target_plan.max_businesses == 0:
+    if direction != 'downgrade' or target_plan.max_businesses == 0:
         keep_business_ids = active_business_ids
     elif len(active_business_ids) > target_plan.max_businesses:
-        if len(keep_business_ids) != target_plan.max_businesses:
+        required_businesses = target_plan.max_businesses
+        if len(keep_business_ids) != required_businesses:
             raise ValueError(
-                'Owner must select exactly the businesses allowed by the target plan.'
+                f'Owner must select exactly {required_businesses} business(es) '
+                'to keep active for the target plan.'
             )
+        if not keep_business_ids.issubset(active_business_ids):
+            raise ValueError('Selected businesses are not currently active.')
     else:
+        # The owner has fewer/equal businesses than the plan allows: keep all.
         keep_business_ids = active_business_ids
 
     suspended_business_ids = sorted(active_business_ids - keep_business_ids)
@@ -315,16 +392,21 @@ def apply_change_request(change_request, *, reviewer):
     available_product_ids = {item.id for item in available_products}
     keep_product_ids = set(request.keep_product_ids)
 
-    if target_plan.max_products == 0:
+    if direction != 'downgrade' or target_plan.max_products == 0:
         keep_product_ids = available_product_ids
     elif len(available_product_ids) > target_plan.max_products:
-        if len(keep_product_ids) != target_plan.max_products:
+        # The limit is a maximum. Exact selection is required only because
+        # there are actually more available products than the new plan allows.
+        required_products = target_plan.max_products
+        if len(keep_product_ids) != required_products:
             raise ValueError(
-                'Owner must select exactly the products allowed by the target plan.'
+                f'Owner must select exactly {required_products} product(s) '
+                'to keep visible for the target plan.'
             )
         if not keep_product_ids.issubset(available_product_ids):
             raise ValueError('Selected products are not available in kept businesses.')
     else:
+        # Example: target allows 3 but kept business has only 2 -> keep both.
         keep_product_ids = available_product_ids
 
     suspended_product_ids = sorted(available_product_ids - keep_product_ids)
@@ -360,6 +442,7 @@ def apply_change_request(change_request, *, reviewer):
     subscription.save()
 
     request.status = 'applied'
+    request.change_type = direction
     request.reviewed_by = reviewer
     request.reviewed_at = request.reviewed_at or timezone.now()
     request.applied_at = timezone.now()
