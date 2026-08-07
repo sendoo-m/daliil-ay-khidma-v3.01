@@ -24,9 +24,28 @@ CHECKLIST_DEFINITIONS = (
 
 
 def get_or_create_onboarding(user):
-    onboarding, _ = MerchantOnboarding.objects.select_related(
+    onboarding, created = MerchantOnboarding.objects.select_related(
         'selected_plan', 'business'
     ).get_or_create(user=user)
+    if created:
+        active = (
+            Subscription.objects.select_related('plan', 'business')
+            .filter(
+                business__owner=user,
+                status='active',
+                end_date__gt=timezone.now(),
+            )
+            .order_by('-end_date')
+            .first()
+        )
+        if active:
+            onboarding.selected_plan = active.plan
+            onboarding.business = active.business
+            onboarding.payment_status = 'confirmed'
+            onboarding.payment_method = active.payment_method
+            onboarding.payment_reference = active.transaction_id
+            onboarding.status = 'subscription_active'
+            onboarding.save()
     return onboarding
 
 
@@ -85,9 +104,7 @@ def _checklist_state(onboarding):
         'first_product': bool(business and business.products.exists()),
         'first_deal': bool(business and business.deals.exists()),
     }
-    applicable = {
-        key: True for key, _, _, _ in CHECKLIST_DEFINITIONS
-    }
+    applicable = {key: True for key, _, _, _ in CHECKLIST_DEFINITIONS}
     applicable['payment_submitted'] = payment_required
     applicable['first_deal'] = deal_applicable
 
