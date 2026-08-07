@@ -7,6 +7,8 @@ import 'src/features/analytics/analytics_page.dart';
 import 'src/features/auth/login_page.dart';
 import 'src/features/home/home_page.dart';
 import 'src/features/home/shop_page.dart';
+import 'src/features/notifications/notification_repository.dart';
+import 'src/features/notifications/notifications_page.dart';
 import 'src/features/products/deals_manager_page.dart';
 import 'src/features/products/products_page.dart';
 import 'src/features/reviews/reviews_page.dart';
@@ -77,6 +79,7 @@ class _ShellState extends ConsumerState<_Shell> {
   @override
   Widget build(BuildContext context) {
     final shop = ref.watch(currentShopProvider);
+    final unread = ref.watch(merchantUnreadNotificationsProvider).valueOrNull ?? 0;
 
     return Scaffold(
       appBar: _index == 0
@@ -109,6 +112,13 @@ class _ShellState extends ConsumerState<_Shell> {
                     ),
                 ],
               ),
+              actions: [
+                _NotificationBell(
+                  unread: unread,
+                  onTap: _openNotifications,
+                ),
+                const SizedBox(width: 6),
+              ],
             ),
       body: switch (_index) {
         0 => HomePage(onOpenTab: (i) => setState(() => _index = i)),
@@ -117,6 +127,12 @@ class _ShellState extends ConsumerState<_Shell> {
         3 => const AnalyticsPage(),
         _ => const ShopPage(),
       },
+      floatingActionButton: _index == 0
+          ? _HomeNotificationButton(
+              unread: unread,
+              onTap: _openNotifications,
+            )
+          : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
@@ -150,6 +166,105 @@ class _ShellState extends ConsumerState<_Shell> {
             label: 'البيانات',
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _openNotifications() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => MerchantNotificationsPage(
+          onOpenTab: (index) {
+            if (mounted) setState(() => _index = index);
+          },
+        ),
+      ),
+    );
+    ref.invalidate(merchantUnreadNotificationsProvider);
+  }
+}
+
+class _NotificationBell extends StatelessWidget {
+  const _NotificationBell({required this.unread, required this.onTap});
+
+  final int unread;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: 'الإشعارات',
+      onPressed: onTap,
+      icon: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Icon(Icons.notifications_none_rounded),
+          if (unread > 0)
+            PositionedDirectional(
+              top: -7,
+              end: -9,
+              child: _UnreadBadge(count: unread),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeNotificationButton extends StatelessWidget {
+  const _HomeNotificationButton({required this.unread, required this.onTap});
+
+  final int unread;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton.small(
+      heroTag: 'merchant-notifications',
+      tooltip: 'الإشعارات',
+      backgroundColor: Shop.sign,
+      foregroundColor: Colors.white,
+      onPressed: onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Icon(Icons.notifications_none_rounded),
+          if (unread > 0)
+            PositionedDirectional(
+              top: -8,
+              end: -10,
+              child: _UnreadBadge(count: unread),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UnreadBadge extends StatelessWidget {
+  const _UnreadBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Shop.clay,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white, width: 1.4),
+      ),
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 9,
+          height: 1,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     );
   }
