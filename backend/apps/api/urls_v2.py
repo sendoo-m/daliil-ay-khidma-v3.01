@@ -90,6 +90,11 @@ router.register(r'deal-claims',        deals.DealClaimViewSet,              base
 router.register(r'reviews',            reviews.ReviewViewSet,               basename='reviews')
 router.register(r'subscriptions',      subscriptions.SubscriptionViewSet,   basename='subscriptions')
 router.register(r'subscription-plans', subscriptions.SubscriptionPlanViewSet, basename='subscription-plans')
+router.register(
+    r'subscription-change-requests',
+    subscriptions.SubscriptionChangeRequestViewSet,
+    basename='subscription-change-requests',
+)
 router.register(r'devices', DeviceRegistrationViewSet, basename='devices')
 router.register(r'notifications', NotificationViewSet, basename='notifications')
 
