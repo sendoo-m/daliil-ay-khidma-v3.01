@@ -78,7 +78,7 @@ class MerchantBusinessSerializer(serializers.ModelSerializer):
             'phone', 'whatsapp', 'email', 'website',
             'facebook', 'instagram',
             'address_ar', 'address_en',
-            'latitude', 'longitude',
+            'latitude', 'longitude', 'location_url',
             'working_hours_ar', 'working_hours_en',
             'logo', 'cover_image',
             'category_name', 'governorate_name', 'city_name',

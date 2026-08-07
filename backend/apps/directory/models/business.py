@@ -396,6 +396,21 @@ class Business(models.Model):
     
     def save(self, *args, **kwargs):
         """Auto-generate slug and handle verification timestamp"""
+        # الإحداثيات من رابط الخرائط الملزوق — قراءة نص لا نداء API.
+        # هنا لا في الـview: أي مسار يحفظ نشاطًا (لوحة، تطبيق التاجر،
+        # استيراد) يحصل على نفس السلوك بلا تكرار.
+        if (
+            self.latitude is None
+            and self.longitude is None
+            and getattr(self, 'location_url', None)
+        ):
+            from apps.directory.map_links import extract_coordinates
+
+            found = extract_coordinates(self.location_url)
+            if found.ok:
+                self.latitude = found.latitude
+                self.longitude = found.longitude
+
         # Auto-generate slug
         if not self.slug:
             base_slug = slugify(self.name_en)

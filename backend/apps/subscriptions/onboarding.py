@@ -70,12 +70,19 @@ def _contact_complete(business):
 
 
 def _location_complete(business):
+    """
+    الموقع مكتمل بالإحداثيات وحدها — لا بوجود رابط.
+
+    كان الشرط يقبل `location_url` فيعلّم الخطوة مكتملة بمجرد لصق رابط،
+    فيرى التاجر ✅ بينما `latitude` و`longitude` فارغتان: لا يظهر محله
+    على الخريطة ولا في البحث بالمسافة، ولا شيء يخبره.
+
+    الرابط الآن يُقرأ في `Business.save()` ويملأ الإحداثيات. فإن بقيت
+    فارغة فالرابط لم يحمل موقعًا (مختصر مثلًا) والخطوة تظل مفتوحة بحق.
+    """
     if not business:
         return False
-    return bool(
-        business.location_url
-        or (business.latitude is not None and business.longitude is not None)
-    )
+    return business.latitude is not None and business.longitude is not None
 
 
 def _checklist_state(onboarding):

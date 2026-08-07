@@ -249,6 +249,30 @@ class MerchantActions {
     _ref.invalidate(productsProvider);
   }
 
+  /// يحفظ موقع النشاط ويرجّع ما خزّنه الخادم فعلًا.
+  ///
+  /// نُرجع الرد لا `void`: عند إرسال رابط، الخادم هو من يستخرج
+  /// الإحداثيات — والواجهة تحتاج أن تعرف إن كان نجح فعلًا أم أن
+  /// الرابط لم يحمل موقعًا.
+  Future<Map<String, dynamic>> updateShopLocation(
+    int shopId, {
+    double? latitude,
+    double? longitude,
+    String? locationUrl,
+  }) async {
+    final result = await _api.patch(
+      'merchant/businesses/$shopId/',
+      body: {
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
+        if (locationUrl != null) 'location_url': locationUrl,
+      },
+    );
+    await _ref.read(sessionProvider.notifier).refreshShops();
+    _ref.invalidate(dashboardProvider);
+    return result;
+  }
+
   Future<void> updateShop(int shopId, Map<String, dynamic> changes) async {
     await _api.patch('merchant/businesses/$shopId/', body: changes);
     await _ref.read(sessionProvider.notifier).refreshShops();
