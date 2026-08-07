@@ -5,7 +5,6 @@ import 'package:geolocator/geolocator.dart';
 
 import '../../app/theme.dart';
 import '../../shared/providers.dart';
-import '../../shared/widgets.dart';
 
 /// خطوة تحديد موقع النشاط.
 ///
@@ -304,7 +303,7 @@ class _LocationCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '${lat.toStringAsFixed(5)}, ${lng.toStringAsFixed(5)}',
-                  style: MerchantTheme.mono(size: 12),
+                  style: MerchantTheme.figure(size: 13, color: Shop.inkSoft),
                 ),
               ],
             ),
