@@ -90,6 +90,49 @@ final class SubscriptionPlan {
   }
 }
 
+final class MerchantOnboardingState {
+  const MerchantOnboardingState({
+    required this.status,
+    required this.progress,
+    required this.nextAction,
+    required this.paymentRequired,
+    required this.paymentStatus,
+    required this.billingPeriod,
+    required this.selectedPrice,
+    required this.selectedPlan,
+    required this.business,
+  });
+
+  final String status;
+  final int progress;
+  final String nextAction;
+  final bool paymentRequired;
+  final String paymentStatus;
+  final String billingPeriod;
+  final double selectedPrice;
+  final Map<String, dynamic>? selectedPlan;
+  final Map<String, dynamic>? business;
+
+  bool get hasBusiness => business != null;
+
+  factory MerchantOnboardingState.fromJson(Map<String, dynamic> json) =>
+      MerchantOnboardingState(
+        status: '${json['status'] ?? 'draft'}',
+        progress: json['progress'] as int? ?? 0,
+        nextAction: '${json['next_action'] ?? 'select_plan'}',
+        paymentRequired: json['payment_required'] as bool? ?? false,
+        paymentStatus: '${json['payment_status'] ?? 'not_required'}',
+        billingPeriod: '${json['billing_period'] ?? 'monthly'}',
+        selectedPrice: double.tryParse('${json['selected_price'] ?? 0}') ?? 0,
+        selectedPlan: json['selected_plan'] is Map<String, dynamic>
+            ? json['selected_plan'] as Map<String, dynamic>
+            : null,
+        business: json['business'] is Map<String, dynamic>
+            ? json['business'] as Map<String, dynamic>
+            : null,
+      );
+}
+
 final class SubscriptionRepository {
   const SubscriptionRepository(this._dio);
   final Dio _dio;
@@ -106,5 +149,24 @@ final class SubscriptionRepository {
         .whereType<Map<String, dynamic>>()
         .map(SubscriptionPlan.fromJson)
         .toList(growable: false);
+  }
+
+  Future<MerchantOnboardingState> onboarding() async {
+    final response = await _dio.get<Map<String, dynamic>>('onboarding/');
+    return MerchantOnboardingState.fromJson(response.data ?? const {});
+  }
+
+  Future<MerchantOnboardingState> selectPlan({
+    required int planId,
+    required String billingPeriod,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      'onboarding/select-plan/',
+      data: <String, dynamic>{
+        'plan_id': planId,
+        'billing_period': billingPeriod,
+      },
+    );
+    return MerchantOnboardingState.fromJson(response.data ?? const {});
   }
 }
