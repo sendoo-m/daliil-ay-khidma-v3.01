@@ -3,7 +3,6 @@ Accounts URL Configuration
 """
 from django.urls import path
 from . import views
-from .magic_link import redeem_magic_link
 
 app_name = 'accounts'
 
@@ -26,8 +25,4 @@ urlpatterns = [
          views.PasswordResetConfirmView.as_view(),  name='password_reset_confirm'),
     path('password-reset/complete/',
          views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
-
-    # ── Magic-Link Web Handoff ──
-    # Flutter يفتح هذا الـ URL في WebView — يُسجَّل الدخول ويُحوَّل للخطط
-    path('magic/', redeem_magic_link, name='magic_link_redeem'),
 ]

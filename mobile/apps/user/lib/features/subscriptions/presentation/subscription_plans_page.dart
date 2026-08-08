@@ -105,6 +105,7 @@ class _SubscriptionPlansPageState
                         plan: plan,
                         period: _period,
                         isArabic: _isArabic,
+                        ref: ref,
                       ),
                     ),
                   ),
@@ -281,11 +282,16 @@ class _PlanCard extends StatelessWidget {
     required this.plan,
     required this.period,
     required this.isArabic,
+    required this.ref,
   });
 
   final SubscriptionPlan plan;
   final String period;
   final bool isArabic;
+
+  /// ‏‏StatelessWidget لا يملك `ref` تلقائيًا — يُمرَّر من الأب
+  /// ‏(‏ConsumerState) الذي يملكه فعلًا.
+  final WidgetRef ref;
 
   String _tr(String ar, String en) => isArabic ? ar : en;
 
@@ -441,13 +447,13 @@ class _PlanCard extends StatelessWidget {
 
     final repo = ref.read(subscriptionRepositoryProvider);
     String? webUrl;
-    Object? failure;
 
     try {
       await repo.selectPlan(planId: plan.id, billingPeriod: period);
       webUrl = await repo.requestWebHandoff();
-    } catch (e) {
-      failure = e;
+    } catch (_) {
+      // فشل أي من النداءين يترك webUrl فارغة، وتُعرض رسالة الفشل
+      // الموحّدة أسفل الدالة — لا حاجة لتفريق سبب الفشل هنا.
     } finally {
       if (context.mounted) Navigator.of(context).pop();
     }

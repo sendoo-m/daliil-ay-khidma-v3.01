@@ -23,7 +23,6 @@ from apps.api.views.auth import (
 )
 from apps.api.views.home import MobileHomeView
 from apps.api.views import browse
-from apps.api.views.handoff import OnboardingHandoffView
 from apps.api.views import search as unified
 from apps.api.views.merchant import (
     MerchantSessionView, MerchantDashboardView,
@@ -129,7 +128,6 @@ urlpatterns = [
     path('onboarding/select-plan/', MerchantOnboardingPlanView.as_view(), name='merchant_onboarding_plan'),
     path('onboarding/attach-business/', MerchantOnboardingBusinessView.as_view(), name='merchant_onboarding_business'),
     path('onboarding/payment/', MerchantOnboardingPaymentView.as_view(), name='merchant_onboarding_payment'),
-    path('onboarding/handoff/', OnboardingHandoffView.as_view(), name='onboarding_handoff'),
 
     # ── التصفّح العام ──
     path('browse/directories/',   browse.directories,           name='browse_directories'),

@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 
+import '../../../core/config/environment.dart';
+
 final class SubscriptionPlan {
   const SubscriptionPlan({
     required this.id,
@@ -161,9 +163,15 @@ final class SubscriptionRepository {
   /// تطبيق أصحاب الأنشطة ليس مبنيًا لمنصة موبايل أصلية بعد، فإكمال
   /// اختيار الخطة وإنشاء النشاط يتم على الويب. هذا الرابط يجعل الانتقال
   /// بلا كتابة بيانات دخول من جديد — نفس الحساب، جلسة جديدة فقط.
+  /// يطلب رابط دخول لمرة واحدة ينقل المستخدم لجلسة ويب بنفس حسابه.
+  ///
+  /// نقطة النهاية هذه خارج `/api/v2/` عمدًا (`/api/auth/magic-link/`
+  /// على جذر الخادم)، فلا يصح استعمال `_dio` بمسار نسبي — قاعدته
+  /// `Environment.apiV2` تُلحق `/api/v2/` بأي مسار نسبي تلقائيًا.
+  /// نبني عنوانًا مطلقًا فوق جذر الخادم بدلًا من ذلك.
   Future<String> requestWebHandoff() async {
     final response = await _dio.post<Map<String, dynamic>>(
-      'onboarding/handoff/',
+      '${Environment.apiBaseUrl}/api/auth/magic-link/',
     );
     final url = response.data?['url'] as String?;
     if (url == null) {

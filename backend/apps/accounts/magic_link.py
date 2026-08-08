@@ -1,16 +1,32 @@
 """
 Magic-Link / Web-Handoff
 ========================
-الموبايل (Flutter) عنده DRF token للمستخدم.
-عايز يفتح WebView على الويب وهو مسجّل دخول بنفس الحساب.
+الموبايل عنده JWT access token للمستخدم. عايز يفتح متصفح على الويب
+وهو مسجّل دخول بنفس الحساب — بلا كتابة بياناته من جديد.
 
 التسلسل:
-  1.  Flutter  →  POST /api/auth/magic-link/           (Authorization: Token <drf_token>)
-  2.  Backend  →  ينشئ MagicLinkToken (one-time, 10 دقايق)
+  1. Flutter   →  POST /api/auth/magic-link/   (Authorization: Bearer <jwt>)
+  2. Backend   →  ينشئ MagicLinkToken (استخدام واحد، دقيقتين)
                   يرجع { "url": "https://…/auth/magic/?t=<token>" }
-  3.  Flutter  →  يفتح الـ URL ده في WebView / External browser
-  4.  Django   →  يتحقق من التوكن، يعمل login(request, user)
-                  يعمل redirect لـ next أو subscriptions:plans_list
+  3. Flutter   →  يفتح الرابط في متصفح خارجي
+  4. Django    →  يتحقق من التوكن، يعمل login(request, user)
+                  يحسب next_action من محرك الرحلة نفسه ويوجّه إليه
+
+تصحيحان جوهريان عن النسخة الأولى من هذا الملف:
+
+  ١. المصادقة كانت `TokenAuthentication` (توكنات DRF التقليدية)، بينما
+     المشروع كله موثَّق بـJWT عبر `rest_framework_simplejwt`
+     (`DEFAULT_AUTHENTICATION_CLASSES` في settings). فكان أي طلب من
+     التطبيق الحقيقي سيُرفض بـ401 دائمًا — الآلية لم تكن تعمل قط مع
+     الموبايل الفعلي، فقط مع توكن من نوع مختلف لا يُصدره النظام.
+
+  ٢. الوجهة كانت تُقرأ من `?next=` في الرابط مباشرة. رابط تسليم مسروق
+     (نُسخ من شاشة تعاون، أو رصدته أداة تتبّع روابط) كان يستطيع توجيه
+     ضحيته بعد تسجيل دخولها تلقائيًا لأي مسار داخل الموقع، لا فقط
+     لوحتها. الآن تُحسب الوجهة من `build_onboarding_state` — نفس
+     المصدر الذي يبني بانر لوحة صاحب النشاط
+     (`apps.dashboard.views.owner._SETUP_ACTIONS`) — فلا يقرر الوجهة
+     أي رابط، بل حالة المستخدم الفعلية فقط.
 """
 
 import secrets
@@ -21,15 +37,18 @@ from django.contrib.auth import get_user_model, login
 from django.db import models
 from django.http import JsonResponse
 from django.shortcuts import redirect
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 User = get_user_model()
 
-_TTL_MINUTES = 10  # التوكن بيبقى صالح 10 دقايق بس
+#: التوكن قصير عمدًا: نافذة انتقال بين نداء API وفتح المتصفح، لا جلسة
+#: تُحفظ. كل دقيقة زيادة هنا نافذة إضافية لإعادة استخدام رابط مسروق.
+_TTL_MINUTES = 2
 
 
 # ──────────────────────────────────────────────
@@ -71,8 +90,33 @@ def _get_client_ip(request):
     return x_forwarded.split(',')[0].strip() if x_forwarded else request.META.get('REMOTE_ADDR')
 
 
+def _resolve_destination(user) -> str:
+    """يحسب وجهة التاجر من حالة رحلته الفعلية — لا من مدخل خارجي."""
+    try:
+        from apps.dashboard.views.owner import _SETUP_ACTIONS
+        from apps.subscriptions.onboarding import (
+            build_onboarding_state,
+            get_or_create_onboarding,
+        )
+
+        state = build_onboarding_state(get_or_create_onboarding(user))
+        spec = _SETUP_ACTIONS.get(state.get('next_action', ''))
+        if spec and spec.get('url_name'):
+            return reverse(spec['url_name'])
+    except Exception:  # noqa: BLE001
+        # فشل حساب الوجهة لا يجوز أن يترك المستخدم عالقًا — يصل دائمًا
+        # إلى مكان يعمل: لوحته.
+        import logging
+
+        logging.getLogger('accounts.magic_link').exception(
+            'تعذّر حساب وجهة تسليم الجلسة للمستخدم %s', user.pk
+        )
+
+    return reverse('dashboard:owner_dashboard')
+
+
 # ──────────────────────────────────────────────
-#  API View — يستقبل طلب الموبايل (DRF token)
+#  API View — يستقبل طلب الموبايل (JWT)
 # ──────────────────────────────────────────────
 
 @csrf_exempt
@@ -80,82 +124,80 @@ def _get_client_ip(request):
 def issue_magic_link(request):
     """
     POST /api/auth/magic-link/
-    Header: Authorization: Token <drf_token>
+    Header: Authorization: Bearer <jwt access token>
 
     يرجع:
-        200  { "url": "https://<host>/auth/magic/?t=<token>&next=<next>" }
+        200  { "url": "https://<host>/auth/magic/?t=<token>", "expires_in": 120 }
         401  { "error": "..." }
     """
-    # نتحقق من DRF token بدون الحاجة لـ DRF view class
-    auth = TokenAuthentication()
-    try:
-        user, _ = auth.authenticate(request)  # يرمي AuthenticationFailed لو فشل
-    except (AuthenticationFailed, TypeError):
+    header = request.META.get('HTTP_AUTHORIZATION', '')
+    if not header.startswith('Bearer '):
         return JsonResponse({'error': 'غير مصرح'}, status=401)
+
+    try:
+        auth = JWTAuthentication()
+        validated = auth.get_validated_token(header.split(' ', 1)[1].strip())
+        user = auth.get_user(validated)
+    except (InvalidToken, TokenError):
+        return JsonResponse({'error': 'التوكن غير صالح'}, status=401)
 
     if user is None or not user.is_active:
         return JsonResponse({'error': 'الحساب غير نشط'}, status=401)
 
-    # نمسح توكنات قديمة للمستخدم ده (cleanup)
+    # تنظيف توكنات منتهية لنفس المستخدم — الجدول صغير بطبيعته ولا
+    # يحتاج مهمة دورية منفصلة.
     MagicLinkToken.objects.filter(
-        user=user,
-        used=False,
-        expires_at__lt=timezone.now(),
+        user=user, used=False, expires_at__lt=timezone.now(),
     ).delete()
 
     token_str = secrets.token_urlsafe(48)
-    ml = MagicLinkToken.objects.create(
+    MagicLinkToken.objects.create(
         user=user,
         token=token_str,
         expires_at=timezone.now() + timedelta(minutes=_TTL_MINUTES),
         issued_ip=_get_client_ip(request),
     )
 
-    next_url = request.GET.get('next', '/subscriptions/plans/')
     host = request.build_absolute_uri('/').rstrip('/')
-    magic_url = f"{host}/auth/magic/?t={ml.token}&next={next_url}"
+    magic_url = f'{host}{reverse("magic_link_redeem")}?t={token_str}'
 
-    return JsonResponse({'url': magic_url})
+    return JsonResponse({'url': magic_url, 'expires_in': _TTL_MINUTES * 60})
 
 
 # ──────────────────────────────────────────────
-#  Web View — التاجر يفتح الـ URL ده في المتصفح
+#  Web View — التاجر يفتح الرابط ده في المتصفح
 # ──────────────────────────────────────────────
 
 @require_GET
 def redeem_magic_link(request):
     """
-    GET /auth/magic/?t=<token>&next=<path>
+    GET /auth/magic/?t=<token>
 
-    - يتحقق من التوكن
-    - يعمل Django session login
-    - يعمل redirect لـ next (default: صفحة الخطط)
+    - يتحقق من التوكن ويعلّمه مُستخدَمًا فورًا (منع إعادة الاستخدام)
+    - يسجّل جلسة Django بنفس الحساب
+    - يوجّه لخطوة الرحلة الفعلية — لا لمسار وارد في الرابط
     """
     token_str = request.GET.get('t', '').strip()
-    next_url = request.GET.get('next', '/subscriptions/plans/')
-
-    # أمان بسيط: next لازم يبدأ بـ /
-    if not next_url.startswith('/'):
-        next_url = '/subscriptions/plans/'
 
     try:
-        ml = MagicLinkToken.objects.select_related('user').get(token=token_str)
+        magic = MagicLinkToken.objects.select_related('user').get(
+            token=token_str
+        )
     except MagicLinkToken.DoesNotExist:
-        return redirect(f'/account/login/?error=invalid_link')
+        return redirect(f'{reverse("dashboard:staff_login")}?error=invalid_link')
 
-    if not ml.is_valid:
-        return redirect(f'/account/login/?error=expired_link')
+    if not magic.is_valid:
+        return redirect(f'{reverse("dashboard:staff_login")}?error=expired_link')
 
-    # نعلّم التوكن كـ مستخدم فوراً (one-time)
-    ml.used = True
-    ml.save(update_fields=['used'])
+    # نعلّمه مُستخدَمًا قبل أي شيء آخر — منع إعادة استخدام في نافذتين
+    # متزامنتين (تبويبان، أو معاينة رابط مسبقة من المتصفح).
+    magic.used = True
+    magic.save(update_fields=['used'])
 
-    user = ml.user
+    user = magic.user
     if not user.is_active:
-        return redirect('/account/login/?error=inactive')
+        return redirect(f'{reverse("dashboard:staff_login")}?error=inactive')
 
-    # Django login — نحدد backend صراحةً
-    backend = 'django.contrib.auth.backends.ModelBackend'
-    login(request, user, backend=backend)
+    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
-    return redirect(next_url)
+    return redirect(_resolve_destination(user))

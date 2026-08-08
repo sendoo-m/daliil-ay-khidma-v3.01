@@ -16,8 +16,6 @@ from apps.administration.constants import Perm
 PUBLIC_DASHBOARD_ROUTES = {
     'staff_login',
     'staff_logout',
-    'consume_handoff',
-    'onboarding_continue',
     'index',
     'profile',
     'settings',
