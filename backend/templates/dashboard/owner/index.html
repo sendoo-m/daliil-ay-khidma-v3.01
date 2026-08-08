@@ -15,10 +15,59 @@
 .quick-card i{font-size:1.35rem;color:#667eea}
 .business-row{border:1px solid #edf0f5;border-radius:14px;padding:1rem;margin-bottom:.75rem}
 .status-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-inline-end:.35rem}
+.setup-banner{background:#fff;border:2px solid #667eea;border-radius:20px;padding:1.5rem;margin-bottom:1.5rem;box-shadow:0 8px 24px rgba(102,126,234,.12)}
+.setup-banner .pct{font-size:2.4rem;font-weight:900;line-height:1;color:#667eea}
+.setup-banner .bar{height:9px;border-radius:99px;background:#eef2ff;overflow:hidden}
+.setup-banner .bar span{display:block;height:100%;background:linear-gradient(90deg,#667eea,#764ba2);border-radius:99px;transition:width .5s ease}
+.setup-next{background:#f8f9ff;border-radius:15px;padding:1.15rem;margin-top:1.1rem}
+.setup-next .ico{width:44px;height:44px;border-radius:13px;background:#667eea;color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex:none}
+.setup-steps{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:1rem}
+.setup-chip{font-size:.78rem;padding:.3rem .7rem;border-radius:99px;background:#f1f5f9;color:#64748b}
+.setup-chip.done{background:#e7f5ef;color:#1f7a5e}
+.setup-chip.done i{font-size:.7rem;margin-inline-end:.2rem}
 </style>
 {% endblock %}
 
 {% block content %}
+{% if setup.progress != None and setup.progress < 100 %}
+{# رحلة التجهيز أعلى كل شيء: التاجر الذي لم يُكمل نشاطه لا تنفعه أرقام
+   الأداء — نشاطه لم يظهر للناس بعد. الأرقام تحتها لمن أنهى. #}
+<div class="setup-banner">
+  <div class="d-flex align-items-center gap-3 flex-wrap">
+    <div class="pct">{{ setup.progress }}%</div>
+    <div class="flex-grow-1">
+      <h5 class="fw-bold mb-1">أنت في مرحلة تجهيز نشاطك</h5>
+      <div class="bar"><span style="width:{{ setup.progress }}%"></span></div>
+    </div>
+  </div>
+
+  {% if setup_action %}
+  <div class="setup-next d-flex align-items-start gap-3 flex-wrap">
+    <div class="ico"><i class="bi {{ setup_action.icon }}"></i></div>
+    <div class="flex-grow-1" style="min-width:220px">
+      <div class="fw-bold mb-1">الخطوة التالية: {{ setup_action.title }}</div>
+      <div class="text-muted small" style="line-height:1.8">{{ setup_action.why }}</div>
+    </div>
+    {% if setup_action.cta %}
+    <a href="{% url setup_action.url_name %}" class="btn btn-primary px-4">
+      {{ setup_action.cta }}
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="setup-steps">
+    {% for item in setup.checklist %}
+      {% if item.applicable %}
+      <span class="setup-chip {% if item.state == 'done' %}done{% endif %}">
+        {% if item.state == 'done' %}<i class="bi bi-check-lg"></i>{% endif %}{{ item.label_ar }}
+      </span>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 <div class="owner-hero mb-4">
   <div class="d-flex align-items-center gap-3 flex-wrap">
     <div class="hero-icon"><i class="fas fa-store"></i></div>
