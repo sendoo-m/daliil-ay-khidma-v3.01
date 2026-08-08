@@ -1,0 +1,558 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}{{ title.icon }} {{ title.ar }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+    .form-wizard-steps {
+        display: flex;
+        justify-content: center;
+        gap: 0;
+        margin-bottom: 2rem;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+    }
+    .wizard-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        min-width: 100px;
+    }
+    .wizard-step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: -50%;
+        width: 100%;
+        height: 2px;
+        background: #dee2e6;
+        z-index: 0;
+    }
+    .wizard-step.completed::after { background: #667eea; }
+    .wizard-step-circle {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: #dee2e6;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1rem;
+        z-index: 1;
+        position: relative;
+        transition: all 0.3s;
+    }
+    .wizard-step.active .wizard-step-circle { background: linear-gradient(135deg,#667eea,#764ba2); color:white; box-shadow:0 4px 12px rgba(102,126,234,0.4); }
+    .wizard-step.completed .wizard-step-circle { background: #28a745; color:white; }
+    .wizard-step-label { font-size:0.72rem; margin-top:6px; color:#6c757d; font-weight:600; text-align:center; }
+    .wizard-step.active .wizard-step-label { color:#667eea; }
+    .form-section { display: none; animation: fadeIn 0.3s ease; }
+    .form-section.active { display: block; }
+    @keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+    .section-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.07);
+        margin-bottom: 1.5rem;
+    }
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .section-title i { color: #667eea; }
+    #map { height: 380px; border-radius: 12px; border: 2px solid #dee2e6; z-index: 1; }
+    .map-hint {
+        background: #f8f9ff;
+        border: 1px solid #e0e5ff;
+        border-radius: 8px;
+        padding: 0.6rem 1rem;
+        font-size: 0.82rem;
+        color: #5a6470;
+        margin-bottom: 0.75rem;
+    }
+    .coords-display {
+        background: #f8f9ff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 0.6rem 1rem;
+        font-size: 0.82rem;
+        margin-top: 0.75rem;
+        display: none;
+    }
+    .coords-display.show { display: block; }
+    .gallery-drop-zone {
+        border: 2px dashed #c5d0f5;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        background: #f8f9ff;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 1rem;
+    }
+    .gallery-drop-zone:hover, .gallery-drop-zone.dragover { border-color: #667eea; background: #eff1ff; }
+    .gallery-preview { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 1rem; }
+    .preview-item {
+        position: relative;
+        width: 110px;
+        height: 110px;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+    }
+    .preview-item img { width: 100%; height: 100%; object-fit: cover; }
+    .preview-item .remove-btn {
+        position: absolute;
+        top: 4px; right: 4px;
+        width: 24px; height: 24px;
+        background: rgba(220,53,69,0.9);
+        border: none; border-radius: 50%;
+        color: white; font-size: 0.7rem;
+        cursor: pointer; display: flex;
+        align-items: center; justify-content: center;
+    }
+    .formset-row { border: 1px solid #e9ecef; border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; background: #fafafa; }
+    .formset-row.marked-delete { opacity: 0.4; }
+    .wizard-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }
+    .btn-wizard { padding: 0.6rem 2rem; border-radius: 10px; font-weight: 600; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">{{ title.icon }} {{ title.ar }}</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">الرئيسية</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:business_list' %}">محلاتي</a></li>
+                <li class="breadcrumb-item active">{{ action|yesno:"تعديل,إضافة" }}</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="{% url 'dashboard:business_list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right me-1"></i> رجوع
+    </a>
+</div>
+
+
+<!-- Wizard Steps -->
+<div class="form-wizard-steps">
+    {% for step in steps %}
+    <div class="wizard-step {% if forloop.first %}active{% endif %}" data-step="{{ forloop.counter }}">
+        <div class="wizard-step-circle">
+            {% if forloop.first %}<i class="fas fa-info"></i>
+            {% elif forloop.counter == 2 %}<i class="fas fa-map-marker-alt"></i>
+            {% elif forloop.counter == 3 %}<i class="fas fa-phone"></i>
+            {% elif forloop.counter == 4 %}<i class="fas fa-share-alt"></i>
+            {% elif forloop.counter == 5 %}<i class="fas fa-images"></i>
+            {% else %}<i class="fas fa-clock"></i>{% endif %}
+        </div>
+        <span class="wizard-step-label">{{ step }}</span>
+    </div>
+    {% endfor %}
+</div>
+
+
+<form method="post" enctype="multipart/form-data" id="businessForm"
+      data-error-section="{{ error_section|default:1 }}" novalidate>
+    {% csrf_token %}
+    {{ form.business_type }}
+    {{ formset.management_form }}
+
+    <!-- SECTION 1 - المعلومات الأساسية -->
+    <div class="form-section active" id="section-1">
+        <div class="section-card">
+            <div class="section-title"><i class="fas fa-info-circle"></i> المعلومات الأساسية</div>
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">اسم المحل بالعربية <span class="text-danger">*</span></label>
+                    {{ form.name_ar }}
+                    {% if form.name_ar.errors %}<div class="text-danger small mt-1">{{ form.name_ar.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Business Name (English) <span class="text-danger">*</span></label>
+                    {{ form.name_en }}
+                    {% if form.name_en.errors %}<div class="text-danger small mt-1">{{ form.name_en.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">التصنيف <span class="text-danger">*</span></label>
+                    {{ form.category }}
+                    {% if form.category.errors %}<div class="text-danger small mt-1">{{ form.category.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">الوصف بالعربية</label>
+                    {{ form.description_ar }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Description (English)</label>
+                    {{ form.description_en }}
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">الشعار (Logo)</label>
+                    {% if form.instance.logo %}
+                        <div class="mb-2"><img src="{{ form.instance.logo.url }}" height="60" class="rounded border"></div>
+                    {% endif %}
+                    {{ form.logo }}
+                    <small class="text-muted">مربع 500×500 بكسل</small>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">صورة الغلاف (Cover)</label>
+                    {% if form.instance.cover_image %}
+                        <div class="mb-2"><img src="{{ form.instance.cover_image.url }}" height="60" class="rounded border"></div>
+                    {% endif %}
+                    {{ form.cover_image }}
+                    <small class="text-muted">1200×400 بكسل</small>
+                </div>
+
+            </div>
+        </div>
+        <div class="wizard-nav">
+            <div></div>
+            <button type="button" class="btn btn-primary btn-wizard" onclick="nextSection(1)">التالي <i class="fas fa-arrow-left ms-1"></i></button>
+        </div>
+    </div>
+
+
+    <!-- SECTION 2 - الموقع -->
+    <div class="form-section" id="section-2">
+        <div class="section-card">
+            <div class="section-title"><i class="fas fa-map-marker-alt"></i> الموقع الجغرافي</div>
+            <div class="row g-3">
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">المحافظة <span class="text-danger">*</span></label>
+                    {{ form.governorate }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">المدينة <span class="text-danger">*</span></label>
+                    {{ form.city }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">الحي <span class="text-danger">*</span></label>
+                    {{ form.district }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">العنوان بالعربية <span class="text-danger">*</span></label>
+                    {{ form.address_ar }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Address (English)</label>
+                    {{ form.address_en }}
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold">رابط Google Maps</label>
+                    {{ form.location_url }}
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold"><i class="fas fa-map text-primary me-1"></i> تحديد الموقع على الخريطة</label>
+                    <div class="map-hint"><i class="fas fa-info-circle me-1 text-primary"></i> اضغط على الخريطة لتحديد موقع المحل</div>
+                    <div id="map"></div>
+                    <div class="coords-display" id="coordsDisplay">
+                        <i class="fas fa-crosshairs text-success me-1"></i>
+                        <strong>الإحداثيات:</strong>
+                        خط العرض: <span id="latDisplay">-</span> &nbsp;|&nbsp;
+                        خط الطول: <span id="lngDisplay">-</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger ms-3" onclick="clearMarker()"><i class="fas fa-times"></i> مسح</button>
+                    </div>
+                    {{ form.latitude }}
+                    {{ form.longitude }}
+                </div>
+
+            </div>
+        </div>
+        <div class="wizard-nav">
+            <button type="button" class="btn btn-outline-secondary btn-wizard" onclick="prevSection(2)"><i class="fas fa-arrow-right me-1"></i> السابق</button>
+            <button type="button" class="btn btn-primary btn-wizard" onclick="nextSection(2)">التالي <i class="fas fa-arrow-left ms-1"></i></button>
+        </div>
+    </div>
+
+
+    <!-- SECTION 3 - معلومات التواصل -->
+    <div class="form-section" id="section-3">
+        <div class="section-card">
+            <div class="section-title"><i class="fas fa-phone-alt"></i> معلومات التواصل</div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">رقم الهاتف <span class="text-danger">*</span></label>
+                    <div class="input-group"><span class="input-group-text"><i class="fas fa-phone"></i></span>{{ form.phone }}</div>
+                    {% if form.phone.errors %}<div class="text-danger small mt-1">{{ form.phone.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">واتساب</label>
+                    <div class="input-group"><span class="input-group-text text-success"><i class="fab fa-whatsapp"></i></span>{{ form.whatsapp }}</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">البريد الإلكتروني</label>
+                    <div class="input-group"><span class="input-group-text"><i class="fas fa-envelope"></i></span>{{ form.email }}</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">الموقع الإلكتروني</label>
+                    <div class="input-group"><span class="input-group-text"><i class="fas fa-globe"></i></span>{{ form.website }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="section-card">
+            <div class="section-title"><i class="fas fa-clock"></i> ساعات العمل</div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">ساعات العمل بالعربية</label>
+                    {{ form.working_hours_ar }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Working Hours (English)</label>
+                    {{ form.working_hours_en }}
+                </div>
+            </div>
+        </div>
+        <div class="wizard-nav">
+            <button type="button" class="btn btn-outline-secondary btn-wizard" onclick="prevSection(3)"><i class="fas fa-arrow-right me-1"></i> السابق</button>
+            <button type="button" class="btn btn-primary btn-wizard" onclick="nextSection(3)">التالي <i class="fas fa-arrow-left ms-1"></i></button>
+        </div>
+    </div>
+
+
+    <!-- SECTION 4 - سوشيال -->
+    <div class="form-section" id="section-4">
+        <div class="section-card">
+            <div class="section-title"><i class="fas fa-share-alt"></i> حسابات التواصل الاجتماعي</div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold"><i class="fab fa-facebook text-primary me-1"></i> فيسبوك</label>
+                    {{ form.facebook }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold"><i class="fab fa-instagram text-danger me-1"></i> إنستجرام</label>
+                    {{ form.instagram }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold"><i class="fab fa-twitter text-info me-1"></i> تويتر / X</label>
+                    {{ form.twitter }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold"><i class="fab fa-tiktok me-1"></i> تيك توك</label>
+                    {{ form.tiktok }}
+                </div>
+            </div>
+        </div>
+        <div class="wizard-nav">
+            <button type="button" class="btn btn-outline-secondary btn-wizard" onclick="prevSection(4)"><i class="fas fa-arrow-right me-1"></i> السابق</button>
+            <button type="button" class="btn btn-primary btn-wizard" onclick="nextSection(4)">التالي <i class="fas fa-arrow-left ms-1"></i></button>
+        </div>
+    </div>
+
+
+    <!-- SECTION 5 - معرض الصور -->
+    <div class="form-section" id="section-5">
+        <div class="section-card">
+            <div class="section-title"><i class="fas fa-images"></i> معرض صور المحل</div>
+            <div class="gallery-drop-zone" id="dropZone" onclick="document.getElementById('bulkImageInput').click()">
+                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                <p class="mb-1 fw-semibold">اسحب الصور هنا أو اضغط للاختيار</p>
+                <small class="text-muted">JPG, PNG, WEBP - حد أقصى 10 صور</small>
+                <input type="file" id="bulkImageInput" multiple accept="image/*" style="display:none">
+            </div>
+            <div class="gallery-preview" id="galleryPreview"></div>
+
+            {% if formset.forms %}
+            <div class="mt-4">
+                <h6 class="fw-bold text-muted mb-3">الصور الحالية</h6>
+                {% for img_form in formset.forms %}
+                <div class="formset-row" id="formset-row-{{ forloop.counter0 }}">
+                    {% if img_form.instance.pk %}
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <img src="{{ img_form.instance.image.url }}" height="70" class="rounded">
+                            <div class="flex-grow-1">{{ img_form.caption_ar }}</div>
+                            <div>{{ img_form.DELETE }}<label class="text-danger small ms-1">حذف</label></div>
+                        </div>
+                    {% else %}
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-4"><label class="form-label small">الصورة</label>{{ img_form.image }}</div>
+                            <div class="col-md-4"><label class="form-label small">وصف عربي</label>{{ img_form.caption_ar }}</div>
+                            <div class="col-md-3"><label class="form-label small">Caption EN</label>{{ img_form.caption_en }}</div>
+                            {{ img_form.id }}
+                        </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="wizard-nav">
+            <button type="button" class="btn btn-outline-secondary btn-wizard" onclick="prevSection(5)"><i class="fas fa-arrow-right me-1"></i> السابق</button>
+            <button type="submit" class="btn btn-success btn-wizard px-4">
+                <i class="fas fa-save me-1"></i>
+                {% if action %}حفظ التعديلات{% else %}إرسال للمراجعة{% endif %}
+            </button>
+        </div>
+    </div>
+
+</form>
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const TOTAL_SECTIONS = 5;
+const stepLabels = ['المعلومات الأساسية','الموقع','التواصل','السوشيال','الصور'];
+
+function showSection(n) {
+    document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('section-' + n).classList.add('active');
+    document.querySelectorAll('.wizard-step').forEach((el, i) => {
+        el.classList.remove('active','completed');
+        if (i + 1 === n)    el.classList.add('active');
+        else if (i + 1 < n) el.classList.add('completed');
+    });
+    window.scrollTo({top: 0, behavior: 'smooth'});
+    if (n === 2 && !mapInitialized) initMap();
+}
+function nextSection(c) { if (c < TOTAL_SECTIONS) showSection(c + 1); }
+function prevSection(c) { if (c > 1) showSection(c - 1); }
+
+(function renderSteps() {
+    const container = document.querySelector('.form-wizard-steps');
+    container.innerHTML = '';
+    stepLabels.forEach((label, i) => {
+        const div = document.createElement('div');
+        div.className = 'wizard-step' + (i === 0 ? ' active' : '');
+        div.dataset.step = i + 1;
+        const icons = ['fa-info','fa-map-marker-alt','fa-phone','fa-share-alt','fa-images'];
+        div.innerHTML = `<div class="wizard-step-circle"><i class="fas ${icons[i]}"></i></div><span class="wizard-step-label">${label}</span>`;
+        container.appendChild(div);
+    });
+})();
+
+(function jumpToErrorSection() {
+    const form = document.getElementById('businessForm');
+    const n = parseInt(form.dataset.errorSection || '1');
+    if (n > 1) showSection(n);
+})();
+
+
+// MAP
+let map, marker, mapInitialized = false;
+const existingLat = "{{ form.instance.latitude|default:'' }}";
+const existingLng = "{{ form.instance.longitude|default:'' }}";
+
+function initMap() {
+    mapInitialized = true;
+    const lat = existingLat ? parseFloat(existingLat) : 26.8206;
+    const lng = existingLng ? parseFloat(existingLng) : 30.8025;
+    map = L.map('map').setView([lat, lng], existingLat ? 15 : 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(map);
+    if (existingLat && existingLng) placeMarker(parseFloat(existingLat), parseFloat(existingLng));
+    map.on('click', e => placeMarker(e.latlng.lat, e.latlng.lng));
+}
+function placeMarker(lat, lng) {
+    if (marker) map.removeLayer(marker);
+    marker = L.marker([lat, lng], {
+        draggable: true,
+        icon: L.divIcon({ className: '', html: '<div style="background:#667eea;width:22px;height:22px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35)"></div>', iconSize:[22,22], iconAnchor:[11,11] })
+    }).addTo(map);
+    updateCoords(lat, lng);
+    marker.on('dragend', e => { const p = e.target.getLatLng(); updateCoords(p.lat, p.lng); });
+}
+function updateCoords(lat, lng) {
+    const lR = parseFloat(lat.toFixed(6)), lnR = parseFloat(lng.toFixed(6));
+    document.getElementById('id_latitude').value  = lR;
+    document.getElementById('id_longitude').value = lnR;
+    document.getElementById('latDisplay').textContent = lR;
+    document.getElementById('lngDisplay').textContent = lnR;
+    document.getElementById('coordsDisplay').classList.add('show');
+}
+function clearMarker() {
+    if (marker) { map.removeLayer(marker); marker = null; }
+    document.getElementById('id_latitude').value  = '';
+    document.getElementById('id_longitude').value = '';
+    document.getElementById('coordsDisplay').classList.remove('show');
+}
+
+// CASCADING
+document.getElementById('id_governorate')?.addEventListener('change', function() {
+    const govId = this.value;
+    const cityEl = document.getElementById('id_city');
+    const distEl = document.getElementById('id_district');
+    cityEl.innerHTML = '<option value="">-- اختر المدينة --</option>';
+    distEl.innerHTML = '<option value="">-- اختر الحي --</option>';
+    if (!govId) return;
+    fetch(`{% url 'dashboard:ajax_cities' %}?governorate_id=${encodeURIComponent(govId)}`)
+        .then(r => r.json()).then(data => data.cities.forEach(c => cityEl.innerHTML += `<option value="${c.id}">${c.name_ar}</option>`));
+});
+document.getElementById('id_city')?.addEventListener('change', function() {
+    const cityId = this.value;
+    const distEl = document.getElementById('id_district');
+    distEl.innerHTML = '<option value="">-- اختر الحي --</option>';
+    if (!cityId) return;
+    fetch(`{% url 'dashboard:ajax_districts' %}?city_id=${encodeURIComponent(cityId)}`)
+        .then(r => r.json()).then(data => data.districts.forEach(d => distEl.innerHTML += `<option value="${d.id}">${d.name_ar}</option>`));
+});
+
+// GALLERY
+const dropZone = document.getElementById('dropZone');
+const bulkInput = document.getElementById('bulkImageInput');
+const previewArea = document.getElementById('galleryPreview');
+const formsetPrefix = '{{ formset.prefix }}';
+let totalForms = parseInt(document.getElementById(`id_${formsetPrefix}-TOTAL_FORMS`).value);
+let fileQueue = [];
+
+function addFilesToQueue(files) {
+    Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/') || fileQueue.length >= 10) return;
+        fileQueue.push(file);
+        renderPreview(file, fileQueue.length - 1);
+        injectFileIntoFormset(file, totalForms++);
+        document.getElementById(`id_${formsetPrefix}-TOTAL_FORMS`).value = totalForms;
+    });
+}
+function renderPreview(file, index) {
+    const reader = new FileReader();
+    reader.onload = e => {
+        const item = document.createElement('div');
+        item.className = 'preview-item'; item.id = `preview-${index}`;
+        item.innerHTML = `<img src="${e.target.result}" alt=""><button type="button" class="remove-btn" onclick="removeFromQueue(${index})"><i class="fas fa-times"></i></button>`;
+        previewArea.appendChild(item);
+    };
+    reader.readAsDataURL(file);
+}
+function injectFileIntoFormset(file, formIndex) {
+    const dt = new DataTransfer(); dt.items.add(file);
+    const input = document.createElement('input');
+    input.type = 'file'; input.name = `${formsetPrefix}-${formIndex}-image`; input.style.display = 'none';
+    try { input.files = dt.files; } catch(e) {}
+    document.getElementById('businessForm').appendChild(input);
+}
+function removeFromQueue(index) {
+    const el = document.getElementById(`preview-${index}`);
+    if (el) el.remove();
+    fileQueue[index] = null;
+}
+bulkInput.addEventListener('change', e => addFilesToQueue(e.target.files));
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); addFilesToQueue(e.dataTransfer.files); });
+</script>
+{% endblock %}
