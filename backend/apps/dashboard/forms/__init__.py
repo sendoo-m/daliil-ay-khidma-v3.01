@@ -2,11 +2,17 @@ from .admin_forms import (
     UserProfileForm,
     AdminUserCreateForm,
     AdminUserEditForm,
-    AdminBusinessForm as BusinessForm,
-    AdminProductForm as ProductForm,
-    AdminDealForm as DealForm,
+    AdminBusinessForm,
+    AdminProductForm,
+    AdminDealForm,
     CategoryForm,
 )
+
+# ─── alias for admin_crud views ───
+BusinessForm = AdminBusinessForm
+
+from .product import ProductForm          # form خاص بأصحاب المحلات
+from .deal import DealForm                # form خاص بأصحاب المحلات
 
 from .business_create import (
     BusinessCreateForm,
@@ -18,6 +24,9 @@ __all__ = [
     'AdminUserCreateForm',
     'AdminUserEditForm',
     'BusinessForm',
+    'AdminBusinessForm',
+    'AdminProductForm',
+    'AdminDealForm',
     'ProductForm',
     'DealForm',
     'CategoryForm',
