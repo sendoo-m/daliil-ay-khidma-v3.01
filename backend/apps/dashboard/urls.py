@@ -39,7 +39,8 @@ urlpatterns = [
     path('', index, name='index'),
 
     path('profile/', profile, name='profile'),
-    path('settings/', settings, name='settings'),
+    # ── إعدادات صاحب المحل (اسم، باسورد، لغة، ثيم) ──
+    path('owner/settings/', settings, name='settings'),
     path('notifications/', notifications, name='notifications'),
     path('help/', help_center, name='help_center'),
 
@@ -152,9 +153,8 @@ urlpatterns = [
 
     path('admin/analytics/', admin_views.admin_analytics, name='admin_analytics'),
     path('admin/reports/', admin_views.admin_reports, name='admin_reports'),
-    path('admin/settings/', admin_views.admin_settings, name='admin_settings'),
+    # ── إعدادات الموقع — للأدمن فقط ──
+    path('admin/settings/', admin_crud.AdminSettingsView.as_view(), name='admin_settings'),
     path('admin/settings/clear-cache/', admin_views.admin_clear_cache, name='admin_clear_cache'),
     path('admin/ajax/districts/', admin_crud.ajax_get_districts, name='admin_ajax_districts'),
-
-    path('settings/', admin_crud.AdminSettingsView.as_view(), name='settings'),
 ]

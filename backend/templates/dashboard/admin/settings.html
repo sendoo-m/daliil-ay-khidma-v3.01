@@ -1,4 +1,4 @@
-{% extends 'dashboard/base.html' %}
+{% extends 'dashboard/admin/base.html' %}
 {% load i18n %}
 
 {% block title %}إعدادات الموقع{% endblock %}
@@ -11,7 +11,6 @@
 .section-card .card-header i{color:#667eea;margin-inline-end:.5rem}
 .form-label{font-weight:700;font-size:.88rem;color:#374151}
 .avatar-preview{width:80px;height:80px;border-radius:12px;object-fit:cover;border:3px solid #e2e8f0}
-/* store preview badges */
 .store-preview-badge{
     display:inline-flex;align-items:center;gap:.5rem;
     padding:.5rem 1.1rem;border-radius:10px;
@@ -118,9 +117,7 @@
     </div>
   </div>
 
-  {# ══════════════════════════════════════════════════════
-      روابط تحميل التطبيق — القسم الجديد
-  ══════════════════════════════════════════════════════ #}
+  {# ── روابط تحميل التطبيق ── #}
   <div class="card section-card">
     <div class="card-header">
       <i class="fas fa-mobile-alt"></i>روابط تحميل التطبيق
@@ -133,13 +130,8 @@
       </p>
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label">
-            <i class="fab fa-apple me-1"></i>رابط App Store (آيفون)
-          </label>
-          <input type="url"
-                 name="ios_store_url"
-                 id="ios_store_url"
-                 class="form-control"
+          <label class="form-label"><i class="fab fa-apple me-1"></i>رابط App Store (آيفون)</label>
+          <input type="url" name="ios_store_url" id="ios_store_url" class="form-control"
                  placeholder="https://apps.apple.com/app/..."
                  value="{{ settings.ios_store_url }}">
           <div class="mt-2" id="ios_preview_wrap" {% if not settings.ios_store_url %}style="display:none"{% endif %}>
@@ -151,13 +143,8 @@
           </div>
         </div>
         <div class="col-md-6">
-          <label class="form-label">
-            <i class="fab fa-google-play me-1"></i>رابط Google Play (أندرويد)
-          </label>
-          <input type="url"
-                 name="android_store_url"
-                 id="android_store_url"
-                 class="form-control"
+          <label class="form-label"><i class="fab fa-google-play me-1"></i>رابط Google Play (أندرويد)</label>
+          <input type="url" name="android_store_url" id="android_store_url" class="form-control"
                  placeholder="https://play.google.com/store/apps/..."
                  value="{{ settings.android_store_url }}">
           <div class="mt-2" id="android_preview_wrap" {% if not settings.android_store_url %}style="display:none"{% endif %}>
@@ -227,7 +214,6 @@
 
 {% block extra_js %}
 <script>
-// معاينة فورية لبادج المتجر لما تكتب الرابط
 function bindPreview(inputId, wrapId) {
     const inp = document.getElementById(inputId);
     const wrap = document.getElementById(wrapId);

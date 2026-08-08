@@ -65,15 +65,16 @@ def profile(request):
 
 @login_required
 def settings(request):
+    """إعدادات صاحب المحل — اسم، باسورد، لغة، ثيم."""
     if request.method == 'POST':
         form = UserProfileForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, 'تم تحديث الإعدادات بنجاح!')
+            messages.success(request, 'تم تحديث إعداداتك بنجاح!')
             return redirect('dashboard:settings')
     else:
         form = UserProfileForm(instance=request.user)
-    return render(request, 'dashboard/admin/settings.html', {
+    return render(request, 'dashboard/owner/settings.html', {
         'user': request.user,
         'form': form,
     })

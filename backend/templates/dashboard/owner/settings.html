@@ -1,32 +1,71 @@
 {% extends 'dashboard/base.html' %}
 {% load i18n %}
 
-{% block title %}الإعدادات{% endblock %}
+{% block title %}إعداداتي{% endblock %}
 
 {% block extra_css %}
 <style>
-.settings-hero{background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;border-radius:20px;padding:1.5rem;margin-bottom:1.5rem}
-.section-card{border-radius:16px;box-shadow:0 4px 18px rgba(15,23,42,.07);margin-bottom:1.25rem}
-.section-card .card-header{background:#f8faff;border-bottom:1px solid #e8edf5;border-radius:16px 16px 0 0;padding:.9rem 1.25rem;font-weight:800;font-size:.95rem;color:#374151}
-.section-card .card-header i{color:#667eea;margin-inline-end:.5rem}
-.form-label{font-weight:700;font-size:.88rem;color:#374151}
-.avatar-preview{width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #e2e8f0}
-.avatar-placeholder{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:2rem;border:3px solid #e2e8f0}
+.owner-settings-hero {
+  background: linear-gradient(135deg, #1a6b4a 0%, #2d9e6e 100%);
+  color: #fff;
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.section-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 18px rgba(15,23,42,.07);
+  margin-bottom: 1.25rem;
+  border: none;
+}
+.section-card .card-header {
+  background: #f8faff;
+  border-bottom: 1px solid #e8edf5;
+  border-radius: 16px 16px 0 0;
+  padding: .9rem 1.25rem;
+  font-weight: 800;
+  font-size: .95rem;
+  color: #374151;
+}
+.section-card .card-header i { color: #1a6b4a; margin-inline-end: .5rem; }
+.form-label { font-weight: 700; font-size: .88rem; color: #374151; }
+.avatar-preview {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #c3e6d8;
+}
+.avatar-placeholder {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#1a6b4a,#2d9e6e);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; color: #fff; font-weight: 700;
+}
+.info-badge {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: #e8f5f0; color: #1a6b4a;
+  border-radius: 8px; padding: .3rem .75rem;
+  font-size: .8rem; font-weight: 600;
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="settings-hero d-flex justify-content-between align-items-center gap-3 flex-wrap">
+{# ── Hero ── #}
+<div class="owner-settings-hero d-flex justify-content-between align-items-center gap-3 flex-wrap">
   <div>
-    <h2 class="fw-bold mb-1"><i class="fas fa-cog me-2"></i>الإعدادات الشخصية</h2>
-    <p class="mb-0 opacity-75">تحديث بياناتك الشخصية وكلمة المرور</p>
+    <h2 class="fw-bold mb-1"><i class="fas fa-user-cog me-2"></i>إعداداتي</h2>
+    <p class="mb-0 opacity-75">تعديل بياناتك الشخصية وتفضيلات حسابك</p>
   </div>
-  <a href="{% url 'dashboard:owner_dashboard' %}" class="btn btn-light fw-bold"><i class="fas fa-home me-1"></i>الرئيسية</a>
+  <span class="info-badge bg-white text-success">
+    <i class="fas fa-store"></i> لوحة التاجر
+  </span>
 </div>
 
 {% if messages %}
   {% for msg in messages %}
-  <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show" role="alert">
+  <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show">
     {{ msg }}
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   </div>
@@ -36,62 +75,120 @@
 <form method="post" enctype="multipart/form-data">
   {% csrf_token %}
 
-  {# ── الصورة الشخصية ── #}
+  {# ── المعلومات الشخصية ── #}
   <div class="card section-card">
-    <div class="card-header"><i class="fas fa-user-circle"></i>الصورة الشخصية</div>
-    <div class="card-body d-flex align-items-center gap-4 flex-wrap">
-      <div>
-        {% if user.profile_picture %}
-          <img src="{{ user.profile_picture.url }}" class="avatar-preview" alt="صورتك">
-        {% else %}
-          <div class="avatar-placeholder"><i class="fas fa-user"></i></div>
+    <div class="card-header"><i class="fas fa-id-card"></i>المعلومات الشخصية</div>
+    <div class="card-body">
+      <div class="row g-3">
+
+        {# صورة المستخدم #}
+        <div class="col-12 d-flex align-items-center gap-3 mb-2">
+          {% if user.profile_picture %}
+            <img src="{{ user.profile_picture.url }}" class="avatar-preview" alt="صورتك">
+          {% else %}
+            <div class="avatar-placeholder">{{ user.first_name|first|upper|default:user.username|first|upper }}</div>
+          {% endif %}
+          <div>
+            <p class="mb-1 fw-bold">{{ user.get_full_name|default:user.username }}</p>
+            <p class="text-muted small mb-0">{{ user.email }}</p>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">الاسم الأول</label>
+          <input type="text" name="first_name" class="form-control"
+                 value="{{ user.first_name }}" placeholder="اسمك الأول">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">الاسم الأخير</label>
+          <input type="text" name="last_name" class="form-control"
+                 value="{{ user.last_name }}" placeholder="اسمك الأخير">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">البريد الإلكتروني</label>
+          <input type="email" name="email" class="form-control"
+                 value="{{ user.email }}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">رقم الهاتف</label>
+          <input type="text" name="phone_number" class="form-control"
+                 value="{{ user.phone_number|default:'' }}" placeholder="01xxxxxxxxx">
+        </div>
+
+        {# form errors #}
+        {% if form.errors %}
+          <div class="col-12">
+            {% for field in form %}
+              {% for error in field.errors %}
+                <div class="alert alert-danger py-2 small">{{ field.label }}: {{ error }}</div>
+              {% endfor %}
+            {% endfor %}
+          </div>
         {% endif %}
-      </div>
-      <div>
-        <label class="form-label">تغيير الصورة</label>
-        {{ form.profile_picture }}
-        <div class="form-text">JPG أو PNG — حجم أقصى 5 ميجا</div>
+
       </div>
     </div>
   </div>
 
-  {# ── البيانات الشخصية ── #}
+  {# ── تغيير كلمة المرور ── #}
   <div class="card section-card">
-    <div class="card-header"><i class="fas fa-id-card"></i>البيانات الشخصية</div>
-    <div class="card-body row g-3">
-      <div class="col-md-6">
-        <label class="form-label">الاسم الأول</label>
-        {{ form.first_name }}
-        {% if form.first_name.errors %}<div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>{% endif %}
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">الاسم الأخير</label>
-        {{ form.last_name }}
-        {% if form.last_name.errors %}<div class="text-danger small mt-1">{{ form.last_name.errors.0 }}</div>{% endif %}
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">البريد الإلكتروني <span class="text-danger">*</span></label>
-        {{ form.email }}
-        {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">رقم الهاتف</label>
-        {{ form.phone }}
-        {% if form.phone.errors %}<div class="text-danger small mt-1">{{ form.phone.errors.0 }}</div>{% endif %}
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">المدينة</label>
-        {{ form.city }}
-      </div>
-      <div class="col-12">
-        <label class="form-label">نبذة عنك</label>
-        {{ form.bio }}
+    <div class="card-header"><i class="fas fa-lock"></i>تغيير كلمة المرور</div>
+    <div class="card-body">
+      <p class="text-muted small mb-3">
+        <i class="fas fa-info-circle me-1"></i>
+        اتركها فاضية لو مش عايز تغيّر الباسورد.
+      </p>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">الباسورد الحالي</label>
+          <input type="password" name="current_password" class="form-control"
+                 autocomplete="current-password">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">الباسورد الجديد</label>
+          <input type="password" name="new_password1" class="form-control"
+                 autocomplete="new-password">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">تأكيد الباسورد الجديد</label>
+          <input type="password" name="new_password2" class="form-control"
+                 autocomplete="new-password">
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="d-flex gap-3 justify-content-end">
-    <button type="submit" class="btn btn-primary px-5"><i class="fas fa-save me-1"></i>حفظ التغييرات</button>
+  {# ── التفضيلات ── #}
+  <div class="card section-card">
+    <div class="card-header"><i class="fas fa-palette"></i>التفضيلات</div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label"><i class="fas fa-language me-1"></i>اللغة</label>
+          <select name="language" class="form-select">
+            <option value="ar" {% if LANGUAGE_CODE == 'ar' %}selected{% endif %}>العربية</option>
+            <option value="en" {% if LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label"><i class="fas fa-moon me-1"></i>المظهر</label>
+          <select name="theme" class="form-select">
+            <option value="light">فاتح ☀️</option>
+            <option value="dark">داكن 🌙</option>
+            <option value="system">تلقائي (حسب الجهاز)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mb-5">
+    <a href="{% url 'dashboard:owner_dashboard' %}" class="btn btn-outline-secondary">
+      <i class="fas fa-arrow-right me-1"></i>رجوع للوحة التحكم
+    </a>
+    <button type="submit" class="btn btn-success px-5">
+      <i class="fas fa-save me-1"></i>حفظ التغييرات
+    </button>
   </div>
 </form>
 {% endblock %}
