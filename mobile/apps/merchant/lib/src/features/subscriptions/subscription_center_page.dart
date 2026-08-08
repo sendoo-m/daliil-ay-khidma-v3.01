@@ -997,7 +997,7 @@ class _ImpactWarning extends StatelessWidget {
       );
     }
     for (final feature in preview.disabledFeatures) {
-      final value = '${feature[isArabic ? 'ar' : 'en'] ?? ''}';
+      final value = (feature[isArabic ? 'ar' : 'en'] ?? '').toString();
       if (value.isNotEmpty) {
         lines.add(isArabic ? 'ستتوقف ميزة: $value.' : 'Feature disabled: $value.');
       }
