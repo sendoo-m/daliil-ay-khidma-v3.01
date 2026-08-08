@@ -18,9 +18,10 @@
 {% block content %}
 <div class="settings-hero d-flex justify-content-between align-items-center gap-3 flex-wrap">
   <div>
-    <h2 class="fw-bold mb-1"><i class="fas fa-cog me-2"></i>الإعدادات</h2>
-    <p class="mb-0 opacity-75">تحديث بياناتك الشخصية</p>
+    <h2 class="fw-bold mb-1"><i class="fas fa-cog me-2"></i>الإعدادات الشخصية</h2>
+    <p class="mb-0 opacity-75">تحديث بياناتك الشخصية وكلمة المرور</p>
   </div>
+  <a href="{% url 'dashboard:owner_dashboard' %}" class="btn btn-light fw-bold"><i class="fas fa-home me-1"></i>الرئيسية</a>
 </div>
 
 {% if messages %}
@@ -35,6 +36,7 @@
 <form method="post" enctype="multipart/form-data">
   {% csrf_token %}
 
+  {# ── الصورة الشخصية ── #}
   <div class="card section-card">
     <div class="card-header"><i class="fas fa-user-circle"></i>الصورة الشخصية</div>
     <div class="card-body d-flex align-items-center gap-4 flex-wrap">
@@ -48,24 +50,48 @@
       <div>
         <label class="form-label">تغيير الصورة</label>
         {{ form.profile_picture }}
+        <div class="form-text">JPG أو PNG — حجم أقصى 5 ميجا</div>
       </div>
     </div>
   </div>
 
+  {# ── البيانات الشخصية ── #}
   <div class="card section-card">
     <div class="card-header"><i class="fas fa-id-card"></i>البيانات الشخصية</div>
     <div class="card-body row g-3">
-      <div class="col-md-6"><label class="form-label">الاسم الأول</label>{{ form.first_name }}{% if form.first_name.errors %}<div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>{% endif %}</div>
-      <div class="col-md-6"><label class="form-label">الاسم الأخير</label>{{ form.last_name }}</div>
-      <div class="col-md-6"><label class="form-label">البريد الإلكتروني <span class="text-danger">*</span></label>{{ form.email }}{% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}</div>
-      <div class="col-md-6"><label class="form-label">رقم الهاتف</label>{{ form.phone }}</div>
-      <div class="col-md-6"><label class="form-label">المدينة</label>{{ form.city }}</div>
-      <div class="col-12"><label class="form-label">نبذة</label>{{ form.bio }}</div>
+      <div class="col-md-6">
+        <label class="form-label">الاسم الأول</label>
+        {{ form.first_name }}
+        {% if form.first_name.errors %}<div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">الاسم الأخير</label>
+        {{ form.last_name }}
+        {% if form.last_name.errors %}<div class="text-danger small mt-1">{{ form.last_name.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">البريد الإلكتروني <span class="text-danger">*</span></label>
+        {{ form.email }}
+        {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">رقم الهاتف</label>
+        {{ form.phone }}
+        {% if form.phone.errors %}<div class="text-danger small mt-1">{{ form.phone.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">المدينة</label>
+        {{ form.city }}
+      </div>
+      <div class="col-12">
+        <label class="form-label">نبذة عنك</label>
+        {{ form.bio }}
+      </div>
     </div>
   </div>
 
-  <div class="d-flex justify-content-end">
-    <button type="submit" class="btn btn-primary px-5"><i class="fas fa-save me-1"></i>حفظ</button>
+  <div class="d-flex gap-3 justify-content-end">
+    <button type="submit" class="btn btn-primary px-5"><i class="fas fa-save me-1"></i>حفظ التغييرات</button>
   </div>
 </form>
 {% endblock %}

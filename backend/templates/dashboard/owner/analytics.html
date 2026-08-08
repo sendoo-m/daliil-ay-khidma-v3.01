@@ -1,0 +1,192 @@
+{% extends 'dashboard/base.html' %}
+{% load i18n humanize %}
+
+{% block title %}الإحصائيات والتحليلات{% endblock %}
+
+{% block extra_css %}
+<style>
+.analytics-hero{background:linear-gradient(135deg,#1e3a5f,#667eea);color:#fff;border-radius:20px;padding:1.5rem;margin-bottom:1.5rem}
+.kpi-card{border-radius:18px;box-shadow:0 4px 18px rgba(15,23,42,.08);border:0;transition:.25s}
+.kpi-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(15,23,42,.12)}
+.kpi-num{font-size:2rem;font-weight:800}
+.kpi-label{font-size:.82rem;color:#64748b;font-weight:600}
+.kpi-badge{font-size:.75rem;border-radius:20px;padding:.25rem .75rem}
+.section-card{border-radius:16px;box-shadow:0 4px 18px rgba(15,23,42,.07);border:0;margin-bottom:1.5rem}
+.section-card .card-header{background:#f8faff;border-bottom:1px solid #edf0f5;border-radius:16px 16px 0 0;padding:.9rem 1.25rem;font-weight:800;font-size:.93rem}
+.biz-row{padding:.8rem 1rem;border-bottom:1px solid #f1f5f9;transition:.15s}
+.biz-row:last-child{border-bottom:0}
+.biz-row:hover{background:#f8faff}
+.star-fill{color:#f59e0b}
+.star-empty{color:#cbd5e1}
+.progress{height:8px;border-radius:8px}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-hero d-flex justify-content-between align-items-center gap-3 flex-wrap">
+  <div>
+    <h2 class="fw-bold mb-1"><i class="fas fa-chart-line me-2"></i>الإحصائيات والتحليلات</h2>
+    <p class="mb-0 opacity-75">نظرة شاملة على أداء نشاطك التجاري</p>
+  </div>
+  <a href="{% url 'dashboard:owner_dashboard' %}" class="btn btn-light fw-bold"><i class="fas fa-home me-1"></i>الرئيسية</a>
+</div>
+
+{# ── KPIs ── #}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card p-3 text-center">
+      <div class="kpi-num text-primary">{{ total_businesses }}</div>
+      <div class="kpi-label">إجمالي الأنشطة</div>
+      <span class="badge bg-success-subtle text-success kpi-badge mt-2">{{ active_businesses }} نشط</span>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card p-3 text-center">
+      <div class="kpi-num text-success">{{ total_products }}</div>
+      <div class="kki-label kpi-label">المنتجات والخدمات</div>
+      <span class="badge bg-info-subtle text-info kpi-badge mt-2">{{ available_products }} متاح</span>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card p-3 text-center">
+      <div class="kpi-num text-warning">{{ active_deals }}</div>
+      <div class="kpi-label">عروض نشطة</div>
+      <span class="badge bg-warning-subtle text-warning kpi-badge mt-2">{{ total_deals }} إجمالي</span>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card kpi-card p-3 text-center">
+      <div class="kpi-num text-danger">{{ avg_rating|floatformat:1 }}</div>
+      <div class="kpi-label">متوسط التقييم</div>
+      <span class="badge bg-danger-subtle text-danger kpi-badge mt-2">{{ total_reviews }} تقييم</span>
+    </div>
+  </div>
+</div>
+
+{# ── المشاهدات والنقرات ── #}
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card kpi-card p-3 text-center">
+      <div class="kpi-num" style="color:#667eea">{{ total_views|intcomma }}</div>
+      <div class="kpi-label">إجمالي المشاهدات</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card kpi-card p-3 text-center">
+      <div class="kpi-num" style="color:#10b981">{{ total_clicks|intcomma }}</div>
+      <div class="kpi-label">إجمالي النقرات</div>
+    </div>
+  </div>
+</div>
+
+{# ── أداء الأنشطة ── #}
+<div class="card section-card">
+  <div class="card-header"><i class="fas fa-trophy text-warning me-2"></i>أداء الأنشطة</div>
+  <div class="card-body p-0">
+    {% if businesses_perf %}
+      {% for biz in businesses_perf %}
+      <div class="biz-row d-flex align-items-center gap-3">
+        <div class="flex-grow-1">
+          <div class="fw-bold">{{ biz.name_ar|default:biz.name_en }}</div>
+          <div class="small text-muted">{{ biz.category.name_ar|default:"-" }}</div>
+        </div>
+        <div class="text-center" style="min-width:80px">
+          <div class="small text-muted">مشاهدات</div>
+          <strong class="text-primary">{{ biz.view_count|intcomma }}</strong>
+        </div>
+        <div class="text-center" style="min-width:80px">
+          <div class="small text-muted">نقرات</div>
+          <strong class="text-success">{{ biz.click_count|intcomma }}</strong>
+        </div>
+        <div class="text-center" style="min-width:80px">
+          <div class="small text-muted">تقييم</div>
+          <strong class="text-warning">{{ biz.avg_rating|floatformat:1|default:"—" }}</strong>
+        </div>
+        <div>
+          {% if biz.is_verified %}<span class="badge bg-info">موثّق</span>{% endif %}
+          {% if biz.is_active %}<span class="badge bg-success ms-1">نشط</span>{% else %}<span class="badge bg-secondary ms-1">موقوف</span>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="text-center py-5 text-muted"><i class="fas fa-store fa-3x mb-3 d-block opacity-25"></i>لا توجد بيانات بعد</div>
+    {% endif %}
+  </div>
+</div>
+
+{# ── توزيع التقييمات ── #}
+{% if rating_distribution %}
+<div class="card section-card">
+  <div class="card-header"><i class="fas fa-star text-warning me-2"></i>توزيع التقييمات</div>
+  <div class="card-body">
+    {% for item in rating_distribution %}
+    <div class="d-flex align-items-center gap-3 mb-2">
+      <div style="width:60px" class="text-end fw-bold small">
+        {{ item.rating }} <i class="fas fa-star star-fill"></i>
+      </div>
+      <div class="flex-grow-1">
+        <div class="progress">
+          <div class="progress-bar bg-warning" style="width:{{ item.pct }}%"></div>
+        </div>
+      </div>
+      <div style="width:40px" class="text-muted small">{{ item.count }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ── العروض حسب الحالة ── #}
+<div class="card section-card">
+  <div class="card-header"><i class="fas fa-tags text-warning me-2"></i>حالة العروض</div>
+  <div class="card-body">
+    <div class="row g-3 text-center">
+      <div class="col-4">
+        <div class="kpi-num text-success">{{ active_deals }}</div>
+        <div class="kpi-label">نشطة الآن</div>
+      </div>
+      <div class="col-4">
+        <div class="kpi-num text-info">{{ upcoming_deals }}</div>
+        <div class="kpi-label">قادمة</div>
+      </div>
+      <div class="col-4">
+        <div class="kpi-num text-secondary">{{ expired_deals }}</div>
+        <div class="kpi-label">منتهية</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── الإجراءات السريعة ── #}
+<div class="card section-card">
+  <div class="card-header"><i class="fas fa-bolt text-warning me-2"></i>إجراءات سريعة</div>
+  <div class="card-body d-flex gap-3 flex-wrap">
+    <a href="{% url 'dashboard:product_create' %}" class="btn btn-outline-primary"><i class="fas fa-plus me-1"></i>إضافة منتج</a>
+    <a href="{% url 'dashboard:deal_create' %}" class="btn btn-outline-warning"><i class="fas fa-tag me-1"></i>إضافة عرض</a>
+    <a href="{% url 'dashboard:review_list' %}" class="btn btn-outline-info"><i class="fas fa-star me-1"></i>التقييمات{% if pending_reviews %} <span class="badge bg-danger">{{ pending_reviews }}</span>{% endif %}</a>
+    <a href="{% url 'dashboard:business_list' %}" class="btn btn-outline-secondary"><i class="fas fa-store me-1"></i>أنشطتي</a>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Animate KPI numbers on load
+  document.querySelectorAll('.kpi-num').forEach(el => {
+    const target = parseFloat(el.textContent.replace(/,/g, ''));
+    if (isNaN(target) || target === 0) return;
+    let start = 0;
+    const duration = 900;
+    const step = (timestamp) => {
+      if (!start) start = timestamp;
+      const progress = Math.min((timestamp - start) / duration, 1);
+      const val = Math.floor(progress * target);
+      el.textContent = val.toLocaleString('ar-EG');
+      if (progress < 1) requestAnimationFrame(step);
+      else el.textContent = target % 1 === 0 ? target.toLocaleString('ar-EG') : target.toFixed(1);
+    };
+    requestAnimationFrame(step);
+  });
+</script>
+{% endblock %}
