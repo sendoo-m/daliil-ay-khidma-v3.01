@@ -1,0 +1,142 @@
+{% extends 'dashboard/base.html' %}
+{% load i18n %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-hero{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;border-radius:20px;padding:1.5rem;margin-bottom:1.5rem}
+.section-card{border-radius:16px;box-shadow:0 4px 18px rgba(15,23,42,.07);margin-bottom:1.25rem}
+.section-card .card-header{background:#fffbf0;border-bottom:1px solid #fde68a;border-radius:16px 16px 0 0;padding:.9rem 1.25rem;font-weight:800;font-size:.95rem;color:#374151}
+.section-card .card-header i{color:#f59e0b;margin-inline-end:.5rem}
+.form-label{font-weight:700;font-size:.88rem;color:#374151}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-hero d-flex justify-content-between align-items-center gap-3 flex-wrap">
+  <div>
+    <h2 class="fw-bold mb-1"><i class="fas fa-{% if deal %}edit{% else %}plus-circle{% endif %} me-2"></i>{{ title }}</h2>
+    <p class="mb-0 opacity-75">إضافة أو تعديل عرض خاص لمحلك</p>
+  </div>
+  <a href="{% url 'dashboard:deal_list' %}" class="btn btn-light fw-bold"><i class="fas fa-arrow-right me-1"></i>رجوع للقائمة</a>
+</div>
+
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+
+  {# ── المحل والنوع ── #}
+  <div class="card section-card">
+    <div class="card-header"><i class="fas fa-store"></i>بيانات أساسية</div>
+    <div class="card-body row g-3">
+      <div class="col-md-6">
+        <label class="form-label">المحل <span class="text-danger">*</span></label>
+        {{ form.business }}
+        {% if form.business.errors %}<div class="text-danger small mt-1">{{ form.business.errors.0 }}</div>{% endif %}
+      </div>
+      {% if form.deal_type %}
+      <div class="col-md-6">
+        <label class="form-label">نوع العرض</label>
+        {{ form.deal_type }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── العنوان ── #}
+  <div class="card section-card">
+    <div class="card-header"><i class="fas fa-tag"></i>عنوان العرض</div>
+    <div class="card-body row g-3">
+      <div class="col-md-6">
+        <label class="form-label">العنوان (عربي) <span class="text-danger">*</span></label>
+        {{ form.title_ar }}
+        {% if form.title_ar.errors %}<div class="text-danger small mt-1">{{ form.title_ar.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Title (English)</label>
+        {{ form.title_en }}
+      </div>
+    </div>
+  </div>
+
+  {# ── الوصف ── #}
+  <div class="card section-card">
+    <div class="card-header"><i class="fas fa-align-right"></i>الوصف</div>
+    <div class="card-body row g-3">
+      {% if form.description_ar %}
+      <div class="col-md-6">
+        <label class="form-label">الوصف (عربي)</label>
+        {{ form.description_ar }}
+      </div>
+      {% endif %}
+      {% if form.description_en %}
+      <div class="col-md-6">
+        <label class="form-label">Description (English)</label>
+        {{ form.description_en }}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── التواريخ والخصم ── #}
+  <div class="card section-card">
+    <div class="card-header"><i class="fas fa-calendar-alt"></i>مدة العرض والخصم</div>
+    <div class="card-body row g-3">
+      {% if form.discount_percentage %}
+      <div class="col-md-4">
+        <label class="form-label">نسبة الخصم (%)</label>
+        {{ form.discount_percentage }}
+        {% if form.discount_percentage.errors %}<div class="text-danger small mt-1">{{ form.discount_percentage.errors.0 }}</div>{% endif %}
+      </div>
+      {% endif %}
+      {% if form.start_date %}
+      <div class="col-md-4">
+        <label class="form-label">تاريخ البداية <span class="text-danger">*</span></label>
+        {{ form.start_date }}
+        {% if form.start_date.errors %}<div class="text-danger small mt-1">{{ form.start_date.errors.0 }}</div>{% endif %}
+      </div>
+      {% endif %}
+      {% if form.end_date %}
+      <div class="col-md-4">
+        <label class="form-label">تاريخ الانتهاء <span class="text-danger">*</span></label>
+        {{ form.end_date }}
+        {% if form.end_date.errors %}<div class="text-danger small mt-1">{{ form.end_date.errors.0 }}</div>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── الصورة والحالة ── #}
+  <div class="card section-card">
+    <div class="card-header"><i class="fas fa-image"></i>صورة وحالة العرض</div>
+    <div class="card-body row g-3">
+      {% if form.image %}
+      <div class="col-md-6">
+        <label class="form-label">صورة العرض</label>
+        {% if deal.image %}<div class="mb-2"><img src="{{ deal.image.url }}" height="80" class="rounded"></div>{% endif %}
+        {{ form.image }}
+      </div>
+      {% endif %}
+      <div class="col-md-6 d-flex align-items-center">
+        {% if form.is_active %}
+        <div class="form-check form-switch me-4">
+          {{ form.is_active }}
+          <label class="form-check-label fw-bold" for="{{ form.is_active.id_for_label }}">العرض نشط</label>
+        </div>
+        {% endif %}
+        {% if form.is_featured %}
+        <div class="form-check form-switch">
+          {{ form.is_featured }}
+          <label class="form-check-label fw-bold" for="{{ form.is_featured.id_for_label }}">مميز</label>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-3 justify-content-end">
+    <a href="{% url 'dashboard:deal_list' %}" class="btn btn-outline-secondary px-4">إلغاء</a>
+    <button type="submit" class="btn btn-warning px-5 text-white fw-bold"><i class="fas fa-save me-1"></i>حفظ العرض</button>
+  </div>
+</form>
+{% endblock %}

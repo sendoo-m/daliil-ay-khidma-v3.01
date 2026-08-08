@@ -1,0 +1,53 @@
+{% extends 'dashboard/base.html' %}
+{% load i18n %}
+
+{% block title %}الرد على التقييم{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+
+    {# ── بطاقة التقييم الأصلي ── #}
+    <div class="card mb-4">
+      <div class="card-header fw-bold"><i class="fas fa-star text-warning me-2"></i>التقييم الأصلي</div>
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div>
+            <strong>{{ review.user.get_full_name|default:review.user.username }}</strong>
+            <div class="text-muted small">{{ review.business.name_ar|default:review.business.name_en }} — {{ review.created_at|date:'Y/m/d' }}</div>
+          </div>
+          <div class="ms-auto">
+            {% for i in '12345' %}
+              {% if forloop.counter <= review.rating %}
+                <i class="fas fa-star text-warning"></i>
+              {% else %}
+                <i class="far fa-star text-muted"></i>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        <p class="mb-0">{{ review.comment }}</p>
+      </div>
+    </div>
+
+    {# ── فورم الرد ── #}
+    <div class="card">
+      <div class="card-header fw-bold"><i class="fas fa-reply text-primary me-2"></i>{% if review.reply %}تعديل الرد{% else %}إضافة رد{% endif %}</div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-bold">نص الرد <span class="text-danger">*</span></label>
+            <textarea name="comment" class="form-control" rows="4" placeholder="اكتب ردك هنا...">{{ review.reply.comment|default:'' }}</textarea>
+          </div>
+          <div class="d-flex gap-3 justify-content-end">
+            <a href="{% url 'dashboard:review_list' %}" class="btn btn-outline-secondary px-4">إلغاء</a>
+            <button type="submit" class="btn btn-primary px-5"><i class="fas fa-paper-plane me-1"></i>إرسال الرد</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
