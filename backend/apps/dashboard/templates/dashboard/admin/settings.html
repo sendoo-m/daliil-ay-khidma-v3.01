@@ -9,20 +9,31 @@
   <div class="d-flex align-items-center gap-2 mb-4">
     <i class="bi bi-gear-fill fs-4 text-primary"></i>
     <h1 class="h3 mb-0">إعدادات النظام</h1>
+    <span class="badge bg-secondary ms-2 fs-6">لوحة الأدمن فقط</span>
   </div>
+
+  {% if messages %}
+  {% for msg in messages %}
+  <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show" role="alert">
+    {{ msg }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+  {% endif %}
 
   <form method="post" novalidate>
     {% csrf_token %}
 
-    {# ── روابط تحميل التطبيق ── #}
+    {# ─────────── روابط تحميل التطبيق ─────────── #}
     <div class="card shadow-sm mb-4">
       <div class="card-header bg-white py-3">
-        <h5 class="mb-0">
-          <i class="bi bi-phone me-2 text-primary"></i>روابط تحميل تطبيق التاجر
+        <h5 class="mb-1">
+          <i class="bi bi-phone-fill me-2 text-primary"></i>روابط تحميل تطبيق التاجر
         </h5>
-        <small class="text-muted">
-          الروابط تظهر في فوتر لوحة تحكم أصحاب المحلات — اتركها فارغة لإخفاء الأزرار.
-        </small>
+        <p class="text-muted small mb-0">
+          الروابط تظهر في فوتر لوحة تحكم أصحاب المحلات.
+          اترك الحقل فارغاً لإخفاء الزر مؤقتاً حتى تجهز التطبيق.
+        </p>
       </div>
       <div class="card-body">
         <div class="row g-3">
@@ -30,7 +41,8 @@
           {# App Store #}
           <div class="col-md-6">
             <label for="app_store_url" class="form-label fw-semibold">
-              <i class="bi bi-apple me-1"></i>رابط App Store (iPhone / iPad)
+              <i class="bi bi-apple me-1"></i>رابط App Store
+              <span class="text-muted fw-normal">(iPhone / iPad)</span>
             </label>
             <input
               type="url"
@@ -46,7 +58,8 @@
           {# Google Play #}
           <div class="col-md-6">
             <label for="google_play_url" class="form-label fw-semibold">
-              <i class="bi bi-google-play me-1"></i>رابط Google Play (Android)
+              <i class="bi bi-google-play me-1"></i>رابط Google Play
+              <span class="text-muted fw-normal">(Android)</span>
             </label>
             <input
               type="url"
@@ -61,57 +74,65 @@
 
         </div>
 
-        {# معاينة مباشرة #}
+        {# ─ معاينة مباشرة ─ #}
         {% if site.app_store_url or site.google_play_url %}
-        <div class="mt-4 p-3 bg-light rounded border">
-          <p class="text-muted small mb-2">معاينة الأزرار كما ستظهر في الفوتر:</p>
+        <div class="mt-4 p-3 rounded-3 border bg-light">
+          <p class="small text-muted mb-2"><i class="bi bi-eye me-1"></i>معاينة الأزرار كما ستظهر للتجار:</p>
           <div class="d-flex flex-wrap gap-2">
             {% if site.app_store_url %}
             <a href="{{ site.app_store_url }}" target="_blank" rel="noopener"
-               class="btn btn-dark btn-sm d-flex align-items-center gap-2">
+               class="btn btn-dark btn-sm d-flex align-items-center gap-2" style="min-width:145px">
               <i class="bi bi-apple fs-5"></i>
               <span class="text-start lh-1">
-                <small class="d-block" style="font-size:.65rem">تحميل من</small>
+                <small class="d-block" style="font-size:.6rem;opacity:.8">تحميل من</small>
                 <strong style="font-size:.85rem">App Store</strong>
               </span>
             </a>
             {% endif %}
             {% if site.google_play_url %}
             <a href="{{ site.google_play_url }}" target="_blank" rel="noopener"
-               class="btn btn-dark btn-sm d-flex align-items-center gap-2"
-               style="background:#01875f; border-color:#01875f">
+               class="btn btn-sm d-flex align-items-center gap-2 text-white"
+               style="background:#01875f;border-color:#01875f;min-width:145px">
               <i class="bi bi-google-play fs-5"></i>
               <span class="text-start lh-1">
-                <small class="d-block" style="font-size:.65rem">تحميل من</small>
+                <small class="d-block" style="font-size:.6rem;opacity:.8">تحميل من</small>
                 <strong style="font-size:.85rem">Google Play</strong>
               </span>
             </a>
             {% endif %}
           </div>
         </div>
+        {% else %}
+        <div class="mt-3 alert alert-info py-2">
+          <i class="bi bi-info-circle me-1"></i>
+          الأزرار مخفية حالياً. أضف رابطاً واحداً على الأقل لتفعيل العرض في الفوتر.
+        </div>
         {% endif %}
 
-      </div>
-    </div>
+      </div>{# /card-body #}
+    </div>{# /card #}
 
-    {# ── إعدادات الذاكرة المؤقتة ── #}
+    {# ─────────── الذاكرة المؤقتة ─────────── #}
     <div class="card shadow-sm mb-4">
       <div class="card-header bg-white py-3">
         <h5 class="mb-0">
-          <i class="bi bi-database me-2 text-warning"></i>الذاكرة المؤقتة
+          <i class="bi bi-database-fill me-2 text-warning"></i>الذاكرة المؤقتة (Cache)
         </h5>
       </div>
       <div class="card-body d-flex align-items-center gap-3">
-        <p class="mb-0 text-muted flex-grow-1">مسح الكاش يُجبر الموقع على إعادة بناء البيانات المحفوظة مؤقتاً.</p>
+        <p class="mb-0 text-muted flex-grow-1">
+          مسح الكاش يُجبر الموقع على إعادة بناء كل البيانات من قاعدة البيانات.
+          استخدمه عند ظهور بيانات قديمة في الصفحات.
+        </p>
         <a href="{% url 'dashboard:admin_clear_cache' %}"
-           class="btn btn-outline-warning btn-sm"
-           onclick="return confirm('مسح الذاكرة المؤقتة؟')">
+           class="btn btn-outline-warning btn-sm flex-shrink-0"
+           onclick="return confirm('سيتم مسح جميع البيانات المخزّنة مؤقتاً. متأكد?')">
           <i class="bi bi-trash me-1"></i>مسح الكاش
         </a>
       </div>
     </div>
 
-    {# ── زر الحفظ ── #}
+    {# ─ زر الحفظ ─ #}
     <div class="d-flex justify-content-end gap-2">
       <a href="{% url 'dashboard:admin_home' %}" class="btn btn-outline-secondary">إلغاء</a>
       <button type="submit" class="btn btn-primary">

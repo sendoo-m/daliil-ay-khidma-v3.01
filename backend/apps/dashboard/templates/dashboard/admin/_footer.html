@@ -1,0 +1,72 @@
+{#
+  Admin dashboard footer — included once in dashboard/admin/base.html
+  Shows: version · copyright · app download badges (if configured)
+#}
+<footer class="admin-footer mt-auto py-3 border-top bg-white">
+  <div class="container-fluid">
+    <div class="row align-items-center gy-3">
+
+      {# ── نص اليسار ── #}
+      <div class="col-md-5 text-center text-md-start">
+        <span class="text-muted small">
+          &copy; {% now "Y" %} <strong>دليل أي خدمة</strong> &mdash; جميع الحقوق محفوظة
+        </span>
+        <br>
+        <span class="badge bg-light text-secondary border" style="font-size:.65rem">
+          <i class="bi bi-code-slash me-1"></i>v1.0.0 &nbsp;&middot;&nbsp; لوحة تحكم الإدارة
+        </span>
+      </div>
+
+      {# ── أزرار التحميل — تظهر فقط إذا كان رابط واحد على الأقل مضبوط ── #}
+      {% if site_settings.app_store_url or site_settings.google_play_url %}
+      <div class="col-md-7">
+        <div class="d-flex align-items-center justify-content-center justify-content-md-end flex-wrap gap-2">
+          <span class="text-muted small me-1">
+            <i class="bi bi-phone me-1"></i>تطبيق التاجر:
+          </span>
+
+          {% if site_settings.app_store_url %}
+          <a href="{{ site_settings.app_store_url }}"
+             target="_blank" rel="noopener noreferrer"
+             class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-3 text-white text-decoration-none"
+             style="background:#000; font-size:.8rem" title="تحميل من App Store">
+            <i class="bi bi-apple" style="font-size:1.25rem"></i>
+            <span class="lh-1">
+              <small class="d-block" style="font-size:.58rem;opacity:.75">تحميل من</small>
+              <strong>App Store</strong>
+            </span>
+          </a>
+          {% endif %}
+
+          {% if site_settings.google_play_url %}
+          <a href="{{ site_settings.google_play_url }}"
+             target="_blank" rel="noopener noreferrer"
+             class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-3 text-white text-decoration-none"
+             style="background:#01875f; font-size:.8rem" title="تحميل من Google Play">
+            <i class="bi bi-google-play" style="font-size:1.2rem"></i>
+            <span class="lh-1">
+              <small class="d-block" style="font-size:.58rem;opacity:.75">تحميل من</small>
+              <strong>Google Play</strong>
+            </span>
+          </a>
+          {% endif %}
+
+        </div>
+      </div>
+      {% else %}
+      <div class="col-md-7 text-center text-md-end">
+        <a href="{% url 'dashboard:admin_settings' %}" class="text-muted small text-decoration-none">
+          <i class="bi bi-plus-circle me-1"></i>أضف روابط تحميل التطبيق
+        </a>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</footer>
+
+<style>
+.admin-footer {
+  font-size: .82rem;
+}
+</style>
