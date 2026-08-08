@@ -1,3 +1,8 @@
+{% load i18n dashboard_tags %}
+
+{% get_site_settings as site_cfg %}
+
+<style>
 /* =========================================================
    Dashboard Footer
    ========================================================= */
@@ -16,7 +21,6 @@
 }
 
 .dashboard-footer__inner {
-    position: relative;
     display: grid;
     grid-template-columns: minmax(240px, 1fr) auto auto;
     align-items: center;
@@ -24,7 +28,6 @@
 
     max-width: 1600px;
     margin: 0 auto;
-
     padding: 20px 22px;
 
     background: var(--footer-bg);
@@ -37,9 +40,9 @@
 }
 
 
-/* =========================================================
+/* =========================
    Brand
-   ========================================================= */
+   ========================= */
 
 .dashboard-footer__brand {
     min-width: 0;
@@ -59,12 +62,12 @@
 .dashboard-footer__logo:hover {
     color: var(--footer-heading);
     opacity: 0.85;
+    text-decoration: none;
 }
 
 .dashboard-footer__logo-icon {
     width: 42px;
     height: 42px;
-
     flex: 0 0 42px;
 
     display: inline-flex;
@@ -72,7 +75,6 @@
     justify-content: center;
 
     overflow: hidden;
-
     border-radius: 12px;
 
     background: var(--footer-primary-soft);
@@ -110,7 +112,9 @@
 }
 
 
-/* Copyright */
+/* =========================
+   Copyright
+   ========================= */
 
 .dashboard-footer__copyright {
     display: flex;
@@ -119,14 +123,9 @@
     gap: 6px;
 
     margin-top: 10px;
-    padding-inline-start: 2px;
 
     color: var(--footer-muted);
     font-size: 11.5px;
-}
-
-.dashboard-footer__copyright i {
-    font-size: 10px;
 }
 
 .footer-dot {
@@ -134,9 +133,9 @@
 }
 
 
-/* =========================================================
+/* =========================
    Quick Links
-   ========================================================= */
+   ========================= */
 
 .dashboard-footer__links {
     display: flex;
@@ -153,7 +152,6 @@
     gap: 7px;
 
     min-height: 38px;
-
     padding: 7px 11px;
 
     border: 1px solid transparent;
@@ -181,6 +179,7 @@
     border-color: rgba(108, 92, 231, 0.12);
 
     transform: translateY(-1px);
+    text-decoration: none;
 }
 
 .dashboard-footer__link-icon {
@@ -205,9 +204,9 @@
 }
 
 
-/* =========================================================
-   App Stores
-   ========================================================= */
+/* =========================
+   Store Buttons
+   ========================= */
 
 .dashboard-footer__apps {
     display: flex;
@@ -216,13 +215,8 @@
     gap: 7px;
 }
 
-[dir="rtl"] .dashboard-footer__apps {
-    align-items: flex-start;
-}
-
 .dashboard-footer__apps-title {
     color: var(--footer-muted);
-
     font-size: 10.5px;
     font-weight: 500;
 }
@@ -250,7 +244,7 @@
 
     text-decoration: none;
 
-    box-shadow: 0 3px 10px rgba(17, 24, 39, 0.1);
+    box-shadow: 0 3px 10px rgba(17, 24, 39, 0.10);
 
     transition:
         transform 0.2s ease,
@@ -265,29 +259,28 @@
     transform: translateY(-2px);
 
     box-shadow: 0 6px 16px rgba(17, 24, 39, 0.15);
+
+    text-decoration: none;
 }
 
 .dashboard-footer__store > i {
     width: 22px;
-
     flex-shrink: 0;
 
     text-align: center;
-
     font-size: 21px;
 }
 
 .dashboard-footer__store span {
     display: flex;
     flex-direction: column;
-
     line-height: 1.05;
 }
 
 .dashboard-footer__store small {
     margin-bottom: 2px;
 
-    color: rgba(255,255,255,0.7);
+    color: rgba(255, 255, 255, 0.7);
 
     font-size: 8.5px;
     font-weight: 400;
@@ -301,21 +294,26 @@
 }
 
 
-/* =========================================================
+/* =========================
    RTL
-   ========================================================= */
+   ========================= */
 
-[dir="rtl"] .dashboard-footer__logo,
-[dir="rtl"] .dashboard-footer__copyright,
-[dir="rtl"] .dashboard-footer__link,
-[dir="rtl"] .dashboard-footer__store {
+html[dir="rtl"] .dashboard-footer__apps,
+body[dir="rtl"] .dashboard-footer__apps {
+    align-items: flex-start;
+}
+
+html[dir="rtl"] .dashboard-footer__logo,
+html[dir="rtl"] .dashboard-footer__copyright,
+html[dir="rtl"] .dashboard-footer__link,
+html[dir="rtl"] .dashboard-footer__store {
     direction: rtl;
 }
 
 
-/* =========================================================
-   Responsive
-   ========================================================= */
+/* =========================
+   Tablet
+   ========================= */
 
 @media (max-width: 1200px) {
 
@@ -336,13 +334,12 @@
 
         border-top: 1px solid var(--footer-border);
     }
-
-    [dir="rtl"] .dashboard-footer__apps {
-        align-items: center;
-    }
-
 }
 
+
+/* =========================
+   Mobile
+   ========================= */
 
 @media (max-width: 768px) {
 
@@ -393,6 +390,7 @@
 
     .dashboard-footer__apps {
         flex-direction: column;
+        align-items: center;
 
         border-top: 0;
         padding-top: 0;
@@ -406,9 +404,12 @@
         flex: 1;
         justify-content: center;
     }
-
 }
 
+
+/* =========================
+   Small Mobile
+   ========================= */
 
 @media (max-width: 480px) {
 
@@ -419,11 +420,6 @@
 
     .dashboard-footer__link {
         width: 100%;
-
-        justify-content: flex-start;
-    }
-
-    [dir="rtl"] .dashboard-footer__link {
         justify-content: flex-start;
     }
 
@@ -435,13 +431,12 @@
         width: 100%;
         min-width: 100%;
     }
-
 }
 
 
-/* =========================================================
-   Dark mode
-   ========================================================= */
+/* =========================
+   Dark Mode
+   ========================= */
 
 [data-bs-theme="dark"] .dashboard-footer {
     --footer-bg: #151922;
@@ -453,9 +448,257 @@
 }
 
 [data-bs-theme="dark"] .dashboard-footer__link-icon {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     color: #aeb6c5;
 }
+</style>
+
+
+<footer class="dashboard-footer">
+
+    <div class="dashboard-footer__inner">
+
+        {# =========================
+           Logo + Site
+           ========================= #}
+
+        <div class="dashboard-footer__brand">
+
+            <a
+                href="/"
+                target="_blank"
+                rel="noopener"
+                class="dashboard-footer__logo"
+            >
+
+                <span class="dashboard-footer__logo-icon">
+
+                    {% if site_cfg.logo %}
+
+                        <img
+                            src="{{ site_cfg.logo.url }}"
+                            alt="{{ site_cfg.site_name|default:'دليل أي خدمة' }}"
+                        >
+
+                    {% else %}
+
+                        <i class="fas fa-map-marked-alt"></i>
+
+                    {% endif %}
+
+                </span>
+
+
+                <span class="dashboard-footer__site-info">
+
+                    <strong>
+                        {{ site_cfg.site_name|default:'دليل أي خدمة' }}
+                    </strong>
+
+                    <small>
+                        {% if LANGUAGE_CODE|slice:':2' == 'ar' %}
+                            إدارة نشاطك بسهولة
+                        {% else %}
+                            Manage your business with ease
+                        {% endif %}
+                    </small>
+
+                </span>
+
+            </a>
+
+
+            <div class="dashboard-footer__copyright">
+
+                <i class="far fa-copyright"></i>
+
+                <span>
+                    {% now 'Y' %}
+                    {{ site_cfg.site_name|default:'دليل أي خدمة' }}
+                </span>
+
+                <span class="footer-dot">•</span>
+
+                <span>
+                    {% if LANGUAGE_CODE|slice:':2' == 'ar' %}
+                        جميع الحقوق محفوظة
+                    {% else %}
+                        All rights reserved
+                    {% endif %}
+                </span>
+
+            </div>
+
+        </div>
 
 
 
+        {# =========================
+           Quick Links
+           ========================= #}
+
+        <nav
+            class="dashboard-footer__links"
+            aria-label="{% if LANGUAGE_CODE|slice:':2' == 'ar' %}روابط التذييل{% else %}Footer links{% endif %}"
+        >
+
+            <a
+                href="{% url 'dashboard:help_center' %}"
+                class="dashboard-footer__link"
+            >
+
+                <span class="dashboard-footer__link-icon">
+                    <i class="fas fa-question-circle"></i>
+                </span>
+
+                <span>
+                    {% if LANGUAGE_CODE|slice:':2' == 'ar' %}
+                        مركز المساعدة
+                    {% else %}
+                        Help Center
+                    {% endif %}
+                </span>
+
+            </a>
+
+
+            <a
+                href="{% url 'subscriptions:my_subscription' %}"
+                class="dashboard-footer__link"
+            >
+
+                <span class="dashboard-footer__link-icon">
+                    <i class="fas fa-gem"></i>
+                </span>
+
+                <span>
+                    {% if LANGUAGE_CODE|slice:':2' == 'ar' %}
+                        اشتراكي
+                    {% else %}
+                        My Plan
+                    {% endif %}
+                </span>
+
+            </a>
+
+
+            <a
+                href="/"
+                target="_blank"
+                rel="noopener"
+                class="dashboard-footer__link"
+            >
+
+                <span class="dashboard-footer__link-icon">
+                    <i class="fas fa-external-link-alt"></i>
+                </span>
+
+                <span>
+                    {% if LANGUAGE_CODE|slice:':2' == 'ar' %}
+                        زيارة الموقع
+                    {% else %}
+                        Visit Website
+                    {% endif %}
+                </span>
+
+            </a>
+
+        </nav>
+
+
+
+        {# =========================
+           Apps
+           ========================= #}
+
+        {% if site_cfg.ios_store_url or site_cfg.android_store_url %}
+
+            <div class="dashboard-footer__apps">
+
+                <span class="dashboard-footer__apps-title">
+
+                    {% if LANGUAGE_CODE|slice:':2' == 'ar' %}
+                        حمّل تطبيق {{ site_cfg.site_name|default:'دليل أي خدمة' }}
+                    {% else %}
+                        Download our app
+                    {% endif %}
+
+                </span>
+
+
+                <div class="dashboard-footer__store-list">
+
+
+                    {% if site_cfg.ios_store_url %}
+
+                        <a
+                            href="{{ site_cfg.ios_store_url }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="dashboard-footer__store"
+                        >
+
+                            <i class="fab fa-apple"></i>
+
+                            <span>
+
+                                <small>
+                                    {% if LANGUAGE_CODE|slice:':2' == 'ar' %}
+                                        حمّله من
+                                    {% else %}
+                                        Download on the
+                                    {% endif %}
+                                </small>
+
+                                <strong>
+                                    App Store
+                                </strong>
+
+                            </span>
+
+                        </a>
+
+                    {% endif %}
+
+
+
+                    {% if site_cfg.android_store_url %}
+
+                        <a
+                            href="{{ site_cfg.android_store_url }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="dashboard-footer__store"
+                        >
+
+                            <i class="fab fa-google-play"></i>
+
+                            <span>
+
+                                <small>
+                                    {% if LANGUAGE_CODE|slice:':2' == 'ar' %}
+                                        حمّله من
+                                    {% else %}
+                                        Get it on
+                                    {% endif %}
+                                </small>
+
+                                <strong>
+                                    Google Play
+                                </strong>
+
+                            </span>
+
+                        </a>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</footer>
