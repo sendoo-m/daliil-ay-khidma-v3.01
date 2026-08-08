@@ -1,6 +1,7 @@
 import 'package:dalil_core/dalil_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
 import '../../shared/providers.dart';
@@ -119,6 +120,9 @@ class _SubscriptionCenterPageState
                         onChoose: current == null
                             ? null
                             : () => _startChange(current, plan),
+                        onChooseWeb: current == null
+                            ? _openWebPlans
+                            : null,
                       ),
                       const SizedBox(height: Gap.md),
                     ],
@@ -142,6 +146,13 @@ class _SubscriptionCenterPageState
       ref.read(merchantPlansProvider.future),
       ref.read(merchantPendingPlanChangeProvider.future),
     ]);
+  }
+
+  Future<void> _openWebPlans() async {
+    final uri = Uri.parse('https://daliil.app/subscriptions/plans/');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   Future<void> _startChange(
@@ -744,6 +755,7 @@ class _PlanCard extends StatelessWidget {
     required this.currentPlanId,
     required this.blocked,
     required this.onChoose,
+    this.onChooseWeb,
   });
   final MerchantPlan plan;
   final String period;
@@ -751,12 +763,15 @@ class _PlanCard extends StatelessWidget {
   final int? currentPlanId;
   final bool blocked;
   final VoidCallback? onChoose;
+  final VoidCallback? onChooseWeb;
   String _tr(String ar, String en) => isArabic ? ar : en;
 
   @override
   Widget build(BuildContext context) {
     final current = currentPlanId == plan.id;
     final price = plan.priceFor(period);
+    // لما التاجر مالوش اشتراك: onChoose=null و onChooseWeb=callback
+    final hasNoSubscription = onChoose == null && onChooseWeb != null;
     return Container(
       padding: const EdgeInsets.all(Gap.lg),
       decoration: BoxDecoration(
@@ -830,16 +845,24 @@ class _PlanCard extends StatelessWidget {
           ),
           const SizedBox(height: Gap.md),
           OutlinedButton.icon(
-            onPressed: current || blocked ? null : onChoose,
+            onPressed: current || blocked
+                ? null
+                : (onChoose ?? onChooseWeb),
             icon: Icon(
-              current ? Icons.check_circle_outline : Icons.swap_horiz_rounded,
+              current
+                  ? Icons.check_circle_outline
+                  : hasNoSubscription
+                      ? Icons.open_in_browser_rounded
+                      : Icons.swap_horiz_rounded,
             ),
             label: Text(
               current
                   ? _tr('الخطة الحالية', 'Current plan')
                   : blocked
                       ? _tr('يوجد طلب قيد المراجعة', 'Request already pending')
-                      : _tr('طلب تغيير للخطة', 'Request plan change'),
+                      : hasNoSubscription
+                          ? _tr('اختر الخطة', 'Select plan')
+                          : _tr('طلب تغيير للخطة', 'Request plan change'),
             ),
           ),
         ],
