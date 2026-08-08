@@ -1,0 +1,123 @@
+{% extends 'dashboard/admin/base.html' %}
+
+{% block title %}متابعة التجار الجدد{% endblock %}
+
+{% block extra_css %}
+<style>
+.q-tab{display:block;text-decoration:none;color:inherit;background:#fff;border:2px solid #edf0f5;border-radius:16px;padding:1rem 1.15rem;transition:.15s}
+.q-tab:hover{color:inherit;border-color:#cbd5e1}
+.q-tab.on{border-color:#667eea;background:#f8f9ff}
+.q-tab .n{font-size:1.7rem;font-weight:900;line-height:1}
+.q-tab .l{font-weight:700;font-size:.92rem}
+.q-tab .h{font-size:.76rem;color:#94a3b8;line-height:1.6}
+.ob-row{background:#fff;border:1px solid #edf0f5;border-radius:14px;padding:1rem;margin-bottom:.65rem}
+.ob-row:hover{border-color:#cbd5e1}
+.mini-bar{height:6px;border-radius:99px;background:#eef2ff;overflow:hidden;width:110px}
+.mini-bar span{display:block;height:100%;background:#667eea}
+.waited{font-size:.76rem;color:#94a3b8}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+  <div>
+    <h4 class="fw-bold mb-1">متابعة التجار الجدد</h4>
+    <p class="text-muted mb-0 small">من اختار خطة لحد ما نشاطه يشتغل</p>
+  </div>
+  <form method="get" class="d-flex gap-2">
+    <input type="hidden" name="queue" value="{{ queue }}">
+    <input name="q" value="{{ search }}" class="form-control" style="min-width:230px"
+           placeholder="اسم · تليفون · مرجع الدفع">
+    <button class="btn btn-outline-secondary">بحث</button>
+  </form>
+</div>
+
+<div class="row g-3 mb-4">
+  {% for key, meta in queues.items %}
+    {% if key != 'all' %}
+    <div class="col-12 col-md-4">
+      <a class="q-tab {% if queue == key %}on{% endif %}" href="?queue={{ key }}">
+        <div class="d-flex align-items-center gap-3">
+          <div class="n text-{{ meta.tone }}">
+            {% if key == 'needs_us' %}{{ counts.needs_us }}
+            {% elif key == 'needs_them' %}{{ counts.needs_them }}
+            {% else %}{{ counts.active }}{% endif %}
+          </div>
+          <div>
+            <div class="l">{{ meta.label }}</div>
+            <div class="h">{{ meta.hint }}</div>
+          </div>
+        </div>
+      </a>
+    </div>
+    {% endif %}
+  {% endfor %}
+</div>
+
+{% for row in page_obj %}
+<div class="ob-row">
+  <div class="d-flex align-items-center gap-3 flex-wrap">
+    <div class="flex-grow-1" style="min-width:190px">
+      <a href="{% url 'dashboard:admin_onboarding_detail' row.pk %}"
+         class="fw-bold text-decoration-none">
+        {% if row.business %}{{ row.business.name_ar }}{% else %}{{ row.user.username }}{% endif %}
+      </a>
+      <div class="text-muted small">
+        {{ row.user.username }}{% if row.user.phone %} · {{ row.user.phone }}{% endif %}
+      </div>
+    </div>
+
+    <div>
+      {% if row.selected_plan %}
+        <span class="badge bg-light text-dark">{{ row.selected_plan.display_name_ar }}</span>
+      {% else %}
+        <span class="badge bg-light text-muted">بلا خطة</span>
+      {% endif %}
+    </div>
+
+    <div>
+      {% if row.payment_status == 'submitted' %}
+        <span class="badge bg-danger">دفع بانتظار التأكيد</span>
+      {% elif row.payment_status == 'confirmed' %}
+        <span class="badge bg-success">الدفع مؤكد</span>
+      {% elif row.payment_status == 'rejected' %}
+        <span class="badge bg-secondary">الدفع مرفوض</span>
+      {% elif row.status == 'admin_review' %}
+        <span class="badge bg-danger">بانتظار المراجعة</span>
+      {% else %}
+        <span class="badge bg-light text-muted">{{ row.get_status_display }}</span>
+      {% endif %}
+    </div>
+
+    <div class="waited">آخر حركة: {{ row.updated_at|timesince }}</div>
+
+    <a href="{% url 'dashboard:admin_onboarding_detail' row.pk %}"
+       class="btn btn-sm btn-outline-primary">افتح</a>
+  </div>
+</div>
+{% empty %}
+<div class="text-center text-muted py-5">
+  <div class="fs-5 mb-1">مفيش حد في الطابور ده</div>
+  <div class="small">
+    {% if queue == 'needs_us' %}مفيش حاجة مستنية منكم دلوقتي.{% endif %}
+  </div>
+</div>
+{% endfor %}
+
+{% if page_obj.has_other_pages %}
+<nav class="mt-4">
+  <ul class="pagination justify-content-center">
+    {% if page_obj.has_previous %}
+    <li class="page-item"><a class="page-link"
+      href="?queue={{ queue }}&q={{ search }}&page={{ page_obj.previous_page_number }}">السابق</a></li>
+    {% endif %}
+    <li class="page-item disabled"><span class="page-link">
+      {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+    {% if page_obj.has_next %}
+    <li class="page-item"><a class="page-link"
+      href="?queue={{ queue }}&q={{ search }}&page={{ page_obj.next_page_number }}">التالي</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+{% endblock %}

@@ -92,6 +92,12 @@ DASHBOARD_PERMISSIONS = {
     'admin_deal_approve': Perm.DEAL_EDIT,
     'admin_deal_feature': Perm.DEAL_EDIT,
 
+    # ── متابعة التجار الجدد ──
+    'admin_onboarding_list': Perm.SUBSCRIPTION_VIEW,
+    'admin_onboarding_detail': Perm.SUBSCRIPTION_VIEW,
+    'admin_onboarding_confirm_payment': Perm.SUBSCRIPTION_MANAGE,
+    'admin_onboarding_reject_payment': Perm.SUBSCRIPTION_MANAGE,
+
     # ── التقييمات ──
     'admin_reviews_list': Perm.REVIEW_VIEW,
     'admin_review_approve': Perm.REVIEW_MODERATE,
@@ -149,6 +155,8 @@ MUTATING_ROUTES = {
         'admin_deal_delete': 'delete',
         'admin_deal_approve': 'approve',
         'admin_deal_feature': 'feature',
+        'admin_onboarding_confirm_payment': 'approve',
+        'admin_onboarding_reject_payment': 'reject',
         'admin_review_approve': 'approve',
         'admin_review_reject': 'reject',
         'admin_review_delete': 'delete',

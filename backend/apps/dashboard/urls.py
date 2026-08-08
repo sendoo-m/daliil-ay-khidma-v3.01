@@ -28,6 +28,7 @@ from apps.dashboard.views.owner import owner_dashboard
 from apps.dashboard.views import admin_views, admin_crud
 from apps.dashboard.views import subscription_admin
 from apps.dashboard.views.auth import staff_login, staff_logout
+from apps.dashboard.views import onboarding_admin
 
 app_name = 'dashboard'
 
@@ -115,6 +116,18 @@ urlpatterns = [
     path('admin/deals/<int:deal_id>/delete/', admin_views.admin_deal_delete, name='admin_deal_delete'),
 
     path('admin/reviews/', admin_views.admin_reviews_list, name='admin_reviews_list'),
+
+    # ── متابعة التجار الجدد ──
+    path('admin/onboarding/', onboarding_admin.admin_onboarding_list,
+         name='admin_onboarding_list'),
+    path('admin/onboarding/<int:pk>/', onboarding_admin.admin_onboarding_detail,
+         name='admin_onboarding_detail'),
+    path('admin/onboarding/<int:pk>/confirm-payment/',
+         onboarding_admin.admin_onboarding_confirm_payment,
+         name='admin_onboarding_confirm_payment'),
+    path('admin/onboarding/<int:pk>/reject-payment/',
+         onboarding_admin.admin_onboarding_reject_payment,
+         name='admin_onboarding_reject_payment'),
     path('admin/reviews/<int:review_id>/approve/', admin_views.admin_review_approve, name='admin_review_approve'),
     path('admin/reviews/<int:review_id>/reject/', admin_views.admin_review_reject, name='admin_review_reject'),
     path('admin/reviews/<int:review_id>/delete/', admin_views.admin_review_delete, name='admin_review_delete'),
