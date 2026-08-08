@@ -179,7 +179,7 @@
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb mb-0 small">
                 {% if is_owner_mode %}
-                    <li class="breadcrumb-item"><a href="{% url 'dashboard:main' %}">الرئيسية</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:index' %}">الرئيسية</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'dashboard:business_list' %}">محلاتي</a></li>
                 {% else %}
                     <li class="breadcrumb-item"><a href="{% url 'dashboard:admin_home' %}">الرئيسية</a></li>
@@ -267,7 +267,6 @@
                     {{ form.description_en }}
                 </div>
 
-                <!-- شعار وصورة الغلاف -->
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">الشعار (Logo)</label>
                     {% if form.instance.logo %}
@@ -340,7 +339,6 @@
                     {{ form.location_url }}
                 </div>
 
-                <!-- الخريطة -->
                 <div class="col-12">
                     <label class="form-label fw-semibold">
                         <i class="fas fa-map text-primary me-1"></i>
@@ -498,7 +496,6 @@
         <div class="section-card">
             <div class="section-title"><i class="fas fa-images"></i> معرض صور المحل</div>
 
-            <!-- Drop Zone -->
             <div class="gallery-drop-zone" id="dropZone" onclick="document.getElementById('bulkImageInput').click()">
                 <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
                 <p class="mb-1 fw-semibold">اسحب الصور هنا أو اضغط للاختيار</p>
@@ -506,10 +503,8 @@
                 <input type="file" id="bulkImageInput" multiple accept="image/*" style="display:none">
             </div>
 
-            <!-- Preview -->
             <div class="gallery-preview" id="galleryPreview"></div>
 
-            <!-- Formset للصور الموجودة (تعديل) -->
             {% if formset.forms %}
             <div class="mt-4">
                 <h6 class="fw-bold text-muted mb-3">الصور الحالية</h6>
@@ -570,35 +565,26 @@
 
 
 {% block extra_js %}
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// =========================================
-// WIZARD
-// =========================================
 const TOTAL_SECTIONS = 5;
 const stepLabels = ['المعلومات الأساسية','الموقع','التواصل','السوشيال','الصور'];
 
 function showSection(n) {
     document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
     document.getElementById('section-' + n).classList.add('active');
-
     document.querySelectorAll('.wizard-step').forEach((el, i) => {
         el.classList.remove('active','completed');
         if (i + 1 === n)        el.classList.add('active');
         else if (i + 1 < n)     el.classList.add('completed');
     });
-
     window.scrollTo({top: 0, behavior: 'smooth'});
-
-    // تهيئة الخريطة عند الوصول لـ section 2
     if (n === 2 && !mapInitialized) initMap();
 }
 
 function nextSection(current) { if (current < TOTAL_SECTIONS) showSection(current + 1); }
 function prevSection(current) { if (current > 1) showSection(current - 1); }
 
-// Render wizard steps
 (function renderSteps() {
     const container = document.querySelector('.form-wizard-steps');
     container.innerHTML = '';
@@ -614,7 +600,6 @@ function prevSection(current) { if (current > 1) showSection(current - 1); }
     });
 })();
 
-// Jump to error section on load
 (function jumpToErrorSection() {
     const errorSection = parseInt('{{ error_section|default:1 }}');
     if (errorSection > 1) showSection(errorSection);
@@ -625,52 +610,35 @@ function prevSection(current) { if (current > 1) showSection(current - 1); }
 // LEAFLET MAP
 // =========================================
 let map, marker, mapInitialized = false;
-
-// القيم الموجودة مسبقاً (تعديل)
 const existingLat = "{{ form.instance.latitude|default:'' }}";
 const existingLng = "{{ form.instance.longitude|default:'' }}";
 
 function initMap() {
     mapInitialized = true;
-
     const defaultLat = existingLat ? parseFloat(existingLat) : 26.8206;
     const defaultLng = existingLng ? parseFloat(existingLng) : 30.8025;
     const defaultZoom = existingLat ? 15 : 6;
 
     map = L.map('map').setView([defaultLat, defaultLng], defaultZoom);
-
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19
+        attribution: '© OpenStreetMap contributors', maxZoom: 19
     }).addTo(map);
 
-    // لو في إحداثيات موجودة حط marker
-    if (existingLat && existingLng) {
-        placeMarker(parseFloat(existingLat), parseFloat(existingLng));
-    }
-
-    // عند الضغط على الخريطة
-    map.on('click', function(e) {
-        placeMarker(e.latlng.lat, e.latlng.lng);
-    });
+    if (existingLat && existingLng) placeMarker(parseFloat(existingLat), parseFloat(existingLng));
+    map.on('click', function(e) { placeMarker(e.latlng.lat, e.latlng.lng); });
 }
 
 function placeMarker(lat, lng) {
     if (marker) map.removeLayer(marker);
-
     marker = L.marker([lat, lng], {
         draggable: true,
         icon: L.divIcon({
             className: '',
             html: '<div style="background:#667eea;width:22px;height:22px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35)"></div>',
-            iconSize: [22, 22],
-            iconAnchor: [11, 11]
+            iconSize: [22, 22], iconAnchor: [11, 11]
         })
     }).addTo(map);
-
     updateCoords(lat, lng);
-
-    // السحب
     marker.on('dragend', function(e) {
         const pos = e.target.getLatLng();
         updateCoords(pos.lat, pos.lng);
@@ -678,13 +646,12 @@ function placeMarker(lat, lng) {
 }
 
 function updateCoords(lat, lng) {
-    const latRounded = parseFloat(lat.toFixed(6));
-    const lngRounded = parseFloat(lng.toFixed(6));
-
-    document.getElementById('id_latitude').value  = latRounded;
-    document.getElementById('id_longitude').value = lngRounded;
-    document.getElementById('latDisplay').textContent = latRounded;
-    document.getElementById('lngDisplay').textContent = lngRounded;
+    const latR = parseFloat(lat.toFixed(6));
+    const lngR = parseFloat(lng.toFixed(6));
+    document.getElementById('id_latitude').value  = latR;
+    document.getElementById('id_longitude').value = lngR;
+    document.getElementById('latDisplay').textContent = latR;
+    document.getElementById('lngDisplay').textContent = lngR;
     document.getElementById('coordsDisplay').classList.add('show');
 }
 
@@ -697,18 +664,15 @@ function clearMarker() {
 
 
 // =========================================
-// CASCADING DROPDOWNS (محافظة → مدينة → حي)
+// CASCADING DROPDOWNS
 // =========================================
 document.getElementById('id_governorate')?.addEventListener('change', function() {
     const govId = this.value;
     const citySelect = document.getElementById('id_city');
     const districtSelect = document.getElementById('id_district');
-
     citySelect.innerHTML = '<option value="">-- اختر المدينة --</option>';
     districtSelect.innerHTML = '<option value="">-- اختر الحي --</option>';
-
     if (!govId) return;
-
     fetch(`{% url 'dashboard:ajax_cities' %}?governorate_id=${encodeURIComponent(govId)}`)
         .then(r => r.json())
         .then(data => {
@@ -721,10 +685,8 @@ document.getElementById('id_governorate')?.addEventListener('change', function()
 document.getElementById('id_city')?.addEventListener('change', function() {
     const cityId = this.value;
     const districtSelect = document.getElementById('id_district');
-
     districtSelect.innerHTML = '<option value="">-- اختر الحي --</option>';
     if (!cityId) return;
-
     fetch(`{% url 'dashboard:ajax_districts' %}?city_id=${encodeURIComponent(cityId)}`)
         .then(r => r.json())
         .then(data => {
@@ -736,7 +698,7 @@ document.getElementById('id_city')?.addEventListener('change', function() {
 
 
 // =========================================
-// GALLERY UPLOAD (Drag & Drop)
+// GALLERY UPLOAD
 // =========================================
 const dropZone      = document.getElementById('dropZone');
 const bulkInput     = document.getElementById('bulkImageInput');
@@ -776,12 +738,10 @@ function renderPreview(file, index) {
 function injectFileIntoFormset(file, formIndex) {
     const dt   = new DataTransfer();
     dt.items.add(file);
-
     const input = document.createElement('input');
     input.type  = 'file';
     input.name  = `${formsetPrefix}-${formIndex}-image`;
     input.style.display = 'none';
-
     try { input.files = dt.files; } catch(e) {}
     document.getElementById('businessForm').appendChild(input);
 }
@@ -793,7 +753,6 @@ function removeFromQueue(index) {
 }
 
 bulkInput.addEventListener('change', e => addFilesToQueue(e.target.files));
-
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
 dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('dragover'));
 dropZone.addEventListener('drop', e => {
@@ -801,6 +760,5 @@ dropZone.addEventListener('drop', e => {
     dropZone.classList.remove('dragover');
     addFilesToQueue(e.dataTransfer.files);
 });
-
 </script>
 {% endblock %}
