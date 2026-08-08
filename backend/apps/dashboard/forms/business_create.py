@@ -18,7 +18,9 @@ class BusinessCreateForm(forms.ModelForm):
         }),
     )
     city = forms.ModelChoiceField(
-        queryset=City.objects.none(),
+        # ✅ FIX: لازم queryset تشمل كل المدن عشان Django يقدر يتحقق من القيمة
+        # عند الـ POST — نقلل النطاق في __init__ بعد ما نعرف الـ governorate
+        queryset=City.objects.filter(is_active=True).order_by('name_ar'),
         required=True,
         label='المدينة',
         widget=forms.Select(attrs={
@@ -102,7 +104,7 @@ class BusinessCreateForm(forms.ModelForm):
             for f in ['is_active', 'is_verified', 'is_featured']:
                 self.fields.pop(f, None)
 
-        # Cascading: لو فيه instance موجودة (edit mode)
+        # ── Edit mode: نضبط الـ cascading بناءً على الـ instance ──
         if self.instance.pk and self.instance.district:
             try:
                 city = self.instance.district.city
@@ -118,20 +120,26 @@ class BusinessCreateForm(forms.ModelForm):
             except AttributeError:
                 pass
 
+        # ── POST mode: نضيق الـ queryset بعد ما نعرف القيم المُرسَلة ──
         if self.is_bound:
             gov_id      = self._safe_int(self.data.get('governorate'))
             city_id     = self._safe_int(self.data.get('city'))
             district_id = self._safe_int(self.data.get('district'))
 
+            # city queryset: نضيقها للـ governorate المختار إن وُجد،
+            # وإلا تبقى City.objects.all() (القيمة الافتراضية في Field)
+            # حتى لا يرفض Django القيمة المُرسَلة بسبب queryset فارغة.
             if gov_id:
                 self.fields['city'].queryset = City.objects.filter(
                     governorate_id=gov_id, is_active=True
                 ).order_by('name_ar')
             elif city_id:
+                # نضمن أن الـ city المُرسَلة موجودة في الـ queryset
                 self.fields['city'].queryset = City.objects.filter(
                     pk=city_id, is_active=True
                 )
 
+            # district queryset: نضيقها للـ city المختارة إن وُجدت
             if city_id:
                 self.fields['district'].queryset = District.objects.filter(
                     city_id=city_id, is_active=True
@@ -140,6 +148,35 @@ class BusinessCreateForm(forms.ModelForm):
                 self.fields['district'].queryset = District.objects.filter(
                     pk=district_id, is_active=True
                 )
+            # لو مافيش city_id ولا district_id، نبقي District.objects.all()
+            # عشان Django ما يرفضش القيمة (نتحقق في clean())
+            else:
+                self.fields['district'].queryset = District.objects.filter(
+                    is_active=True
+                )
+
+    def clean(self):
+        """تحقق إضافي: المدينة تابعة للمحافظة المختارة."""
+        cleaned = super().clean()
+        governorate = cleaned.get('governorate')
+        city        = cleaned.get('city')
+        district    = cleaned.get('district')
+
+        if governorate and city:
+            if city.governorate_id != governorate.pk:
+                self.add_error(
+                    'city',
+                    'المدينة المختارة لا تنتمي للمحافظة المحددة.',
+                )
+
+        if city and district:
+            if district.city_id != city.pk:
+                self.add_error(
+                    'district',
+                    'الحي المختار لا ينتمي للمدينة المحددة.',
+                )
+
+        return cleaned
 
     @staticmethod
     def _safe_int(value):
