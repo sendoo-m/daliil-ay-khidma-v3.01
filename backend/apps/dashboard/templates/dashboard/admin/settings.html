@@ -1,0 +1,124 @@
+{% extends 'dashboard/admin/base.html' %}
+{% load i18n %}
+
+{% block title %}إعدادات النظام{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <i class="bi bi-gear-fill fs-4 text-primary"></i>
+    <h1 class="h3 mb-0">إعدادات النظام</h1>
+  </div>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    {# ── روابط تحميل التطبيق ── #}
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white py-3">
+        <h5 class="mb-0">
+          <i class="bi bi-phone me-2 text-primary"></i>روابط تحميل تطبيق التاجر
+        </h5>
+        <small class="text-muted">
+          الروابط تظهر في فوتر لوحة تحكم أصحاب المحلات — اتركها فارغة لإخفاء الأزرار.
+        </small>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+
+          {# App Store #}
+          <div class="col-md-6">
+            <label for="app_store_url" class="form-label fw-semibold">
+              <i class="bi bi-apple me-1"></i>رابط App Store (iPhone / iPad)
+            </label>
+            <input
+              type="url"
+              id="app_store_url"
+              name="app_store_url"
+              value="{{ site.app_store_url }}"
+              class="form-control"
+              placeholder="https://apps.apple.com/app/id..."
+            >
+            <div class="form-text">مثال: https://apps.apple.com/app/id123456789</div>
+          </div>
+
+          {# Google Play #}
+          <div class="col-md-6">
+            <label for="google_play_url" class="form-label fw-semibold">
+              <i class="bi bi-google-play me-1"></i>رابط Google Play (Android)
+            </label>
+            <input
+              type="url"
+              id="google_play_url"
+              name="google_play_url"
+              value="{{ site.google_play_url }}"
+              class="form-control"
+              placeholder="https://play.google.com/store/apps/details?id=..."
+            >
+            <div class="form-text">مثال: https://play.google.com/store/apps/details?id=com.example</div>
+          </div>
+
+        </div>
+
+        {# معاينة مباشرة #}
+        {% if site.app_store_url or site.google_play_url %}
+        <div class="mt-4 p-3 bg-light rounded border">
+          <p class="text-muted small mb-2">معاينة الأزرار كما ستظهر في الفوتر:</p>
+          <div class="d-flex flex-wrap gap-2">
+            {% if site.app_store_url %}
+            <a href="{{ site.app_store_url }}" target="_blank" rel="noopener"
+               class="btn btn-dark btn-sm d-flex align-items-center gap-2">
+              <i class="bi bi-apple fs-5"></i>
+              <span class="text-start lh-1">
+                <small class="d-block" style="font-size:.65rem">تحميل من</small>
+                <strong style="font-size:.85rem">App Store</strong>
+              </span>
+            </a>
+            {% endif %}
+            {% if site.google_play_url %}
+            <a href="{{ site.google_play_url }}" target="_blank" rel="noopener"
+               class="btn btn-dark btn-sm d-flex align-items-center gap-2"
+               style="background:#01875f; border-color:#01875f">
+              <i class="bi bi-google-play fs-5"></i>
+              <span class="text-start lh-1">
+                <small class="d-block" style="font-size:.65rem">تحميل من</small>
+                <strong style="font-size:.85rem">Google Play</strong>
+              </span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    {# ── إعدادات الذاكرة المؤقتة ── #}
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white py-3">
+        <h5 class="mb-0">
+          <i class="bi bi-database me-2 text-warning"></i>الذاكرة المؤقتة
+        </h5>
+      </div>
+      <div class="card-body d-flex align-items-center gap-3">
+        <p class="mb-0 text-muted flex-grow-1">مسح الكاش يُجبر الموقع على إعادة بناء البيانات المحفوظة مؤقتاً.</p>
+        <a href="{% url 'dashboard:admin_clear_cache' %}"
+           class="btn btn-outline-warning btn-sm"
+           onclick="return confirm('مسح الذاكرة المؤقتة؟')">
+          <i class="bi bi-trash me-1"></i>مسح الكاش
+        </a>
+      </div>
+    </div>
+
+    {# ── زر الحفظ ── #}
+    <div class="d-flex justify-content-end gap-2">
+      <a href="{% url 'dashboard:admin_home' %}" class="btn btn-outline-secondary">إلغاء</a>
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-floppy me-1"></i>حفظ الإعدادات
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

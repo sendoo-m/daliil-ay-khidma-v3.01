@@ -1,0 +1,42 @@
+{#
+  App download badges — included in the owner dashboard footer.
+  Renders only when at least one URL is configured in SiteSettings.
+  Data comes from the 'site_settings' context processor.
+#}
+{% if site_settings.app_store_url or site_settings.google_play_url %}
+<div class="app-download-banner border-top pt-4 mt-4 text-center">
+  <p class="text-muted small mb-3">
+    <i class="bi bi-phone me-1"></i>
+    حمّل تطبيق التاجر وأدر محلك من هاتفك في أي وقت
+  </p>
+  <div class="d-flex justify-content-center flex-wrap gap-3">
+
+    {% if site_settings.app_store_url %}
+    <a href="{{ site_settings.app_store_url }}"
+       target="_blank" rel="noopener noreferrer"
+       class="d-inline-flex align-items-center gap-2 px-4 py-2 rounded-3 text-white text-decoration-none"
+       style="background:#000; min-width:160px">
+      <i class="bi bi-apple" style="font-size:1.8rem"></i>
+      <span class="text-start lh-1">
+        <span class="d-block" style="font-size:.65rem; opacity:.8">تحميل من</span>
+        <strong style="font-size:1rem">App Store</strong>
+      </span>
+    </a>
+    {% endif %}
+
+    {% if site_settings.google_play_url %}
+    <a href="{{ site_settings.google_play_url }}"
+       target="_blank" rel="noopener noreferrer"
+       class="d-inline-flex align-items-center gap-2 px-4 py-2 rounded-3 text-white text-decoration-none"
+       style="background:#01875f; min-width:160px">
+      <i class="bi bi-google-play" style="font-size:1.6rem"></i>
+      <span class="text-start lh-1">
+        <span class="d-block" style="font-size:.65rem; opacity:.8">تحميل من</span>
+        <strong style="font-size:1rem">Google Play</strong>
+      </span>
+    </a>
+    {% endif %}
+
+  </div>
+</div>
+{% endif %}
