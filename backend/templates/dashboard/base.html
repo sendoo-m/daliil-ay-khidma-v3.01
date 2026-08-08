@@ -51,49 +51,6 @@
         .spinner { width: 50px; height: 50px; border: 4px solid #e5e7eb; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 991px) { .main-content { padding: 1rem; } .sidebar { min-height: 100%; } }
-
-        /* ── App Download Footer ── */
-        .app-download-footer {
-            background: #fff;
-            border-top: 1px solid var(--border);
-            padding: 1rem 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-        .app-download-footer .footer-label {
-            font-size: .78rem;
-            font-weight: 700;
-            color: var(--muted);
-            white-space: nowrap;
-        }
-        .store-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: .45rem;
-            padding: .45rem 1rem;
-            border-radius: 10px;
-            text-decoration: none;
-            font-family: 'Cairo', sans-serif;
-            font-weight: 700;
-            font-size: .78rem;
-            transition: opacity .18s, transform .18s;
-            line-height: 1.2;
-        }
-        .store-badge:hover { opacity: .85; transform: translateY(-1px); }
-        .store-badge.ios {
-            background: #000;
-            color: #fff;
-        }
-        .store-badge.android {
-            background: #01875f;
-            color: #fff;
-        }
-        .store-badge i { font-size: 1.2rem; }
-        .store-badge .badge-text small { display: block; font-size: .62rem; font-weight: 500; opacity: .82; }
-        .store-badge .badge-text strong { display: block; font-size: .8rem; }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -107,7 +64,7 @@
             </button>
             <a class="navbar-brand" href="{% url 'dashboard:owner_dashboard' %}"><i class="fas fa-chart-line"></i> {% if LANGUAGE_CODE|slice:':2' == 'ar' %}دليل أي خدمة{% else %}Daliil Ay Khidma{% endif %}</a>
             <div class="ms-auto d-flex align-items-center gap-2">
-                <a href="{% url 'subscriptions:pricing_comparison' %}" class="btn btn-warning btn-sm fw-bold"><i class="fas fa-crown"></i> <span class="d-none d-md-inline">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الأسعار والباقات{% else %}Pricing & Plans{% endif %}</span></a>
+                <a href="{% url 'subscriptions:pricing_comparison' %}" class="btn btn-warning btn-sm fw-bold"><i class="fas fa-crown"></i> <span class="d-none d-md-inline">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الأسعار والباقات{% else %}Pricing &amp; Plans{% endif %}</span></a>
                 <a href="/" class="btn btn-outline-primary btn-sm" target="_blank" title="{% if LANGUAGE_CODE|slice:':2' == 'ar' %}زيارة الموقع{% else %}Visit website{% endif %}"><i class="fas fa-external-link-alt"></i> <span class="d-none d-md-inline">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الموقع{% else %}Website{% endif %}</span></a>
                 <div class="dropdown">
                     <button class="btn btn-link dropdown-toggle text-decoration-none" type="button" data-bs-toggle="dropdown"><i class="fas fa-user-circle fa-lg"></i> <span class="d-none d-md-inline">{{ user.get_full_name|default:user.username }}</span></button>
@@ -126,36 +83,15 @@
     <div class="container-fluid"><div class="row">
         <div class="col-lg-2 p-0 d-none d-lg-block"><aside class="sidebar">{% include 'dashboard/includes/sidebar_content.html' %}</aside></div>
         <div class="offcanvas {% if LANGUAGE_CODE|slice:':2' == 'ar' %}offcanvas-end{% else %}offcanvas-start{% endif %} d-lg-none" tabindex="-1" id="sidebarMobile" style="width:285px;"><div class="offcanvas-body p-0"><aside class="sidebar"><button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="offcanvas" aria-label="{% if LANGUAGE_CODE|slice:':2' == 'ar' %}إغلاق{% else %}Close{% endif %}"></button>{% include 'dashboard/includes/sidebar_content.html' %}</aside></div></div>
-        <main class="col-lg-10 main-content">
+        <main class="col-lg-10 main-content d-flex flex-column">
             {% if messages %}<div class="messages-container mb-4">{% for message in messages %}<div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert"><i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endfor %}</div>{% endif %}
-            {% block content %}{% endblock %}
+            <div class="flex-grow-1">
+                {% block content %}{% endblock %}
+            </div>
 
-            {# ── App Download Footer — يظهر فقط لأصحاب المحلات (غير الأدمن) ── #}
+            {# ── Footer — يظهر فقط لأصحاب المحلات (غير الأدمن) ── #}
             {% if not request.user.is_staff %}
-                {% get_site_settings as site_cfg %}
-                {% if site_cfg.ios_store_url or site_cfg.android_store_url %}
-                <div class="app-download-footer mt-4">
-                    <span class="footer-label"><i class="fas fa-mobile-alt me-1"></i> حمّل تطبيق دليل أي خدمة</span>
-                    {% if site_cfg.ios_store_url %}
-                    <a href="{{ site_cfg.ios_store_url }}" class="store-badge ios" target="_blank" rel="noopener">
-                        <i class="fab fa-apple"></i>
-                        <div class="badge-text">
-                            <small>متاح على</small>
-                            <strong>App Store</strong>
-                        </div>
-                    </a>
-                    {% endif %}
-                    {% if site_cfg.android_store_url %}
-                    <a href="{{ site_cfg.android_store_url }}" class="store-badge android" target="_blank" rel="noopener">
-                        <i class="fab fa-google-play"></i>
-                        <div class="badge-text">
-                            <small>متاح على</small>
-                            <strong>Google Play</strong>
-                        </div>
-                    </a>
-                    {% endif %}
-                </div>
-                {% endif %}
+                {% include 'dashboard/admin/_footer.html' %}
             {% endif %}
         </main>
     </div></div>

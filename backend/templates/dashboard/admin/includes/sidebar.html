@@ -27,7 +27,7 @@
         <a class="nav-link" href="{% url 'subscriptions:pricing_comparison' %}" target="_blank"><i class="fas fa-crown"></i>{% if LANGUAGE_CODE == 'ar' %}صفحة الأسعار{% else %}Pricing Page{% endif %}</a>
         <hr class="text-white-50 mx-3 my-2"><span class="sidebar-section-label">{% if LANGUAGE_CODE == 'ar' %}النظام{% else %}System{% endif %}</span>
         <a class="nav-link {% if 'analytics' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:admin_analytics' %}"><i class="fas fa-chart-line"></i>{% if LANGUAGE_CODE == 'ar' %}التحليلات{% else %}Analytics{% endif %}</a>
-        <a class="nav-link {% if 'settings' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'dashboard:settings' %}"><i class="fas fa-cog"></i>{% if LANGUAGE_CODE == 'ar' %}الإعدادات{% else %}Settings{% endif %}</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin_settings' %}active{% endif %}" href="{% url 'dashboard:admin_settings' %}"><i class="fas fa-cog"></i>{% if LANGUAGE_CODE == 'ar' %}الإعدادات{% else %}Settings{% endif %}</a>
         <a class="nav-link" href="/admin/" target="_blank"><i class="fas fa-tools"></i>Django Admin</a>
     </nav>
 </div>

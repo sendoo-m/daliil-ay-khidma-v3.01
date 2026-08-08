@@ -1,0 +1,109 @@
+{% load i18n dashboard_tags %}
+{# ────────────────────────────────────────────────────────────────
+   Footer خاص بلوحة تحكم أصحاب المحلات
+   يُضمَّن داخل dashboard/base.html بعد نهاية المحتوى الرئيسي
+──────────────────────────────────────────────────────────────── #}
+<footer class="owner-dashboard-footer mt-auto">
+    <div class="footer-inner d-flex flex-wrap align-items-center justify-content-between gap-3">
+
+        {# — اسم الموقع والحقوق — #}
+        <div class="footer-copy">
+            {% get_site_settings as site_cfg %}
+            <span class="footer-brand">
+                {% if site_cfg.logo %}
+                    <img src="{{ site_cfg.logo.url }}" alt="{{ site_cfg.site_name }}" height="22" class="me-1">
+                {% else %}
+                    <i class="fas fa-map-marked-alt me-1"></i>
+                {% endif %}
+                {{ site_cfg.site_name|default:'دليل أي خدمة' }}
+            </span>
+            <span class="footer-sep d-none d-sm-inline">·</span>
+            <span class="footer-rights">© {% now 'Y' %} {% if LANGUAGE_CODE|slice:':2' == 'ar' %}جميع الحقوق محفوظة{% else %}All rights reserved{% endif %}</span>
+        </div>
+
+        {# — روابط سريعة — #}
+        <nav class="footer-links d-flex flex-wrap gap-3" aria-label="{% if LANGUAGE_CODE|slice:':2' == 'ar' %}روابط التذييل{% else %}Footer links{% endif %}">
+            <a href="{% url 'dashboard:help_center' %}"><i class="fas fa-question-circle me-1"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}المساعدة{% else %}Help{% endif %}</a>
+            <a href="{% url 'subscriptions:my_subscription' %}"><i class="fas fa-gem me-1"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}اشتراكي{% else %}My Plan{% endif %}</a>
+            <a href="/" target="_blank" rel="noopener"><i class="fas fa-external-link-alt me-1"></i>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}الموقع{% else %}Website{% endif %}</a>
+        </nav>
+
+        {# — أزرار المتاجر (تظهر فقط لو الروابط مُعبَّأة في إعدادات الموقع) — #}
+        {% if site_cfg.ios_store_url or site_cfg.android_store_url %}
+        <div class="footer-stores d-flex flex-wrap gap-2">
+            <span class="store-label">{% if LANGUAGE_CODE|slice:':2' == 'ar' %}حمّل التطبيق{% else %}Get the app{% endif %}</span>
+            {% if site_cfg.ios_store_url %}
+            <a href="{{ site_cfg.ios_store_url }}" class="store-badge ios" target="_blank" rel="noopener noreferrer">
+                <i class="fab fa-apple"></i>
+                <span class="badge-text">
+                    <small>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}متاح على{% else %}Available on{% endif %}</small>
+                    <strong>App Store</strong>
+                </span>
+            </a>
+            {% endif %}
+            {% if site_cfg.android_store_url %}
+            <a href="{{ site_cfg.android_store_url }}" class="store-badge android" target="_blank" rel="noopener noreferrer">
+                <i class="fab fa-google-play"></i>
+                <span class="badge-text">
+                    <small>{% if LANGUAGE_CODE|slice:':2' == 'ar' %}متاح على{% else %}Available on{% endif %}</small>
+                    <strong>Google Play</strong>
+                </span>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </div>
+</footer>
+
+<style>
+.owner-dashboard-footer {
+    background: #fff;
+    border-top: 1px solid var(--border, #e5e7eb);
+    padding: .9rem 1.5rem;
+    font-family: 'Cairo', sans-serif;
+}
+.footer-inner { min-height: 44px; }
+.footer-brand { font-weight: 800; color: var(--primary, #667eea); font-size: .85rem; }
+.footer-brand img { vertical-align: middle; }
+.footer-sep { color: var(--muted, #64748b); margin-inline: .3rem; }
+.footer-rights { font-size: .78rem; color: var(--muted, #64748b); }
+.footer-links a {
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--muted, #64748b);
+    text-decoration: none;
+    transition: color .18s;
+}
+.footer-links a:hover { color: var(--primary, #667eea); }
+.store-label {
+    font-size: .72rem;
+    font-weight: 700;
+    color: var(--muted, #64748b);
+    align-self: center;
+    white-space: nowrap;
+}
+.store-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .35rem .85rem;
+    border-radius: 9px;
+    text-decoration: none;
+    font-family: 'Cairo', sans-serif;
+    font-weight: 700;
+    font-size: .74rem;
+    transition: opacity .18s, transform .18s;
+    line-height: 1.25;
+}
+.store-badge:hover { opacity: .85; transform: translateY(-1px); }
+.store-badge.ios  { background: #000; color: #fff; }
+.store-badge.android { background: #01875f; color: #fff; }
+.store-badge i { font-size: 1.1rem; }
+.badge-text small  { display: block; font-size: .6rem; font-weight: 500; opacity: .82; }
+.badge-text strong { display: block; font-size: .76rem; }
+@media (max-width: 576px) {
+    .owner-dashboard-footer { padding: .75rem 1rem; }
+    .footer-inner { flex-direction: column; align-items: flex-start; gap: .6rem; }
+}
+</style>
