@@ -114,3 +114,8 @@ class User(AbstractUser):
         if self.profile_picture:
             return self.profile_picture.url
         return '/static/images/default-avatar.png'  # Default avatar
+
+
+# التوكن مُعرَّف في handoff.py — يُستورَد هنا فقط ليراه Django عند
+# فحص الموديلات وبناء الترحيلات، ولإبقاء منطقه في ملف منفصل واضح.
+from apps.accounts.handoff import LoginHandoffToken  # noqa: E402,F401

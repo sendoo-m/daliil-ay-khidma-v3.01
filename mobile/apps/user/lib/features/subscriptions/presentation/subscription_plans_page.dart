@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/app_theme.dart';
 import '../../../app/providers.dart';
@@ -423,45 +424,61 @@ class _PlanCard extends StatelessWidget {
         _ => _tr('شهر', 'month'),
       };
 
-  void _showSubscribeInfo(BuildContext context) {
-    showModalBottomSheet<void>(
+  /// يسجّل اختيار الخطة، ثم ينقل المستخدم للويب بنفس حسابه ليكمل
+  /// إنشاء نشاطه.
+  ///
+  /// كانت هذه الدالة تعرض رسالة ثابتة بلا نداء للخادم ثم تُغلَق بلا أي
+  /// أثر — يختار المستخدم خطة، يقرأ جملة، يضغط "حسنًا"، ولا شيء تغيّر.
+  /// الآن: الاختيار يُسجَّل فعليًا على الخادم، ثم يُفتح متصفح بجلسة
+  /// مسجَّلة بنفس الحساب مباشرة على خطوة إنشاء النشاط — لا شاشة وسيطة
+  /// في التطبيق يجب أن يفهمها المستخدم أولًا.
+  Future<void> _showSubscribeInfo(BuildContext context) async {
+    showDialog<void>(
       context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(22, 6, 22, 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                _tr(
-                  'الاشتراك في ${plan.displayNameFor('ar')}',
-                  'Subscribe to ${plan.displayNameFor('en')}',
-                ),
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                _tr(
-                  'اخترت فوترة ${_periodLabel()}. إتمام الاشتراك والدفع متاح حاليًا من لوحة نشاطك على الموقع.',
-                  'You selected ${_periodLabel()} billing. Subscription and payment are currently completed from your business dashboard on the website.',
-                ),
-                style: const TextStyle(color: AppColors.muted, height: 1.7),
-              ),
-              const SizedBox(height: 18),
-              FilledButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(_tr('حسنًا', 'Got it')),
-              ),
-            ],
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final repo = ref.read(subscriptionRepositoryProvider);
+    String? webUrl;
+    Object? failure;
+
+    try {
+      await repo.selectPlan(planId: plan.id, billingPeriod: period);
+      webUrl = await repo.requestWebHandoff();
+    } catch (e) {
+      failure = e;
+    } finally {
+      if (context.mounted) Navigator.of(context).pop();
+    }
+
+    if (!context.mounted) return;
+
+    if (webUrl == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _tr(
+              'تعذّر الانتقال للويب. تأكد من اتصالك وجرّب تاني.',
+              'Could not open the web dashboard. Check your connection '
+                  'and try again.',
+            ),
           ),
         ),
-      ),
+      );
+      return;
+    }
+
+    final opened = await launchUrl(
+      Uri.parse(webUrl),
+      mode: LaunchMode.externalApplication,
     );
+
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_tr('تعذّر فتح المتصفح.', 'Could not open browser.'))),
+      );
+    }
   }
 }
 

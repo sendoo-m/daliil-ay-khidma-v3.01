@@ -28,13 +28,15 @@ from apps.dashboard.views.owner import owner_dashboard
 from apps.dashboard.views import admin_views, admin_crud
 from apps.dashboard.views import subscription_admin
 from apps.dashboard.views.auth import staff_login, staff_logout
-from apps.dashboard.views import onboarding_admin
+from apps.dashboard.views import handoff, onboarding_admin
 
 app_name = 'dashboard'
 
 
 urlpatterns = [
     path('login/', staff_login, name='staff_login'),
+    path('handoff/<str:token>/', handoff.consume_handoff, name='consume_handoff'),
+    path('onboarding/continue/', handoff.onboarding_continue, name='onboarding_continue'),
     path('logout/', staff_logout, name='staff_logout'),
     path('', index, name='index'),
 

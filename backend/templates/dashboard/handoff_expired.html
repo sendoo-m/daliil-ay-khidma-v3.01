@@ -1,0 +1,30 @@
+{% load static %}<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الرابط انتهى — دليل أي خدمة</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+<style>
+  body{background:#f5f7fb;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif}
+  .shell{min-height:100vh;display:grid;place-items:center;padding:24px}
+  .box{max-width:420px;background:#fff;border:1px solid #e5e9f2;border-radius:16px;padding:32px;text-align:center}
+  .bar{width:44px;height:3px;background:#f59e0b;margin:0 auto 20px}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="box">
+    <div class="bar"></div>
+    <h1 class="h5 fw-bold">الرابط ده انتهت صلاحيته</h1>
+    <p class="text-muted small" style="line-height:1.9">
+      روابط الدخول من التطبيق صالحة لثوانٍ معدودة لحمايتك.
+      رجّع للتطبيق واضغط "اختر الخطة" تاني.
+    </p>
+    <a class="btn btn-outline-secondary mt-2" href="{% url 'dashboard:staff_login' %}">
+      تسجيل الدخول العادي
+    </a>
+  </div>
+</div>
+</body>
+</html>

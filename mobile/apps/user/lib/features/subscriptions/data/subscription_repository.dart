@@ -156,6 +156,22 @@ final class SubscriptionRepository {
     return MerchantOnboardingState.fromJson(response.data ?? const {});
   }
 
+  /// يطلب رابط دخول لمرة واحدة ينقل المستخدم لجلسة ويب بنفس حسابه.
+  ///
+  /// تطبيق أصحاب الأنشطة ليس مبنيًا لمنصة موبايل أصلية بعد، فإكمال
+  /// اختيار الخطة وإنشاء النشاط يتم على الويب. هذا الرابط يجعل الانتقال
+  /// بلا كتابة بيانات دخول من جديد — نفس الحساب، جلسة جديدة فقط.
+  Future<String> requestWebHandoff() async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      'onboarding/handoff/',
+    );
+    final url = response.data?['url'] as String?;
+    if (url == null) {
+      throw StateError('لم يصل رابط الدخول من الخادم.');
+    }
+    return url;
+  }
+
   Future<MerchantOnboardingState> selectPlan({
     required int planId,
     required String billingPeriod,
