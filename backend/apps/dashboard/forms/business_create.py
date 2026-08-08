@@ -53,7 +53,12 @@ class BusinessCreateForm(forms.ModelForm):
             'business_type': forms.Select(attrs={'class': 'form-select', 'id': 'id_business_type'}),
             'name_ar':        forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'اسم المحل بالعربية', 'dir': 'rtl'}),
             'name_en':        forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Business name in English'}),
-            'category':       forms.Select(attrs={'class': 'form-select'}),
+            # category يتخذ Select2 عبر المُخصصة
+            'category':       forms.Select(attrs={
+                'class': 'form-select select2-category',
+                'id': 'id_category',
+                'data-placeholder': 'ابحث عن تصنيف...',
+            }),
             'description_ar': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'وصف تفصيلي...', 'dir': 'rtl'}),
             'description_en': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Detailed description...'}),
             # Section 2
@@ -82,7 +87,12 @@ class BusinessCreateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.user = user
 
-        # لو نوع المحل محدد مسبقاً (shop/craft) نخفي الـ field ونحدده
+        # أعربي فقط لقائمة التصنيفات - مرتبة بالاسم العربي
+        self.fields['category'].queryset = Category.objects.filter(
+            is_active=True
+        ).order_by('order', 'name_ar')
+
+        # لو نوع المحل محدد مسبقاً (shop/craft) نخفي الفيلد
         if business_type:
             self.fields['business_type'].initial = business_type
             self.fields['business_type'].widget = forms.HiddenInput()
@@ -108,29 +118,20 @@ class BusinessCreateForm(forms.ModelForm):
             except AttributeError:
                 pass
 
-        # Cascading: لو POST
-        # المنطق: نوسّع الـ queryset بناءً على القيمة المرسلة قبل ما Django
-        # يعمل validation، عشان ModelChoiceField ما يرفضش القيمة لأنها
-        # مش موجودة في queryset فاضي.
         if self.is_bound:
-            gov_id = self._safe_int(self.data.get('governorate'))
-            city_id = self._safe_int(self.data.get('city'))
+            gov_id      = self._safe_int(self.data.get('governorate'))
+            city_id     = self._safe_int(self.data.get('city'))
             district_id = self._safe_int(self.data.get('district'))
 
-            # ① city queryset: فلتر بالمحافظة لو موجودة،
-            #    fallback: اجلب المدينة المحددة بـ PK مباشرة
             if gov_id:
                 self.fields['city'].queryset = City.objects.filter(
                     governorate_id=gov_id, is_active=True
                 ).order_by('name_ar')
             elif city_id:
-                # JS ما اشتغلش أو direct submit — نضمن القيمة صالحة
                 self.fields['city'].queryset = City.objects.filter(
                     pk=city_id, is_active=True
                 )
 
-            # ② district queryset: فلتر بالمدينة لو موجودة،
-            #    fallback: اجلب الحي المحدد بـ PK مباشرة
             if city_id:
                 self.fields['district'].queryset = District.objects.filter(
                     city_id=city_id, is_active=True
@@ -142,7 +143,6 @@ class BusinessCreateForm(forms.ModelForm):
 
     @staticmethod
     def _safe_int(value):
-        """تحويل آمن للـ string إلى int، يرجع None لو فشل."""
         try:
             return int(value)
         except (TypeError, ValueError):
@@ -153,7 +153,6 @@ class BusinessImageForm(forms.ModelForm):
     """فورم صورة واحدة من الـ gallery"""
     class Meta:
         model   = BusinessImage
-        # الترتيب قيمة داخلية يحددها النظام تلقائياً حسب موضع الصورة.
         fields  = ['image', 'caption_ar', 'caption_en']
         widgets = {
             'image':      forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
@@ -162,14 +161,13 @@ class BusinessImageForm(forms.ModelForm):
         }
 
 
-# Formset للـ gallery - حتى 10 صور
 from django.forms import inlineformset_factory
 
 BusinessImageFormSet = inlineformset_factory(
     Business,
     BusinessImage,
     form=BusinessImageForm,
-    extra=3,        # 3 حقول فاضية للبداية
-    max_num=10,     # حد أقصى 10 صور
+    extra=3,
+    max_num=10,
     can_delete=True,
 )
