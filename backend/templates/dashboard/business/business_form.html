@@ -5,7 +5,6 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<!-- Select2 CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
 <style>
@@ -132,7 +131,6 @@
     .wizard-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }
     .btn-wizard { padding: 0.6rem 2rem; border-radius: 10px; font-weight: 600; }
 
-    /* Select2 RTL override */
     .select2-container--bootstrap-5 .select2-selection {
         direction: rtl;
         text-align: right;
@@ -190,7 +188,7 @@
     {{ form.business_type }}
     {{ formset.management_form }}
 
-    <!-- SECTION 1 - المعلومات الأساسية -->
+    <!-- SECTION 1 -->
     <div class="form-section active" id="section-1">
         <div class="section-card">
             <div class="section-title"><i class="fas fa-info-circle"></i> المعلومات الأساسية</div>
@@ -251,7 +249,7 @@
     </div>
 
 
-    <!-- SECTION 2 - الموقع -->
+    <!-- SECTION 2 -->
     <div class="form-section" id="section-2">
         <div class="section-card">
             <div class="section-title"><i class="fas fa-map-marker-alt"></i> الموقع الجغرافي</div>
@@ -305,7 +303,7 @@
     </div>
 
 
-    <!-- SECTION 3 - معلومات التواصل -->
+    <!-- SECTION 3 -->
     <div class="form-section" id="section-3">
         <div class="section-card">
             <div class="section-title"><i class="fas fa-phone-alt"></i> معلومات التواصل</div>
@@ -349,7 +347,7 @@
     </div>
 
 
-    <!-- SECTION 4 - سوشيال -->
+    <!-- SECTION 4 -->
     <div class="form-section" id="section-4">
         <div class="section-card">
             <div class="section-title"><i class="fas fa-share-alt"></i> حسابات التواصل الاجتماعي</div>
@@ -379,7 +377,7 @@
     </div>
 
 
-    <!-- SECTION 5 - معرض الصور -->
+    <!-- SECTION 5 -->
     <div class="form-section" id="section-5">
         <div class="section-card">
             <div class="section-title"><i class="fas fa-images"></i> معرض صور المحل</div>
@@ -430,12 +428,13 @@
 
 
 {% block extra_js %}
+<!-- ✅ jQuery أولاً قبل Select2 -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- Select2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 // =========================================
-// SELECT2 - البحث في التصنيف
+// SELECT2
 // =========================================
 $(document).ready(function () {
     $('#id_category').select2({
@@ -444,7 +443,7 @@ $(document).ready(function () {
         allowClear: true,
         language: {
             noResults:    function() { return 'لا توجد نتائج'; },
-            searching:    function() { return 'جارٍ البحث...'; },
+            searching:    function() { return 'جارى البحث...'; },
             inputTooShort: function() { return 'اكتب للبحث'; },
         },
         width: '100%',
