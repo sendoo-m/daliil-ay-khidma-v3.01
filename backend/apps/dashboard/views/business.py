@@ -12,6 +12,14 @@ from apps.directory.models.location import Governorate
 from apps.subscriptions.models import Subscription
 
 
+BUSINESS_WIZARD_STEPS = [
+    'المعلومات الأساسية',
+    'الموقع الجغرافي',
+    'معلومات التواصل',
+    'حسابات التواصل',
+    'معرض الصور',
+]
+
 BUSINESS_FORM_SECTIONS = {
     1: {
         'business_type', 'name_ar', 'name_en', 'category',
@@ -192,10 +200,15 @@ def business_create(request, business_type='shop'):
             business = form.save(commit=False)
             business.owner = request.user
             business.business_type = business_type
+            business.is_active = False  # ينتظر تفعيل الأدمن
             business.save()
             _save_business_images(formset, business)
-            messages.success(request, f'✅ تم إضافة "{business.name_ar}" بنجاح!')
-            return redirect('dashboard:business_detail', slug=business.slug)
+            messages.success(
+                request,
+                f'✅ تم إرسال "{business.name_ar}" بنجاح! '
+                'سيتم مراجعته وتفعيله من قِبَل الإدارة قريباً.',
+            )
+            return redirect('dashboard:business_list')
 
         error_section = _business_form_error_section(form, formset)
         messages.error(request, 'لم يتم حفظ المحل. راجع الأخطاء الموضحة في النموذج.')
@@ -204,16 +217,18 @@ def business_create(request, business_type='shop'):
         formset = BusinessImageFormSet()
         error_section = 1
 
-    return render(request, 'dashboard/business/form.html', {
+    return render(request, 'dashboard/admin/business_form.html', {
         'form': form,
         'formset': formset,
         'business_type': business_type,
         'title': titles[business_type],
+        'steps': BUSINESS_WIZARD_STEPS,
         'governorates': Governorate.objects.filter(is_active=True).order_by('name_ar'),
-        'action': 'create',
+        'action': False,  # False = إضافة جديدة
         'error_section': error_section,
         'current_subscription': subscription,
         'business_limit': limit,
+        'is_owner_mode': True,
     })
 
 
@@ -251,7 +266,7 @@ def business_update(request, slug):
         error_section = 1
 
     subscription = getattr(business, 'subscription', None)
-    return render(request, 'dashboard/business/form.html', {
+    return render(request, 'dashboard/admin/business_form.html', {
         'form': form,
         'formset': formset,
         'business': business,
@@ -261,10 +276,12 @@ def business_update(request, slug):
             'en': f'Edit: {business.name_en}',
             'icon': '✏️',
         },
+        'steps': BUSINESS_WIZARD_STEPS,
         'governorates': Governorate.objects.filter(is_active=True).order_by('name_ar'),
-        'action': 'update',
+        'action': True,  # True = تعديل
         'error_section': error_section,
         'current_subscription': subscription,
+        'is_owner_mode': True,
     })
 
 
