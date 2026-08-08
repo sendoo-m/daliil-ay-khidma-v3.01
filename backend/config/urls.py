@@ -5,6 +5,7 @@ from django.urls import include, path, re_path
 from django.views.static import serve
 
 from apps.core.admin_views import demo_data_admin
+from apps.accounts.magic_link import issue_magic_link, redeem_magic_link
 
 urlpatterns = [
     # Temporary superuser-only tool for Render's free plan (no Shell access).
@@ -25,6 +26,13 @@ urlpatterns = [
     path("api/v1/", include("apps.api.urls", namespace="api")),
     path("api/v2/", include("apps.api.urls_v2", namespace="api_v2")),
     path("api/dashboard/", include("apps.dashboard.api.urls")),
+
+    # ── Magic-Link Web Handoff ──────────────────────────────────────────────
+    # Flutter يستدعي POST /api/auth/magic-link/ بـ DRF token
+    # فيحصل على URL يفتحه في WebView فيُسجَّل الدخول ويُحوَّل للخطط
+    path("api/auth/magic-link/", issue_magic_link, name="api_magic_link_issue"),
+    path("auth/magic/",           redeem_magic_link, name="magic_link_redeem"),
+    # ───────────────────────────────────────────────────────────────────────
 ]
 
 # Static & Media
