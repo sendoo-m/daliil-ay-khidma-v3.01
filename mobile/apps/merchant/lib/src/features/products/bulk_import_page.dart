@@ -178,7 +178,7 @@ class _BulkImportPageState extends ConsumerState<BulkImportPage> {
           _report = null;
           _file = null;
           _done = 'تم. اتضاف $created منتج، واتعدّل $updated'
-              '${skipped > 0 ? '، واتساب $skipped فيهم مشاكل' : ''}.';
+              '${skipped > 0 ? '، واتساب $skipped فيهم مشاكل' : ''}';
         });
       }
     } on ApiFailure catch (failure) {
@@ -496,6 +496,8 @@ class _Tally extends StatelessWidget {
 }
 
 class _Bar extends StatelessWidget {
+  const _Bar();
+
   @override
   Widget build(BuildContext context) =>
       Container(width: 1, height: 40, color: Shop.rule);

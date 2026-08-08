@@ -923,7 +923,7 @@ class _ChangeSummary extends StatelessWidget {
                 Expanded(
                   child: _HeroValue(
                     label: isArabic ? 'السعر' : 'Price',
-                    value: '${_money(preview.price)}',
+                    value: _money(preview.price),
                   ),
                 ),
               ],
