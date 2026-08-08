@@ -5,6 +5,9 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<!-- Select2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
 <style>
     .form-wizard-steps {
         display: flex;
@@ -128,6 +131,19 @@
     .formset-row.marked-delete { opacity: 0.4; }
     .wizard-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }
     .btn-wizard { padding: 0.6rem 2rem; border-radius: 10px; font-weight: 600; }
+
+    /* Select2 RTL override */
+    .select2-container--bootstrap-5 .select2-selection {
+        direction: rtl;
+        text-align: right;
+    }
+    .select2-container--bootstrap-5 .select2-dropdown {
+        direction: rtl;
+    }
+    .select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
+        direction: rtl;
+        text-align: right;
+    }
 </style>
 {% endblock %}
 
@@ -415,7 +431,30 @@
 
 {% block extra_js %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
+// =========================================
+// SELECT2 - البحث في التصنيف
+// =========================================
+$(document).ready(function () {
+    $('#id_category').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'ابحث عن تصنيف...',
+        allowClear: true,
+        language: {
+            noResults:    function() { return 'لا توجد نتائج'; },
+            searching:    function() { return 'جارٍ البحث...'; },
+            inputTooShort: function() { return 'اكتب للبحث'; },
+        },
+        width: '100%',
+        dir: 'rtl',
+    });
+});
+
+// =========================================
+// WIZARD
+// =========================================
 const TOTAL_SECTIONS = 5;
 const stepLabels = ['المعلومات الأساسية','الموقع','التواصل','السوشيال','الصور'];
 
@@ -496,8 +535,8 @@ document.getElementById('id_governorate')?.addEventListener('change', function()
     const govId = this.value;
     const cityEl = document.getElementById('id_city');
     const distEl = document.getElementById('id_district');
-    cityEl.innerHTML = '<option value="">-- اختر المدينة --</option>';
-    distEl.innerHTML = '<option value="">-- اختر الحي --</option>';
+    cityEl.innerHTML = '<option value="">اختر المدينة</option>';
+    distEl.innerHTML = '<option value="">اختر الحي</option>';
     if (!govId) return;
     fetch(`{% url 'dashboard:ajax_cities' %}?governorate_id=${encodeURIComponent(govId)}`)
         .then(r => r.json()).then(data => data.cities.forEach(c => cityEl.innerHTML += `<option value="${c.id}">${c.name_ar}</option>`));
@@ -505,7 +544,7 @@ document.getElementById('id_governorate')?.addEventListener('change', function()
 document.getElementById('id_city')?.addEventListener('change', function() {
     const cityId = this.value;
     const distEl = document.getElementById('id_district');
-    distEl.innerHTML = '<option value="">-- اختر الحي --</option>';
+    distEl.innerHTML = '<option value="">اختر الحي</option>';
     if (!cityId) return;
     fetch(`{% url 'dashboard:ajax_districts' %}?city_id=${encodeURIComponent(cityId)}`)
         .then(r => r.json()).then(data => data.districts.forEach(d => distEl.innerHTML += `<option value="${d.id}">${d.name_ar}</option>`));
