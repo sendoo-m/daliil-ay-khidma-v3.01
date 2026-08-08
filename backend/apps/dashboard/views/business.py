@@ -36,6 +36,9 @@ BUSINESS_FORM_SECTIONS = {
     4: {'facebook', 'instagram', 'twitter', 'tiktok'},
 }
 
+# Template used by owner (extends dashboard/base.html, NOT admin/base.html)
+_OWNER_FORM_TEMPLATE = 'dashboard/business/business_form.html'
+
 
 def _active_owner_subscription(user):
     """Return the most relevant active subscription for owner-level limits."""
@@ -217,18 +220,17 @@ def business_create(request, business_type='shop'):
         formset = BusinessImageFormSet()
         error_section = 1
 
-    return render(request, 'dashboard/admin/business_form.html', {
+    return render(request, _OWNER_FORM_TEMPLATE, {
         'form': form,
         'formset': formset,
         'business_type': business_type,
         'title': titles[business_type],
         'steps': BUSINESS_WIZARD_STEPS,
         'governorates': Governorate.objects.filter(is_active=True).order_by('name_ar'),
-        'action': False,  # False = إضافة جديدة
+        'action': False,
         'error_section': error_section,
         'current_subscription': subscription,
         'business_limit': limit,
-        'is_owner_mode': True,
     })
 
 
@@ -266,7 +268,7 @@ def business_update(request, slug):
         error_section = 1
 
     subscription = getattr(business, 'subscription', None)
-    return render(request, 'dashboard/admin/business_form.html', {
+    return render(request, _OWNER_FORM_TEMPLATE, {
         'form': form,
         'formset': formset,
         'business': business,
@@ -278,10 +280,9 @@ def business_update(request, slug):
         },
         'steps': BUSINESS_WIZARD_STEPS,
         'governorates': Governorate.objects.filter(is_active=True).order_by('name_ar'),
-        'action': True,  # True = تعديل
+        'action': True,
         'error_section': error_section,
         'current_subscription': subscription,
-        'is_owner_mode': True,
     })
 
 
