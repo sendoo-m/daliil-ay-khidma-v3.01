@@ -92,7 +92,7 @@ class BusinessCreateForm(forms.ModelForm):
             for f in ['is_active', 'is_verified', 'is_featured']:
                 self.fields.pop(f, None)
 
-        # Cascading: لو فيه instance موجودة
+        # Cascading: لو فيه instance موجودة (edit mode)
         if self.instance.pk and self.instance.district:
             try:
                 city = self.instance.district.city
@@ -109,21 +109,44 @@ class BusinessCreateForm(forms.ModelForm):
                 pass
 
         # Cascading: لو POST
+        # المنطق: نوسّع الـ queryset بناءً على القيمة المرسلة قبل ما Django
+        # يعمل validation، عشان ModelChoiceField ما يرفضش القيمة لأنها
+        # مش موجودة في queryset فاضي.
         if self.is_bound:
-            if self.data.get('governorate'):
-                try:
-                    self.fields['city'].queryset = City.objects.filter(
-                        governorate_id=int(self.data['governorate']), is_active=True
-                    ).order_by('name_ar')
-                except (ValueError, TypeError):
-                    pass
-            if self.data.get('city'):
-                try:
-                    self.fields['district'].queryset = District.objects.filter(
-                        city_id=int(self.data['city']), is_active=True
-                    ).order_by('name_ar')
-                except (ValueError, TypeError):
-                    pass
+            gov_id = self._safe_int(self.data.get('governorate'))
+            city_id = self._safe_int(self.data.get('city'))
+            district_id = self._safe_int(self.data.get('district'))
+
+            # ① city queryset: فلتر بالمحافظة لو موجودة،
+            #    fallback: اجلب المدينة المحددة بـ PK مباشرة
+            if gov_id:
+                self.fields['city'].queryset = City.objects.filter(
+                    governorate_id=gov_id, is_active=True
+                ).order_by('name_ar')
+            elif city_id:
+                # JS ما اشتغلش أو direct submit — نضمن القيمة صالحة
+                self.fields['city'].queryset = City.objects.filter(
+                    pk=city_id, is_active=True
+                )
+
+            # ② district queryset: فلتر بالمدينة لو موجودة،
+            #    fallback: اجلب الحي المحدد بـ PK مباشرة
+            if city_id:
+                self.fields['district'].queryset = District.objects.filter(
+                    city_id=city_id, is_active=True
+                ).order_by('name_ar')
+            elif district_id:
+                self.fields['district'].queryset = District.objects.filter(
+                    pk=district_id, is_active=True
+                )
+
+    @staticmethod
+    def _safe_int(value):
+        """تحويل آمن للـ string إلى int، يرجع None لو فشل."""
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
 
 
 class BusinessImageForm(forms.ModelForm):
