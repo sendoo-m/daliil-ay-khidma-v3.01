@@ -147,7 +147,10 @@ def _product_fields():
     allowed = [
         'name_en', 'name_ar',
         'description_en', 'description_ar',
-        'product_type', 'price', 'ProductImage',
+        'product_type', 'price', 'old_price',
+        'stock_quantity',
+        'has_delivery', 'delivery_cost',
+        'delivery_time_en', 'delivery_time_ar',
         'is_available', 'is_featured',
     ]
     existing = {f.name for f in Product._meta.get_fields() if hasattr(f, 'name')}
@@ -159,12 +162,20 @@ class AdminProductForm(forms.ModelForm):
         model   = Product
         fields  = _product_fields()
         widgets = {
-            'name_en':        forms.TextInput(attrs={'class': 'form-control'}),
-            'name_ar':        forms.TextInput(attrs={'class': 'form-control'}),
-            'description_en': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
-            'description_ar': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
-            'product_type':   forms.Select(attrs={'class': 'form-select'}),
-            'price':          forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'name_en':           forms.TextInput(attrs={'class': 'form-control'}),
+            'name_ar':           forms.TextInput(attrs={'class': 'form-control'}),
+            'description_en':    forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'description_ar':    forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'product_type':      forms.Select(attrs={'class': 'form-select'}),
+            'price':             forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'old_price':         forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'stock_quantity':    forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
+            'has_delivery':      forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'id_has_delivery'}),
+            'delivery_cost':     forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'delivery_time_en':  forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 1-2 business days'}),
+            'delivery_time_ar':  forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'مثال: 1-2 يوم عمل', 'dir': 'rtl'}),
+            'is_available':      forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_featured':       forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
 

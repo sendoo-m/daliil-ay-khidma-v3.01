@@ -28,6 +28,8 @@ class ProductForm(forms.ModelForm):
             'price', 'old_price',
             'is_available', 'is_featured',
             'stock_quantity',
+            'has_delivery', 'delivery_cost',
+            'delivery_time_en', 'delivery_time_ar',
         ]
         
         widgets = {
@@ -77,6 +79,25 @@ class ProductForm(forms.ModelForm):
             'is_featured': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
+            'has_delivery': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+                'id': 'id_has_delivery'
+            }),
+            'delivery_cost': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': 'مثال: 25.00'
+            }),
+            'delivery_time_en': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. 1-2 business days'
+            }),
+            'delivery_time_ar': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'مثال: 1-2 يوم عمل',
+                'dir': 'rtl'
+            }),
         }
         
         labels = {
@@ -91,4 +112,8 @@ class ProductForm(forms.ModelForm):
             'stock_quantity': 'الكمية',
             'is_available': 'متوفر',
             'is_featured': 'مميز',
+            'has_delivery': 'يوجد توصيل',
+            'delivery_cost': 'تكلفة التوصيل (جنيه)',
+            'delivery_time_en': 'Delivery Time (English)',
+            'delivery_time_ar': 'وقت التوصيل',
         }

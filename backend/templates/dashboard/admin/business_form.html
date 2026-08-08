@@ -217,22 +217,8 @@
 </div>
 
 
-<!-- ===== Wizard Steps ===== -->
-<div class="form-wizard-steps">
-    {% for step in steps %}
-    <div class="wizard-step {% if forloop.first %}active{% endif %}" data-step="{{ forloop.counter }}">
-        <div class="wizard-step-circle">
-            {% if forloop.first %}<i class="fas fa-info"></i>
-            {% elif forloop.counter == 2 %}<i class="fas fa-map-marker-alt"></i>
-            {% elif forloop.counter == 3 %}<i class="fas fa-phone"></i>
-            {% elif forloop.counter == 4 %}<i class="fas fa-share-alt"></i>
-            {% elif forloop.counter == 5 %}<i class="fas fa-images"></i>
-            {% else %}<i class="fas fa-clock"></i>{% endif %}
-        </div>
-        <span class="wizard-step-label">{{ step }}</span>
-    </div>
-    {% endfor %}
-</div>
+<!-- ===== Wizard Steps Container ===== -->
+<div class="form-wizard-steps" id="wizardStepsContainer"></div>
 
 
 <form method="post" enctype="multipart/form-data" id="businessForm" novalidate
@@ -244,7 +230,7 @@
     <!-- =========================================
          SECTION 1 - المعلومات الأساسية
     ========================================= -->
-    <div class="form-section active" id="section-1">
+    <div class="form-section" id="section-1">
         <div class="section-card">
             <div class="section-title"><i class="fas fa-info-circle"></i> المعلومات الأساسية</div>
             <div class="row g-3">
@@ -587,7 +573,63 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 // =========================================
-// SELECT2 - البحث في التصنيف
+// WIZARD CONFIG
+// =========================================
+const TOTAL_SECTIONS = 5;
+const stepLabels  = ['المعلومات الأساسية', 'الموقع', 'التواصل', 'السوشيال', 'الصور'];
+const stepIcons   = ['fa-info', 'fa-map-marker-alt', 'fa-phone', 'fa-share-alt', 'fa-images'];
+
+// =========================================
+// BUILD WIZARD STEPS - يتشغل أول ما الصفحة تفتح
+// =========================================
+(function buildWizardSteps() {
+    const container = document.getElementById('wizardStepsContainer');
+    stepLabels.forEach(function (label, i) {
+        const div = document.createElement('div');
+        div.className = 'wizard-step';
+        div.dataset.step = i + 1;
+        div.innerHTML =
+            '<div class="wizard-step-circle"><i class="fas ' + stepIcons[i] + '"></i></div>' +
+            '<span class="wizard-step-label">' + label + '</span>';
+        container.appendChild(div);
+    });
+})();
+
+// =========================================
+// SHOW SECTION
+// =========================================
+function showSection(n) {
+    document.querySelectorAll('.form-section').forEach(function (s) {
+        s.classList.remove('active');
+    });
+    var target = document.getElementById('section-' + n);
+    if (target) target.classList.add('active');
+
+    document.querySelectorAll('.wizard-step').forEach(function (el, i) {
+        el.classList.remove('active', 'completed');
+        if (i + 1 === n)      el.classList.add('active');
+        else if (i + 1 < n)   el.classList.add('completed');
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (n === 2 && !mapInitialized) initMap();
+}
+
+function nextSection(current) { if (current < TOTAL_SECTIONS) showSection(current + 1); }
+function prevSection(current) { if (current > 1) showSection(current - 1); }
+
+// =========================================
+// INIT: اظهر القسم الصح بعد ما الـ DOM يتبنى
+// =========================================
+(function initWizard() {
+    var errorSection = parseInt(
+        document.getElementById('businessForm').dataset.errorSection || '1'
+    );
+    showSection(errorSection > 0 ? errorSection : 1);
+})();
+
+
+// =========================================
+// SELECT2
 // =========================================
 $(document).ready(function () {
     $('#id_category').select2({
@@ -595,77 +637,37 @@ $(document).ready(function () {
         placeholder: 'ابحث عن تصنيف...',
         allowClear: true,
         language: {
-            noResults:    function() { return 'لا توجد نتائج'; },
-            searching:    function() { return 'جارٍ البحث...'; },
-            inputTooShort: function() { return 'اكتب للبحث'; },
+            noResults:     function () { return 'لا توجد نتائج'; },
+            searching:     function () { return 'جارٍ البحث...'; },
+            inputTooShort: function () { return 'اكتب للبحث'; },
         },
         width: '100%',
         dir: 'rtl',
     });
 });
 
-// =========================================
-// WIZARD
-// =========================================
-const TOTAL_SECTIONS = 5;
-const stepLabels = ['المعلومات الأساسية','الموقع','التواصل','السوشيال','الصور'];
-
-function showSection(n) {
-    document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
-    document.getElementById('section-' + n).classList.add('active');
-    document.querySelectorAll('.wizard-step').forEach((el, i) => {
-        el.classList.remove('active','completed');
-        if (i + 1 === n)        el.classList.add('active');
-        else if (i + 1 < n)     el.classList.add('completed');
-    });
-    window.scrollTo({top: 0, behavior: 'smooth'});
-    if (n === 2 && !mapInitialized) initMap();
-}
-
-function nextSection(current) { if (current < TOTAL_SECTIONS) showSection(current + 1); }
-function prevSection(current) { if (current > 1) showSection(current - 1); }
-
-(function renderSteps() {
-    const container = document.querySelector('.form-wizard-steps');
-    container.innerHTML = '';
-    stepLabels.forEach((label, i) => {
-        const div = document.createElement('div');
-        div.className = 'wizard-step' + (i === 0 ? ' active' : '');
-        div.dataset.step = i + 1;
-        const icons = ['fa-info','fa-map-marker-alt','fa-phone','fa-share-alt','fa-images'];
-        div.innerHTML = `
-            <div class="wizard-step-circle"><i class="fas ${icons[i]}"></i></div>
-            <span class="wizard-step-label">${label}</span>`;
-        container.appendChild(div);
-    });
-})();
-
-(function jumpToErrorSection() {
-    const errorSection = parseInt('{{ error_section|default:1 }}');
-    if (errorSection > 1) showSection(errorSection);
-})();
-
 
 // =========================================
 // LEAFLET MAP
 // =========================================
-let map, marker, mapInitialized = false;
-const existingLat = "{{ form.instance.latitude|default:'' }}";
-const existingLng = "{{ form.instance.longitude|default:'' }}";
+var map, marker, mapInitialized = false;
+var existingLat = "{{ form.instance.latitude|default:'' }}";
+var existingLng = "{{ form.instance.longitude|default:'' }}";
 
 function initMap() {
     mapInitialized = true;
-    const defaultLat = existingLat ? parseFloat(existingLat) : 26.8206;
-    const defaultLng = existingLng ? parseFloat(existingLng) : 30.8025;
-    const defaultZoom = existingLat ? 15 : 6;
+    var defaultLat  = existingLat ? parseFloat(existingLat) : 26.8206;
+    var defaultLng  = existingLng ? parseFloat(existingLng) : 30.8025;
+    var defaultZoom = existingLat ? 15 : 6;
 
     map = L.map('map').setView([defaultLat, defaultLng], defaultZoom);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors', maxZoom: 19
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
     }).addTo(map);
 
     if (existingLat && existingLng) placeMarker(parseFloat(existingLat), parseFloat(existingLng));
-    map.on('click', function(e) { placeMarker(e.latlng.lat, e.latlng.lng); });
+    map.on('click', function (e) { placeMarker(e.latlng.lat, e.latlng.lng); });
 }
 
 function placeMarker(lat, lng) {
@@ -675,19 +677,20 @@ function placeMarker(lat, lng) {
         icon: L.divIcon({
             className: '',
             html: '<div style="background:#667eea;width:22px;height:22px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35)"></div>',
-            iconSize: [22, 22], iconAnchor: [11, 11]
+            iconSize: [22, 22],
+            iconAnchor: [11, 11]
         })
     }).addTo(map);
     updateCoords(lat, lng);
-    marker.on('dragend', function(e) {
-        const pos = e.target.getLatLng();
+    marker.on('dragend', function (e) {
+        var pos = e.target.getLatLng();
         updateCoords(pos.lat, pos.lng);
     });
 }
 
 function updateCoords(lat, lng) {
-    const latR = parseFloat(lat.toFixed(6));
-    const lngR = parseFloat(lng.toFixed(6));
+    var latR = parseFloat(lat.toFixed(6));
+    var lngR = parseFloat(lng.toFixed(6));
     document.getElementById('id_latitude').value  = latR;
     document.getElementById('id_longitude').value = lngR;
     document.getElementById('latDisplay').textContent = latR;
@@ -706,32 +709,32 @@ function clearMarker() {
 // =========================================
 // CASCADING DROPDOWNS
 // =========================================
-document.getElementById('id_governorate')?.addEventListener('change', function() {
-    const govId = this.value;
-    const citySelect = document.getElementById('id_city');
-    const districtSelect = document.getElementById('id_district');
-    citySelect.innerHTML = '<option value="">-- اختر المدينة --</option>';
+document.getElementById('id_governorate') && document.getElementById('id_governorate').addEventListener('change', function () {
+    var govId = this.value;
+    var citySelect     = document.getElementById('id_city');
+    var districtSelect = document.getElementById('id_district');
+    citySelect.innerHTML     = '<option value="">-- اختر المدينة --</option>';
     districtSelect.innerHTML = '<option value="">-- اختر الحي --</option>';
     if (!govId) return;
-    fetch(`{% url 'dashboard:ajax_cities' %}?governorate_id=${encodeURIComponent(govId)}`)
-        .then(r => r.json())
-        .then(data => {
-            data.cities.forEach(c => {
-                citySelect.innerHTML += `<option value="${c.id}">${c.name_ar}</option>`;
+    fetch("{% url 'dashboard:ajax_cities' %}?governorate_id=" + encodeURIComponent(govId))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            data.cities.forEach(function (c) {
+                citySelect.innerHTML += '<option value="' + c.id + '">' + c.name_ar + '</option>';
             });
         });
 });
 
-document.getElementById('id_city')?.addEventListener('change', function() {
-    const cityId = this.value;
-    const districtSelect = document.getElementById('id_district');
+document.getElementById('id_city') && document.getElementById('id_city').addEventListener('change', function () {
+    var cityId         = this.value;
+    var districtSelect = document.getElementById('id_district');
     districtSelect.innerHTML = '<option value="">-- اختر الحي --</option>';
     if (!cityId) return;
-    fetch(`{% url 'dashboard:ajax_districts' %}?city_id=${encodeURIComponent(cityId)}`)
-        .then(r => r.json())
-        .then(data => {
-            data.districts.forEach(d => {
-                districtSelect.innerHTML += `<option value="${d.id}">${d.name_ar}</option>`;
+    fetch("{% url 'dashboard:ajax_districts' %}?city_id=" + encodeURIComponent(cityId))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            data.districts.forEach(function (d) {
+                districtSelect.innerHTML += '<option value="' + d.id + '">' + d.name_ar + '</option>';
             });
         });
 });
@@ -740,62 +743,61 @@ document.getElementById('id_city')?.addEventListener('change', function() {
 // =========================================
 // GALLERY UPLOAD
 // =========================================
-const dropZone      = document.getElementById('dropZone');
-const bulkInput     = document.getElementById('bulkImageInput');
-const previewArea   = document.getElementById('galleryPreview');
-const formsetPrefix = '{{ formset.prefix }}';
-let totalForms      = parseInt(document.getElementById(`id_${formsetPrefix}-TOTAL_FORMS`).value);
-let fileQueue       = [];
+var dropZone      = document.getElementById('dropZone');
+var bulkInput     = document.getElementById('bulkImageInput');
+var previewArea   = document.getElementById('galleryPreview');
+var formsetPrefix = '{{ formset.prefix }}';
+var totalForms    = parseInt(document.getElementById('id_' + formsetPrefix + '-TOTAL_FORMS').value);
+var fileQueue     = [];
 
 function addFilesToQueue(files) {
-    Array.from(files).forEach(file => {
+    Array.from(files).forEach(function (file) {
         if (!file.type.startsWith('image/')) return;
         if (fileQueue.length >= 10) return;
         fileQueue.push(file);
         renderPreview(file, fileQueue.length - 1);
         injectFileIntoFormset(file, totalForms);
         totalForms++;
-        document.getElementById(`id_${formsetPrefix}-TOTAL_FORMS`).value = totalForms;
+        document.getElementById('id_' + formsetPrefix + '-TOTAL_FORMS').value = totalForms;
     });
 }
 
 function renderPreview(file, index) {
-    const reader = new FileReader();
-    reader.onload = e => {
-        const item = document.createElement('div');
+    var reader = new FileReader();
+    reader.onload = function (e) {
+        var item = document.createElement('div');
         item.className = 'preview-item';
-        item.id = `preview-${index}`;
-        item.innerHTML = `
-            <img src="${e.target.result}" alt="">
-            <button type="button" class="remove-btn" onclick="removeFromQueue(${index})">
-                <i class="fas fa-times"></i>
-            </button>`;
+        item.id = 'preview-' + index;
+        item.innerHTML =
+            '<img src="' + e.target.result + '" alt="">' +
+            '<button type="button" class="remove-btn" onclick="removeFromQueue(' + index + ')">' +
+            '<i class="fas fa-times"></i></button>';
         previewArea.appendChild(item);
     };
     reader.readAsDataURL(file);
 }
 
 function injectFileIntoFormset(file, formIndex) {
-    const dt   = new DataTransfer();
+    var dt    = new DataTransfer();
     dt.items.add(file);
-    const input = document.createElement('input');
+    var input = document.createElement('input');
     input.type  = 'file';
-    input.name  = `${formsetPrefix}-${formIndex}-image`;
+    input.name  = formsetPrefix + '-' + formIndex + '-image';
     input.style.display = 'none';
-    try { input.files = dt.files; } catch(e) {}
+    try { input.files = dt.files; } catch (e) {}
     document.getElementById('businessForm').appendChild(input);
 }
 
 function removeFromQueue(index) {
-    const el = document.getElementById(`preview-${index}`);
+    var el = document.getElementById('preview-' + index);
     if (el) el.remove();
     fileQueue[index] = null;
 }
 
-bulkInput.addEventListener('change', e => addFilesToQueue(e.target.files));
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', e => {
+bulkInput.addEventListener('change', function (e) { addFilesToQueue(e.target.files); });
+dropZone.addEventListener('dragover', function (e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', function () { dropZone.classList.remove('dragover'); });
+dropZone.addEventListener('drop', function (e) {
     e.preventDefault();
     dropZone.classList.remove('dragover');
     addFilesToQueue(e.dataTransfer.files);
