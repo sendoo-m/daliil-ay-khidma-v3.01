@@ -155,7 +155,7 @@ def admin_analytics(request):
         'stats':            stats,
         'users_chart':      json.dumps(users_chart,      ensure_ascii=False),
         'category_chart':   json.dumps(category_chart,   ensure_ascii=False),
-        'gov_chart':        json.dumps(gov_chart,        ensure_ascii=False),
+        'gov_chart':        json.dumps(gov_chart,         ensure_ascii=False),
         'businesses_chart': json.dumps(businesses_chart, ensure_ascii=False),
     })
 
@@ -523,20 +523,76 @@ def admin_category_delete(request, category_id):
 @staff_member_required
 def admin_settings(request):
     """
-    إعدادات النظام — خاصة بلوحة الأدمن فقط.
-    رابط: /dashboard/admin/settings/
+    إعدادات النظام الكاملة — تحفظ كل الحقول في apps.core.models.SiteSettings.
+    القالب يستخدم {{ settings.xxx }} لذا الـ context key هو 'settings'.
     """
-    from apps.site_settings.models import SiteSettings
-    site = SiteSettings.get()
+    from apps.core.models import SiteSettings
+
+    site = SiteSettings.get_settings()
 
     if request.method == 'POST':
-        site.app_store_url  = request.POST.get('app_store_url', '').strip()
-        site.google_play_url = request.POST.get('google_play_url', '').strip()
+        p = request.POST
+        f = request.FILES
+
+        # ── هوية الموقع ──────────────────────────────────────────
+        site.site_name_ar        = p.get('site_name_ar', '').strip()
+        site.site_name_en        = p.get('site_name_en', '').strip()
+        site.site_description_ar = p.get('site_description_ar', '').strip()
+        site.site_description_en = p.get('site_description_en', '').strip()
+
+        # لوجو
+        if p.get('delete_logo') and site.logo:
+            site.logo.delete(save=False)
+            site.logo = None
+        elif 'logo' in f:
+            site.logo = f['logo']
+
+        # فافيكون
+        if p.get('delete_favicon') and site.favicon:
+            site.favicon.delete(save=False)
+            site.favicon = None
+        elif 'favicon' in f:
+            site.favicon = f['favicon']
+
+        # ── بيانات التواصل ────────────────────────────────────────
+        site.contact_email = p.get('contact_email', '').strip()
+        site.contact_phone = p.get('contact_phone', '').strip()
+        site.address       = p.get('address', '').strip()
+
+        # ── سوشيال ميديا ─────────────────────────────────────────
+        site.facebook  = p.get('facebook',  '').strip()
+        site.instagram = p.get('instagram', '').strip()
+        site.twitter   = p.get('twitter',   '').strip()
+        site.whatsapp  = p.get('whatsapp',  '').strip()
+        site.youtube   = p.get('youtube',   '').strip()
+
+        # ── روابط التطبيق ─────────────────────────────────────────
+        site.ios_store_url     = p.get('ios_store_url',     '').strip()
+        site.android_store_url = p.get('android_store_url', '').strip()
+
+        # ── إعدادات تقنية ─────────────────────────────────────────
+        try:
+            site.results_per_page = int(p.get('results_per_page', 12))
+        except (ValueError, TypeError):
+            site.results_per_page = 12
+
+        site.maintenance_mode        = 'maintenance_mode'        in p
+        site.allow_registration      = 'allow_registration'      in p
+        site.allow_reviews           = 'allow_reviews'           in p
+        site.require_review_approval = 'require_review_approval' in p
+
+        # ── SEO ───────────────────────────────────────────────────
+        site.meta_description    = p.get('meta_description',    '').strip()
+        site.meta_keywords       = p.get('meta_keywords',       '').strip()
+        site.google_analytics_id = p.get('google_analytics_id', '').strip()
+        site.google_maps_key     = p.get('google_maps_key',     '').strip()
+
         site.save()
         messages.success(request, '✅ تم حفظ الإعدادات بنجاح')
         return redirect('dashboard:admin_settings')
 
-    return render(request, 'dashboard/admin/settings.html', {'site': site})
+    # القالب يستخدم {{ settings.xxx }}
+    return render(request, 'dashboard/admin/settings.html', {'settings': site})
 
 
 @staff_member_required
