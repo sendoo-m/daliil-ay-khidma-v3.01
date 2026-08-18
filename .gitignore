@@ -7,6 +7,14 @@ build/
 pubspec.lock
 **/doc/api/
 
+# Mobile release signing / Apple credentials
+**/android/key.properties
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+AuthKey_*.p8
+
 # Python
 __pycache__/
 *.py[cod]
