@@ -57,8 +57,7 @@ class SettingsPage extends ConsumerWidget {
                   ],
                   selected: {locale.languageCode},
                   onSelectionChanged: (value) {
-                    ref.read(merchantLocaleProvider.notifier).state =
-                        Locale(value.first);
+                    ref.read(merchantLocaleProvider.notifier).state = Locale(value.first);
                   },
                   showSelectedIcon: false,
                 ),
@@ -97,6 +96,16 @@ class SettingsPage extends ConsumerWidget {
                 subtitle: tr('كل التنبيهات والتحديثات.', 'All alerts and updates.'),
                 onTap: onOpenNotifications,
               ),
+              const Divider(),
+              _ActionTile(
+                icon: Icons.delete_forever_outlined,
+                title: tr('حذف الحساب', 'Delete account'),
+                subtitle: tr(
+                  'يعطل الحساب وأنشطتك فور قبول الطلب.',
+                  'Disables your account and businesses as soon as the request is accepted.',
+                ),
+                onTap: () => _startAccountDeletion(context, ref, isArabic),
+              ),
             ],
           ),
           const SizedBox(height: Gap.md),
@@ -111,8 +120,8 @@ class SettingsPage extends ConsumerWidget {
                   context,
                   tr('الخصوصية', 'Privacy'),
                   tr(
-                    'يعرض التطبيق بيانات حسابك وأنشطتك المصرح لك بإدارتها فقط. إعدادات الخصوصية المتقدمة ستظهر هنا عند توفر API مخصص لها.',
-                    'The app only shows your account data and businesses you are allowed to manage. Advanced privacy controls will appear here when a dedicated API is available.',
+                    'يعرض التطبيق بيانات حسابك وأنشطتك المصرح لك بإدارتها فقط.',
+                    'The app only shows your account data and businesses you are allowed to manage.',
                   ),
                 ),
               ),
@@ -145,6 +154,140 @@ class SettingsPage extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  static Future<void> _startAccountDeletion(
+    BuildContext context,
+    WidgetRef ref,
+    bool isArabic,
+  ) async {
+    final firstConfirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded),
+        title: Text(isArabic ? 'حذف الحساب؟' : 'Delete account?'),
+        content: Text(
+          isArabic
+              ? 'سيتم تعطيل حسابك فورًا وإخفاء أنشطتك من المنصة أثناء معالجة طلب الحذف. لن تتمكن من تسجيل الدخول بعد إرسال الطلب.'
+              : 'Your account will be disabled immediately and your businesses hidden while the deletion request is processed. You will not be able to sign in after submitting it.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(isArabic ? 'إلغاء' : 'Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(dialogContext).colorScheme.error),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(isArabic ? 'متابعة' : 'Continue'),
+          ),
+        ],
+      ),
+    );
+    if (firstConfirmed != true || !context.mounted) return;
+
+    final password = TextEditingController();
+    final reason = TextEditingController();
+    var submitting = false;
+    String? errorMessage;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(isArabic ? 'التأكيد النهائي' : 'Final confirmation'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isArabic
+                      ? 'أدخل كلمة المرور الحالية للتأكد من هويتك. سبب الحذف اختياري.'
+                      : 'Enter your current password to verify your identity. The reason is optional.',
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: password,
+                  obscureText: true,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: isArabic ? 'كلمة المرور الحالية' : 'Current password',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: reason,
+                  maxLines: 3,
+                  maxLength: 1000,
+                  decoration: InputDecoration(
+                    labelText: isArabic ? 'سبب الحذف (اختياري)' : 'Reason (optional)',
+                  ),
+                ),
+                if (errorMessage != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    errorMessage!,
+                    style: TextStyle(color: Theme.of(dialogContext).colorScheme.error),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: submitting ? null : () => Navigator.pop(dialogContext),
+              child: Text(isArabic ? 'إلغاء' : 'Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Theme.of(dialogContext).colorScheme.error),
+              onPressed: submitting
+                  ? null
+                  : () async {
+                      if (password.text.isEmpty) {
+                        setDialogState(() {
+                          errorMessage = isArabic ? 'أدخل كلمة المرور الحالية.' : 'Enter your current password.';
+                        });
+                        return;
+                      }
+                      setDialogState(() {
+                        submitting = true;
+                        errorMessage = null;
+                      });
+                      try {
+                        await ref.read(authRepositoryProvider).requestAccountDeletion(
+                              password: password.text,
+                              reason: reason.text,
+                              source: 'merchant_app',
+                            );
+                        if (!dialogContext.mounted) return;
+                        Navigator.pop(dialogContext);
+                        await ref.read(sessionProvider.notifier).signOut();
+                        if (context.mounted) {
+                          Navigator.of(context).popUntil((route) => route.isFirst);
+                        }
+                      } catch (error) {
+                        if (dialogContext.mounted) {
+                          setDialogState(() {
+                            submitting = false;
+                            errorMessage = error.toString();
+                          });
+                        }
+                      }
+                    },
+              child: submitting
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(isArabic ? 'إرسال طلب الحذف' : 'Submit deletion request'),
+            ),
+          ],
+        ),
+      ),
+    );
+    password.dispose();
+    reason.dispose();
   }
 
   static Future<void> _confirmLogout(
