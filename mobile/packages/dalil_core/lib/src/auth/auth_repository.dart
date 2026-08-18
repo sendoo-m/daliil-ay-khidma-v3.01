@@ -34,6 +34,27 @@ class AuthRepository {
     return AdminSession.fromJson(data);
   }
 
+  /// يرسل طلب حذف الحساب بعد إعادة التحقق بكلمة المرور، ثم يمسح
+  /// الرموز المحلية لأن الخادم يعطل الحساب فور قبول الطلب.
+  Future<void> requestAccountDeletion({
+    required String password,
+    String reason = '',
+    String source = 'mobile',
+  }) async {
+    final refresh = await _tokens.readRefresh();
+    await _api.post(
+      'auth/account-deletion/',
+      body: {
+        'password': password,
+        'confirmation': 'DELETE',
+        'source': source,
+        if (reason.trim().isNotEmpty) 'reason': reason.trim(),
+        if (refresh != null) 'refresh': refresh,
+      },
+    );
+    await _tokens.clear();
+  }
+
   Future<void> logout() async {
     try {
       final refresh = await _tokens.readRefresh();
