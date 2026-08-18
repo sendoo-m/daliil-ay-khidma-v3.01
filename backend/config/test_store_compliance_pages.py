@@ -1,8 +1,8 @@
-from django.test import SimpleTestCase
+from django.test import TestCase
 from django.urls import reverse
 
 
-class StoreCompliancePagesTests(SimpleTestCase):
+class StoreCompliancePagesTests(TestCase):
     def test_privacy_policy_is_public(self):
         response = self.client.get(reverse("privacy_policy"))
         self.assertEqual(response.status_code, 200)
