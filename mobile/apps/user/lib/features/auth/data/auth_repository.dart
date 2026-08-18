@@ -47,7 +47,6 @@ final class AuthRepository {
         await _tokens.clear();
         return false;
       }
-      // لا نحذف جلسة صالحة لمجرد أن الهاتف غير متصل مؤقتًا.
       return true;
     }
   }
@@ -67,6 +66,24 @@ final class AuthRepository {
         refresh: data['refresh'] as String,
       ),
     );
+  }
+
+  Future<void> requestAccountDeletion({
+    required String password,
+    String reason = '',
+  }) async {
+    final refresh = await _tokens.readRefresh();
+    await _dio.post<Map<String, dynamic>>(
+      'auth/account-deletion/',
+      data: {
+        'password': password,
+        'confirmation': 'DELETE',
+        'source': 'user_app',
+        if (reason.trim().isNotEmpty) 'reason': reason.trim(),
+        if (refresh != null) 'refresh': refresh,
+      },
+    );
+    await _tokens.clear();
   }
 
   Future<void> logout() async {
