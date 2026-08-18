@@ -2,12 +2,36 @@ from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import include, path, re_path
+from django.views.generic import TemplateView
 from django.views.static import serve
 
 from apps.core.admin_views import demo_data_admin
 from apps.accounts.magic_link import issue_magic_link, redeem_magic_link
 
 urlpatterns = [
+    # Public store-compliance pages. Keep these stable: Google Play and
+    # App Store Connect may review them independently of an app release.
+    path(
+        "privacy/",
+        TemplateView.as_view(template_name="legal/privacy.html"),
+        name="privacy_policy",
+    ),
+    path(
+        "terms/",
+        TemplateView.as_view(template_name="legal/terms.html"),
+        name="terms_of_service",
+    ),
+    path(
+        "support/",
+        TemplateView.as_view(template_name="legal/support.html"),
+        name="support",
+    ),
+    path(
+        "account-deletion/",
+        TemplateView.as_view(template_name="legal/account_deletion.html"),
+        name="account_deletion_info",
+    ),
+
     # Temporary superuser-only tool for Render's free plan (no Shell access).
     path("admin/demo-data/", demo_data_admin, name="admin_demo_data"),
     # Django Admin
@@ -31,7 +55,7 @@ urlpatterns = [
     # Flutter يستدعي POST /api/auth/magic-link/ بـ DRF token
     # فيحصل على URL يفتحه في WebView فيُسجَّل الدخول ويُحوَّل للخطط
     path("api/auth/magic-link/", issue_magic_link, name="api_magic_link_issue"),
-    path("auth/magic/",           redeem_magic_link, name="magic_link_redeem"),
+    path("auth/magic/", redeem_magic_link, name="magic_link_redeem"),
     # ───────────────────────────────────────────────────────────────────────
 ]
 
