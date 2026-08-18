@@ -1,0 +1,91 @@
+name: Mobile Release Smoke
+
+on:
+  pull_request:
+    paths:
+      - 'mobile/apps/user/**'
+      - 'mobile/apps/merchant/**'
+      - 'mobile/packages/dalil_core/**'
+      - '.github/workflows/mobile-release-smoke.yml'
+  workflow_dispatch:
+
+jobs:
+  android-release:
+    name: Android release AAB (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [user, merchant]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Java diagnostics
+        run: |
+          java -version
+          javac -version
+
+      - name: Dependencies
+        working-directory: mobile/apps/${{ matrix.app }}
+        run: flutter pub get
+
+      - name: Create ephemeral CI upload key
+        working-directory: mobile/apps/${{ matrix.app }}/android
+        run: |
+          keytool -genkeypair \
+            -keystore ci-upload-key.jks \
+            -storepass ci-release-pass \
+            -keypass ci-release-pass \
+            -alias upload \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 2 \
+            -dname "CN=CI Release Smoke, OU=CI, O=Daliil Ay Khidma, L=Riyadh, ST=Riyadh, C=SA"
+          cat > key.properties <<'EOF'
+          storePassword=ci-release-pass
+          keyPassword=ci-release-pass
+          keyAlias=upload
+          storeFile=../ci-upload-key.jks
+          EOF
+
+      - name: Build release app bundle
+        working-directory: mobile/apps/${{ matrix.app }}
+        run: flutter build appbundle --release --dart-define=API_BASE_URL=https://daliil-ay-khidma.onrender.com
+
+      - name: Verify AAB exists
+        working-directory: mobile/apps/${{ matrix.app }}
+        run: test -s build/app/outputs/bundle/release/app-release.aab
+
+  ios-release:
+    name: iOS release no-codesign (${{ matrix.app }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [user, merchant]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Dependencies
+        working-directory: mobile/apps/${{ matrix.app }}
+        run: flutter pub get
+
+      - name: Build iOS release without signing
+        working-directory: mobile/apps/${{ matrix.app }}
+        run: flutter build ios --release --no-codesign --dart-define=API_BASE_URL=https://daliil-ay-khidma.onrender.com
+
+      - name: Verify iOS app exists
+        working-directory: mobile/apps/${{ matrix.app }}
+        run: test -d build/ios/iphoneos/Runner.app
