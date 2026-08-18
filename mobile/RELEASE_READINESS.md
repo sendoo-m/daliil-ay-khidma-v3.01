@@ -14,42 +14,52 @@ Apps in this monorepo:
 
 ### Customer app (`mobile/apps/user`)
 
-Status: **platform projects exist, but release build is NOT store-ready yet**.
+Status: **platform foundations are in place; release hardening is in progress**.
 
-Confirmed blockers:
+Completed:
 
-1. `android/app/build.gradle.kts` signs the `release` build with the debug signing config. A Play Store release must use a private upload/release key and the key must never be committed.
-2. `lib/core/config/environment.dart` defaults `API_BASE_URL` to `http://10.0.2.2:8000`. Store builds must be compiled with the production HTTPS API URL via `--dart-define=API_BASE_URL=...`; release automation must fail if this value is missing or local.
-3. `pubspec.yaml` is still `0.1.0+1`. Final store candidate version will be set only after release QA is green.
-4. Android application label is still the technical value `dalil_app`; final Arabic/English store-facing app name must be verified.
-5. iOS `Info.plist` contains location usage text, but all permissions used by the final app (notifications, photos/camera if applicable) must be verified against actual code and plugins.
-6. Bundle/Application identifiers must be confirmed as final and registered in Google Play Console / Apple Developer before signing configuration is locked.
+- Android and iOS platform projects exist.
+- Android release no longer silently uses the debug signing key; release signing is loaded from an untracked `key.properties` file.
+- Production HTTPS (`https://daliil-ay-khidma.onrender.com`) is the default API base URL; local development can override it with `--dart-define=API_BASE_URL=...`.
+- CI guards prevent restoring debug release signing or an emulator/local API default.
+- Location permission declarations and the `daliil://` custom scheme already exist.
 
-Already present:
+Still pending:
 
-- Android project
-- iOS project
-- Firebase setup documentation/config area
-- Location permission declarations
-- Custom URL scheme `daliil://`
-- CI analyze/test coverage
+1. `pubspec.yaml` is still `0.1.0+1`; final store version will be assigned after release QA.
+2. Android application label/app icon/store-facing name must be finalized.
+3. iOS Bundle ID and Apple Developer registration/signing must be confirmed.
+4. Firebase push configuration and all final permission declarations must be verified against the shipped feature set.
+5. A physical-device release test is still required.
 
 ### Merchant app (`mobile/apps/merchant`)
 
-Status: **NOT buildable for Android/iOS from `main` yet**.
+Status: **Android/iOS platform projects now exist and build validation is being added**.
 
-Confirmed blocker:
+Completed:
 
-- The app currently contains `lib`, `web`, and `pubspec.yaml`, but no `android/` or `ios/` platform projects. These must be generated from the installed Flutter SDK and then configured with final identifiers, signing, permissions, icons, Firebase/push setup, and deep links before store builds can exist.
+- Android and iOS platform projects were added without replacing the Merchant Dart source.
+- Merchant Android has a distinct application ID/namespace: `com.daliilaykhidma.merchant`.
+- Merchant Android has an independent launcher activity and release upload-signing configuration.
+- Customer Android Firebase configuration was removed from Merchant Android because Merchant currently does not depend on Firebase.
+- iOS permission purpose strings for location, camera, and photo library use are present.
 
-Also pending:
+Still pending:
 
-- Final package / bundle identifiers
-- Release signing
-- Firebase configuration where required
-- Platform permission descriptions
-- App icons / launch assets verification
-- Store versioning
+1. Merchant iOS was bootstrapped from the existing Flutter iOS baseline and its Xcode Bundle ID references still need final cleanup to a distinct Merchant App ID before App Store signing.
+2. Final app icons / launch assets need product-approved artwork.
+3. Push/Firebase must only be added if the Merchant app actually ships push notifications on mobile.
+4. Store versioning and physical-device QA remain pending.
+
+## Automated release build smoke
+
+`.github/workflows/mobile-release-smoke.yml` validates both public apps on release-shaped builds:
+
+- Android: `flutter build appbundle --release` for User and Merchant using an ephemeral CI-only upload keystore.
+- iOS: `flutter build ios --release --no-codesign` for User and Merchant on macOS.
+- Both builds receive the production HTTPS API URL explicitly.
+
+These builds verify project/build-system health only. The CI keystore is intentionally disposable and is never a production signing credential.
 
 ## Store compliance gates
 
@@ -63,7 +73,8 @@ The following must be completed before production submission:
 - [ ] Location permission is requested only when needed and has a clear purpose string.
 - [ ] Notification permission/push behavior is verified on real Android and iOS devices.
 - [ ] Photo/camera/file permissions are declared only if actually required.
-- [ ] No debug/test API endpoints or localhost/emulator endpoints exist in release builds.
+- [x] Customer Android release cannot silently use the debug signing key.
+- [x] Customer app release configuration no longer defaults to localhost/emulator API.
 - [ ] No secrets, signing keys, `.p12`, `.jks`, provisioning profiles, service-account credentials, or private API keys are committed.
 - [ ] Production backend HTTPS and certificate chain are valid.
 - [ ] Account registration, login, password reset/OTP, logout, and token refresh work in release mode.
@@ -77,26 +88,36 @@ The following must be completed before production submission:
 
 ### Customer Android
 
-- [ ] Replace debug signing with release/upload signing loaded from untracked `key.properties` / environment.
-- [ ] Build `flutter build appbundle --release --dart-define=API_BASE_URL=https://<production-host>`.
-- [ ] Install/test a release APK/AAB-derived build on a physical Android device.
+- [x] Replace debug release signing with upload signing loaded from an untracked `key.properties` file.
+- [x] Add CI release AAB smoke build against production HTTPS.
+- [ ] Generate the real Google Play upload key locally / in protected release infrastructure.
+- [ ] Install/test a release build on a physical Android device.
 - [ ] Confirm target SDK meets current Play requirements at submission time.
 
 ### Customer iOS
 
+- [x] Add CI no-codesign iOS release smoke build.
 - [ ] Confirm final Bundle ID and Apple Developer App ID.
 - [ ] Configure Signing & Capabilities in Xcode.
 - [ ] Verify push notifications / associated domains if used.
-- [ ] Archive a Release build with production API URL.
+- [ ] Archive a signed Release build with production API URL.
 - [ ] Test via TestFlight before App Store review.
 
-### Merchant Android/iOS
+### Merchant Android
 
-- [ ] Generate Flutter Android and iOS runners without overwriting app source.
-- [ ] Assign identifiers distinct from the customer app.
-- [ ] Configure signing and permissions.
-- [ ] Configure Firebase/push/deep-link integration as required.
-- [ ] Produce internal Android and TestFlight builds.
+- [x] Generate Android runner.
+- [x] Assign a distinct Android application ID.
+- [x] Configure safe release upload-signing plumbing.
+- [x] Add CI release AAB smoke build.
+- [ ] Generate the real Google Play upload key and run physical-device QA.
+
+### Merchant iOS
+
+- [x] Generate iOS runner.
+- [x] Add CI no-codesign iOS release smoke build.
+- [ ] Replace inherited customer Bundle ID references with the final Merchant Bundle ID.
+- [ ] Register the Merchant App ID in Apple Developer and configure signing/capabilities.
+- [ ] Archive and test through TestFlight.
 
 ## Branch cleanup
 
@@ -104,12 +125,13 @@ Many historical `agent/*` and `hotfix/*` branches remain after their PRs were me
 
 ## Release sequence
 
-1. Release audit and security/signing foundation.
-2. Generate Merchant Android/iOS platform projects.
-3. Production environment/build configuration.
-4. Store compliance: privacy, deletion, permissions, support URLs.
-5. Release QA and regression fixes.
-6. Version `1.0.0+<build>` (or approved release number).
-7. Google Play Internal Testing + Apple TestFlight.
-8. Fix store/internal-test findings.
-9. Production submission.
+1. Release audit and signing/security foundation. ✅
+2. Generate Merchant Android/iOS platform projects. ✅
+3. Release build smoke validation. **In progress**
+4. Final iOS identities/signing configuration.
+5. Store compliance: privacy, account deletion, permissions, support URLs.
+6. Release QA and regression fixes.
+7. Version `1.0.0+<build>` (or approved release number).
+8. Google Play Internal Testing + Apple TestFlight.
+9. Fix store/internal-test findings.
+10. Production submission.
