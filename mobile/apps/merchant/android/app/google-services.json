@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "846312712628",
+    "project_id": "gen-lang-client-0048255023",
+    "storage_bucket": "gen-lang-client-0048255023.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:846312712628:android:3dce513925a951fb152ae1",
+        "android_client_info": {
+          "package_name": "com.daliilaykhidma.dalil_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGTuT4XPF_j0WuwDhPvKX2XLqh2_kWSz4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
