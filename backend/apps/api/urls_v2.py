@@ -21,6 +21,7 @@ from apps.api.views.auth import (
     register, get_user_profile, update_user_profile, change_password,
     logout, request_password_reset, confirm_password_reset,
 )
+from apps.api.views.account_deletion import AccountDeletionRequestView
 from apps.api.views.home import MobileHomeView
 from apps.api.views import browse
 from apps.api.views import search as unified
@@ -63,7 +64,6 @@ router.register(r'admin/roles',       RoleViewSet,            basename='admin-ro
 router.register(r'admin/staff',       StaffProfileViewSet,    basename='admin-staff')
 router.register(r'admin/audit',       AuditLogViewSet,        basename='admin-audit')
 
-# ── تطبيق الأنشطة — مسار منفصل بنيويًا عن الإدارة ──
 router.register(r'merchant/businesses', MerchantBusinessViewSet, basename='merchant-businesses')
 router.register(r'merchant/products',   MerchantProductViewSet,  basename='merchant-products')
 router.register(r'merchant/deals',      MerchantDealViewSet,     basename='merchant-deals')
@@ -74,27 +74,25 @@ router.register(
     basename='merchant-product-images',
 )
 
-# Business Owner
 router.register(r'business-owner/dashboard',  BusinessOwnerDashboardViewSet, basename='business-owner-dashboard')
 router.register(r'business-owner/businesses', BusinessOwnerBusinessViewSet,  basename='business-owner-businesses')
 
 business_router = routers.NestedDefaultRouter(router, r'business-owner/businesses', lookup='business')
 business_router.register(r'products', BusinessOwnerProductViewSet, basename='business-owner-products')
-business_router.register(r'deals',    BusinessOwnerDealViewSet,    basename='business-owner-deals')
-business_router.register(r'reviews',  BusinessOwnerReviewViewSet,  basename='business-owner-reviews')
+business_router.register(r'deals',    BusinessOwnerDealViewSet, basename='business-owner-deals')
+business_router.register(r'reviews',  BusinessOwnerReviewViewSet, basename='business-owner-reviews')
 
-# Public
 router.register(r'governorates',       directory.GovernorateViewSet,       basename='governorates')
-router.register(r'cities',             directory.CityViewSet,               basename='cities')
-router.register(r'districts',          directory.DistrictViewSet,           basename='districts')
-router.register(r'categories',         directory.CategoryViewSet,           basename='categories')
-router.register(r'businesses',         directory.BusinessViewSet,           basename='businesses')
-router.register(r'favorites',          directory.FavoriteViewSet,           basename='favorites')
-router.register(r'products',           products.ProductViewSet,             basename='products')
-router.register(r'deals',              deals.DealViewSet,                   basename='deals')
-router.register(r'deal-claims',        deals.DealClaimViewSet,              basename='deal-claims')
-router.register(r'reviews',            reviews.ReviewViewSet,               basename='reviews')
-router.register(r'subscriptions',      subscriptions.SubscriptionViewSet,   basename='subscriptions')
+router.register(r'cities',             directory.CityViewSet,              basename='cities')
+router.register(r'districts',          directory.DistrictViewSet,          basename='districts')
+router.register(r'categories',         directory.CategoryViewSet,          basename='categories')
+router.register(r'businesses',         directory.BusinessViewSet,          basename='businesses')
+router.register(r'favorites',          directory.FavoriteViewSet,          basename='favorites')
+router.register(r'products',           products.ProductViewSet,            basename='products')
+router.register(r'deals',              deals.DealViewSet,                  basename='deals')
+router.register(r'deal-claims',        deals.DealClaimViewSet,             basename='deal-claims')
+router.register(r'reviews',            reviews.ReviewViewSet,              basename='reviews')
+router.register(r'subscriptions',      subscriptions.SubscriptionViewSet,  basename='subscriptions')
 router.register(r'subscription-plans', subscriptions.SubscriptionPlanViewSet, basename='subscription-plans')
 router.register(
     r'subscription-change-requests',
@@ -105,7 +103,6 @@ router.register(r'devices', DeviceRegistrationViewSet, basename='devices')
 router.register(r'notifications', NotificationViewSet, basename='notifications')
 
 urlpatterns = [
-    # ── Auth ───────────────────────────────────────────
     path('auth/login/',           CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/refresh/',         MobileTokenRefreshView.as_view(),    name='token_refresh'),
     path('auth/register/',        register,                            name='register'),
@@ -115,36 +112,32 @@ urlpatterns = [
     path('auth/logout/',          logout,                              name='logout'),
     path('auth/password-reset/',  request_password_reset,              name='password_reset'),
     path('auth/password-reset/confirm/', confirm_password_reset,       name='password_reset_confirm'),
-    path('home/',                 MobileHomeView.as_view(),             name='home'),
-    path('app-config/',           MobileAppConfigView.as_view(),        name='app_config'),
-    path('admin/session/',        AdminSessionView.as_view(),           name='admin_session'),
-    path('admin/permissions/',    PermissionCatalogView.as_view(),      name='admin_permissions'),
-    path('merchant/session/',     MerchantSessionView.as_view(),        name='merchant_session'),
-    path('merchant/dashboard/',   MerchantDashboardView.as_view(),      name='merchant_dashboard'),
-    path('merchant/products/bulk/', MerchantProductBulkView.as_view(),  name='merchant_products_bulk'),
+    path('auth/account-deletion/', AccountDeletionRequestView.as_view(), name='account_deletion'),
+    path('home/',                 MobileHomeView.as_view(),            name='home'),
+    path('app-config/',           MobileAppConfigView.as_view(),       name='app_config'),
+    path('admin/session/',        AdminSessionView.as_view(),          name='admin_session'),
+    path('admin/permissions/',    PermissionCatalogView.as_view(),     name='admin_permissions'),
+    path('merchant/session/',     MerchantSessionView.as_view(),       name='merchant_session'),
+    path('merchant/dashboard/',   MerchantDashboardView.as_view(),     name='merchant_dashboard'),
+    path('merchant/products/bulk/', MerchantProductBulkView.as_view(), name='merchant_products_bulk'),
 
-    # ── Merchant onboarding ────────────────────────────
     path('onboarding/', MerchantOnboardingView.as_view(), name='merchant_onboarding'),
     path('onboarding/select-plan/', MerchantOnboardingPlanView.as_view(), name='merchant_onboarding_plan'),
     path('onboarding/attach-business/', MerchantOnboardingBusinessView.as_view(), name='merchant_onboarding_business'),
     path('onboarding/payment/', MerchantOnboardingPaymentView.as_view(), name='merchant_onboarding_payment'),
 
-    # ── التصفّح العام ──
-    path('browse/directories/',   browse.directories,           name='browse_directories'),
+    path('browse/directories/',   browse.directories, name='browse_directories'),
     path('browse/categories/',    browse.categories_by_directory, name='browse_categories'),
-    path('browse/governorates/',  browse.governorates_index,    name='browse_governorates'),
+    path('browse/governorates/',  browse.governorates_index, name='browse_governorates'),
     path('browse/governorates/<int:pk>/', browse.governorate_overview, name='browse_governorate'),
 
-    # ── البحث الموحّد: أماكن ومنتجات معًا ──
-    path('search/',         unified.unified_search,     name='unified_search'),
+    path('search/',         unified.unified_search, name='unified_search'),
     path('search/suggest/', unified.search_suggestions, name='search_suggest'),
     path('admin/notifications/send/', AdminSendNotificationView.as_view(), name='admin_send_notification'),
     path('schema/', SpectacularAPIView.as_view(urlconf='apps.api.urls_v2'), name='schema'),
     path('docs/', SpectacularSwaggerView.as_view(url_name='api_v2:schema'), name='swagger'),
     path('redoc/', SpectacularRedocView.as_view(url_name='api_v2:schema'), name='redoc'),
 
-    # ── Routers ────────────────────────────────────────
     path('', include(router.urls)),
     path('', include(business_router.urls)),
-
 ]
