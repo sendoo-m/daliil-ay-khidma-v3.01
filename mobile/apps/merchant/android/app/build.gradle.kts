@@ -4,7 +4,6 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     id("dev.flutter.flutter-gradle-plugin")
-    id("com.google.gms.google-services")
 }
 
 val keystoreProperties = Properties()
@@ -17,12 +16,12 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 } else if (releaseTaskRequested) {
     throw GradleException(
-        "Missing android/key.properties. Copy key.properties.example, point it to the Google Play upload keystore, and never commit the real file."
+        "Missing android/key.properties. Configure the Merchant Google Play upload keystore before building release."
     )
 }
 
 android {
-    namespace = "com.daliilaykhidma.dalil_app"
+    namespace = "com.daliilaykhidma.merchant"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -32,7 +31,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.daliilaykhidma.dalil_app"
+        applicationId = "com.daliilaykhidma.merchant"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
