@@ -55,6 +55,14 @@ final class AuthController extends StateNotifier<AsyncValue<bool>> {
     }
   }
 
+  Future<void> requestAccountDeletion({
+    required String password,
+    String reason = '',
+  }) async {
+    await _repository.requestAccountDeletion(password: password, reason: reason);
+    state = const AsyncData(false);
+  }
+
   Future<void> logout() async {
     await _repository.logout();
     state = const AsyncData(false);

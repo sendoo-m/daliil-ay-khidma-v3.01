@@ -140,6 +140,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ),
                 ),
               ),
+              _SettingsTile(
+                icon: Icons.delete_forever_outlined,
+                title: _t('حذف الحساب', 'Delete account'),
+                onTap: _startAccountDeletion,
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -279,6 +284,128 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     oldPassword.dispose();
     newPassword.dispose();
     confirmation.dispose();
+  }
+
+  Future<void> _startAccountDeletion() async {
+    final firstConfirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded),
+        title: Text(_t('حذف الحساب؟', 'Delete account?')),
+        content: Text(_t(
+          'سيتم تعطيل حسابك فورًا بعد إرسال الطلب ولن تتمكن من تسجيل الدخول أثناء معالجة الحذف.',
+          'Your account will be disabled immediately after submitting the request and you will not be able to sign in while deletion is processed.',
+        )),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(_t('إلغاء', 'Cancel')),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(dialogContext).colorScheme.error),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(_t('متابعة', 'Continue')),
+          ),
+        ],
+      ),
+    );
+    if (firstConfirmed != true || !mounted) return;
+
+    final password = TextEditingController();
+    final reason = TextEditingController();
+    var submitting = false;
+    String? errorMessage;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(_t('التأكيد النهائي', 'Final confirmation')),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_t(
+                  'أدخل كلمة المرور الحالية للتأكد من هويتك. سبب الحذف اختياري.',
+                  'Enter your current password to verify your identity. The reason is optional.',
+                )),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: password,
+                  obscureText: true,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: _t('كلمة المرور الحالية', 'Current password'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: reason,
+                  maxLines: 3,
+                  maxLength: 1000,
+                  decoration: InputDecoration(
+                    labelText: _t('سبب الحذف (اختياري)', 'Reason (optional)'),
+                  ),
+                ),
+                if (errorMessage != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    errorMessage!,
+                    style: TextStyle(color: Theme.of(dialogContext).colorScheme.error),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: submitting ? null : () => Navigator.pop(dialogContext),
+              child: Text(_t('إلغاء', 'Cancel')),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Theme.of(dialogContext).colorScheme.error),
+              onPressed: submitting
+                  ? null
+                  : () async {
+                      if (password.text.isEmpty) {
+                        setDialogState(() {
+                          errorMessage = _t('أدخل كلمة المرور الحالية.', 'Enter your current password.');
+                        });
+                        return;
+                      }
+                      setDialogState(() {
+                        submitting = true;
+                        errorMessage = null;
+                      });
+                      try {
+                        await ref.read(authControllerProvider.notifier).requestAccountDeletion(
+                              password: password.text,
+                              reason: reason.text,
+                            );
+                        if (dialogContext.mounted) Navigator.pop(dialogContext);
+                      } catch (error) {
+                        if (dialogContext.mounted) {
+                          setDialogState(() {
+                            submitting = false;
+                            errorMessage = ApiFailure.message(error);
+                          });
+                        }
+                      }
+                    },
+              child: submitting
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(_t('إرسال طلب الحذف', 'Submit deletion request')),
+            ),
+          ],
+        ),
+      ),
+    );
+    password.dispose();
+    reason.dispose();
   }
 
   Future<void> _confirmLogout() async {
