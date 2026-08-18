@@ -9,8 +9,6 @@ jobs:
   flutter:
     runs-on: ubuntu-latest
     strategy:
-      # لا نلغي بقية المصفوفة عند فشل واحد — نريد رؤية كل الأخطاء
-      # في تشغيل واحد بدل اكتشافها واحدة تلو الأخرى.
       fail-fast: false
       matrix:
         package:
@@ -29,7 +27,6 @@ jobs:
         working-directory: ${{ matrix.package }}
         run: flutter pub get
 
-      # التنسيق تنبيه لا حاجز. اختلاف مسافة لا يجب أن يمنع نشر إصلاح.
       - name: Format check
         working-directory: ${{ matrix.package }}
         run: dart format --output=none --set-exit-if-changed . || echo "::warning::ملفات تحتاج dart format ."
@@ -47,11 +44,33 @@ jobs:
             echo "لا توجد اختبارات في ${{ matrix.package }}"
           fi
 
+  release-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify mobile store foundations
+        run: |
+          test -d mobile/apps/user/android
+          test -d mobile/apps/user/ios
+          test -d mobile/apps/merchant/android
+          test -d mobile/apps/merchant/ios
+
+          if grep -q 'signingConfigs.getByName("debug")' mobile/apps/user/android/app/build.gradle.kts; then
+            echo "::error::User release build must never use the debug signing key."
+            exit 1
+          fi
+
+          if grep -q "defaultValue: 'http://10.0.2.2:8000'" mobile/apps/user/lib/core/config/environment.dart; then
+            echo "::error::Distributed user builds must not default to the Android emulator API."
+            exit 1
+          fi
+
+          grep -q 'applicationId = "com.daliilaykhidma.merchant"' mobile/apps/merchant/android/app/build.gradle.kts
+          grep -q 'android:label="Daliil Merchant"' mobile/apps/merchant/android/app/src/main/AndroidManifest.xml
+
   backend:
     runs-on: ubuntu-latest
     env:
-      # الإعدادات تقرأ من البيئة. بدون هذه، manage.py check يفشل
-      # قبل أن يفحص أي شيء.
       SECRET_KEY: ci-only-not-a-real-secret
       DEBUG: 'False'
       DATABASE_URL: sqlite:///ci.sqlite3
