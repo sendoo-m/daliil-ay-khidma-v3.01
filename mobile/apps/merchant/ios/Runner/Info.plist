@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Dalil App</string>
+	<string>Daliil Merchant</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,13 +15,11 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>dalil_app</string>
+	<string>dalil_merchant</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
-	<key>CFBundleSignature</key>
-	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
@@ -66,18 +64,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>com.daliilaykhidma.dalilApp</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>daliil</string>
-			</array>
-		</dict>
-	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>نستخدم موقعك فقط لعرض الأنشطة القريبة منك.</string>
+	<string>نستخدم موقعك لتحديد موقع نشاطك وإدارة بياناته الجغرافية.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>نستخدم مكتبة الصور لرفع شعار نشاطك وصوره ومنتجاتك.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>نستخدم الكاميرا فقط عندما تختار تصوير صورة لنشاطك أو منتجاتك.</string>
 </dict>
 </plist>
