@@ -79,7 +79,7 @@ jobs:
         run: test -s build/app/outputs/bundle/release/app-release.aab
 
   ios-release:
-    name: iOS release no-codesign (${{ matrix.app }})
+    name: iOS simulator release smoke (${{ matrix.app }})
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -96,16 +96,16 @@ jobs:
         working-directory: mobile/apps/${{ matrix.app }}
         run: flutter pub get
 
-      - name: Build iOS release without signing
+      - name: Build iOS simulator release without signing
         working-directory: mobile/apps/${{ matrix.app }}
-        run: flutter build ios --release --no-codesign --dart-define=API_BASE_URL=https://daliil-ay-khidma.onrender.com
+        run: flutter build ios --release --simulator --dart-define=API_BASE_URL=https://daliil-ay-khidma.onrender.com
 
-      - name: Verify iOS app identity
+      - name: Verify iOS simulator app identity
         working-directory: mobile/apps/${{ matrix.app }}
         shell: bash
         run: |
-          test -d build/ios/iphoneos/Runner.app
-          actual=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' build/ios/iphoneos/Runner.app/Info.plist)
+          test -d build/ios/iphonesimulator/Runner.app
+          actual=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' build/ios/iphonesimulator/Runner.app/Info.plist)
           if [ "${{ matrix.app }}" = "user" ]; then
             expected='com.daliilaykhidma.dalilApp'
           else
