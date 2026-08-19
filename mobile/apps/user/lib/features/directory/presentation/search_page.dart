@@ -8,6 +8,7 @@ import '../../../app/providers.dart';
 import '../../catalog/data/catalog_models.dart';
 import '../../catalog/presentation/catalog_detail_pages.dart';
 import '../../home/data/home_repository.dart';
+import '../../location/data/location_service.dart';
 import '../data/business.dart';
 import 'business_card.dart';
 
@@ -42,6 +43,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   double? _minRating;
   double? _minPrice;
   double? _maxPrice;
+  double? _radiusKm;
   var _kind = _SearchKind.businesses;
   var _sort = _SearchSort.featured;
   var _revision = 0;
@@ -59,6 +61,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         _governorateId,
         _kind == _SearchKind.businesses ? _businessType : _productType,
         _kind == _SearchKind.businesses ? _minRating : null,
+        _kind == _SearchKind.businesses ? _radiusKm : null,
         _kind == _SearchKind.products ? _minPrice : null,
         _kind == _SearchKind.products ? _maxPrice : null,
       ].where((value) => value != null).length;
@@ -142,6 +145,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         _minRating = null;
         _minPrice = null;
         _maxPrice = null;
+        _radiusKm = null;
         _sort = _SearchSort.featured;
         _revision++;
       });
@@ -260,21 +264,53 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   }
 
   Widget _businessResults() => FutureBuilder<List<Business>>(
-        key: ValueKey('business-$_revision-$_query-$_categoryId-$_ordering'),
-        future: ref.read(businessRepositoryProvider).search(
-              _query,
-              categoryId: _categoryId,
-              governorateId: _governorateId,
-              businessType: _businessType,
-              minRating: _minRating,
-              ordering: _ordering,
-            ),
+        key: ValueKey(
+          'business-$_revision-$_query-$_categoryId-$_ordering-$_radiusKm',
+        ),
+        future: _fetchBusinesses(),
         builder: (context, snapshot) => _ResultsFrame<Business>(
           snapshot: snapshot,
           isArabic: _isArabic,
           itemBuilder: (item) => BusinessCard(business: item),
         ),
       );
+
+  Future<List<Business>> _fetchBusinesses() async {
+    final radius = _radiusKm;
+    if (radius == null) {
+      return ref.read(businessRepositoryProvider).search(
+            _query,
+            categoryId: _categoryId,
+            governorateId: _governorateId,
+            businessType: _businessType,
+            minRating: _minRating,
+            ordering: _ordering,
+          );
+    }
+    try {
+      final coordinates = await ref.read(locationServiceProvider).current();
+      return await ref.read(businessRepositoryProvider).nearby(
+            latitude: coordinates.latitude,
+            longitude: coordinates.longitude,
+            radiusKm: radius,
+            query: _query,
+            categoryId: _categoryId,
+            governorateId: _governorateId,
+            businessType: _businessType,
+            minRating: _minRating,
+          );
+    } on LocationException {
+      // موقع مرفوض أو غير متاح: نكمّل بدون تصفية المسافة بدل ما نفشل البحث.
+      return ref.read(businessRepositoryProvider).search(
+            _query,
+            categoryId: _categoryId,
+            governorateId: _governorateId,
+            businessType: _businessType,
+            minRating: _minRating,
+            ordering: _ordering,
+          );
+    }
+  }
 
   Widget _productResults() => FutureBuilder<List<ProductSummary>>(
         key: ValueKey('product-$_revision-$_query-$_categoryId-$_ordering'),
@@ -299,6 +335,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     var businessType = _businessType;
     var productType = _productType;
     var minRating = _minRating;
+    var radiusKm = _radiusKm;
     var sort = _sort;
     final minPriceController =
         TextEditingController(text: _minPrice?.toStringAsFixed(0) ?? '');
@@ -375,6 +412,47 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     ],
                     onChanged: (value) => setModalState(() => minRating = value),
                   ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.near_me_outlined,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(_tr('المسافة', 'Distance')),
+                      const Spacer(),
+                      Text(
+                        radiusKm == null
+                            ? _tr('بلا حد', 'No limit')
+                            : _tr(
+                                '${radiusKm.toInt()} كم',
+                                '${radiusKm.toInt()} km',
+                              ),
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                  Slider(
+                    value: radiusKm ?? 20,
+                    min: 1,
+                    max: 20,
+                    divisions: 19,
+                    label: radiusKm == null
+                        ? _tr('بلا حد', 'No limit')
+                        : '${radiusKm.toInt()} ${_tr('كم', 'km')}',
+                    onChanged: (value) =>
+                        setModalState(() => radiusKm = value),
+                  ),
+                  if (radiusKm != null)
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: TextButton(
+                        onPressed: () => setModalState(() => radiusKm = null),
+                        child: Text(_tr('إزالة حد المسافة', 'Clear distance limit')),
+                      ),
+                    ),
                 ] else ...[
                   DropdownButtonFormField<String?>(
                     initialValue: productType,
@@ -455,6 +533,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         _businessType = businessType;
         _productType = productType;
         _minRating = minRating;
+        _radiusKm = radiusKm;
         _minPrice = double.tryParse(minPriceController.text.trim());
         _maxPrice = double.tryParse(maxPriceController.text.trim());
         _sort = sort;
