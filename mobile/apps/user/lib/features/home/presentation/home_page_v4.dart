@@ -581,8 +581,9 @@ class _BusinessTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AspectRatio(
-              aspectRatio: 16 / 11,
+            SizedBox(
+              height: 108,
+              width: double.infinity,
               child: image == null || image.isEmpty
                   ? const ColoredBox(
                       color: AppColors.primarySoft,
@@ -595,6 +596,7 @@ class _BusinessTile extends StatelessWidget {
                   : Image.network(
                       image,
                       fit: BoxFit.cover,
+                      width: double.infinity,
                       errorBuilder: (_, __, ___) => const ColoredBox(
                         color: AppColors.primarySoft,
                         child: Icon(

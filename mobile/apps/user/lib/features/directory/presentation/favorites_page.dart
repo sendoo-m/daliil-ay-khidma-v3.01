@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/app_theme.dart';
 import '../../../app/providers.dart';
 import '../data/business.dart';
-import 'business_card.dart';
+import 'business_detail_page.dart';
 
 class FavoritesPage extends ConsumerStatefulWidget {
   const FavoritesPage({this.embedded = false, super.key});
@@ -71,41 +72,21 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                 setState(() => _future = next);
                 await next;
               },
-              child: ListView.builder(
+              child: GridView.builder(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 28),
                 itemCount: items.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  mainAxisExtent: 252,
+                ),
                 itemBuilder: (_, index) {
                   final business = items[index];
-                  return Stack(
-                    children: [
-                      BusinessCard(business: business),
-                      PositionedDirectional(
-                        top: 8,
-                        end: 8,
-                        child: Material(
-                          color: Theme.of(context).colorScheme.surface,
-                          shape: const CircleBorder(),
-                          elevation: 2,
-                          child: IconButton(
-                            tooltip: 'إزالة من المفضلة',
-                            onPressed: _removing.contains(business.id)
-                                ? null
-                                : () => _remove(business),
-                            icon: _removing.contains(business.id)
-                                ? const SizedBox.square(
-                                    dimension: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(
-                                    Icons.favorite,
-                                    color: Colors.redAccent,
-                                  ),
-                          ),
-                        ),
-                      ),
-                    ],
+                  return _FavoriteTile(
+                    business: business,
+                    removing: _removing.contains(business.id),
+                    onRemove: () => _remove(business),
                   );
                 },
               ),
@@ -135,6 +116,181 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     } finally {
       if (mounted) setState(() => _removing.remove(business.id));
     }
+  }
+}
+
+class _FavoriteTile extends StatelessWidget {
+  const _FavoriteTile({
+    required this.business,
+    required this.removing,
+    required this.onRemove,
+  });
+
+  final Business business;
+  final bool removing;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final image = business.coverImage ?? business.logo;
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => BusinessDetailPage(slug: business.slug),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                SizedBox(
+                  height: 108,
+                  width: double.infinity,
+                  child: image == null || image.isEmpty
+                      ? const ColoredBox(
+                          color: AppColors.primarySoft,
+                          child: Icon(
+                            Icons.storefront_rounded,
+                            color: AppColors.primary,
+                            size: 32,
+                          ),
+                        )
+                      : Image.network(
+                          image,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          errorBuilder: (_, __, ___) => const ColoredBox(
+                            color: AppColors.primarySoft,
+                            child: Icon(
+                              Icons.storefront_rounded,
+                              color: AppColors.primary,
+                              size: 32,
+                            ),
+                          ),
+                        ),
+                ),
+                PositionedDirectional(
+                  top: 8,
+                  end: 8,
+                  child: Material(
+                    color: Colors.white,
+                    shape: const CircleBorder(),
+                    elevation: 2,
+                    child: IconButton(
+                      tooltip: 'إزالة من المفضلة',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: removing ? null : onRemove,
+                      icon: removing
+                          ? const SizedBox.square(
+                              dimension: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(
+                              Icons.favorite,
+                              color: Colors.redAccent,
+                              size: 20,
+                            ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    business.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  if (business.categoryName.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondarySoft,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        business.categoryName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: AppColors.secondary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 15,
+                        color: AppColors.accentDark,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        business.rating.toStringAsFixed(1),
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      if (business.distanceKm != null) ...[
+                        const Spacer(),
+                        Text(
+                          '${business.distanceKm!.toStringAsFixed(1)} كم',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: AppColors.muted,
+                              ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const Spacer(),
+            InkWell(
+              onTap: removing ? null : onRemove,
+              child: const Padding(
+                padding: EdgeInsets.fromLTRB(10, 0, 10, 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.delete_outline_rounded,
+                      size: 16,
+                      color: AppColors.muted,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'إزالة',
+                      style: TextStyle(
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
