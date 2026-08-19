@@ -10,6 +10,7 @@ import '../features/auth/presentation/reset_password_page.dart';
 import 'app_theme.dart';
 import 'main_shell.dart';
 import 'providers.dart';
+import 'theme_controller.dart';
 
 class DalilApp extends ConsumerStatefulWidget {
   const DalilApp({super.key});
@@ -49,6 +50,7 @@ class _DalilAppState extends ConsumerState<DalilApp> {
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
+    final themePreference = ref.watch(themeControllerProvider);
     ref.listen(authControllerProvider, (_, next) {
       if (next.valueOrNull == true) {
         ref.read(pushServiceProvider).initialize().catchError((_) {});
@@ -66,7 +68,9 @@ class _DalilAppState extends ConsumerState<DalilApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: AppTheme.light,
+      theme: AppTheme.light(themePreference.palette),
+      darkTheme: AppTheme.dark(themePreference.palette),
+      themeMode: themePreference.themeMode,
       home: auth.when(
         loading: () => const _SplashScreen(),
         error: (_, __) => const MainShell(),
@@ -89,21 +93,22 @@ class _SplashScreen extends StatelessWidget {
                 width: 82,
                 height: 82,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.secondary,
+                    ],
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                  ),
                   borderRadius: BorderRadius.circular(24),
                 ),
-                child: const Icon(
-                  Icons.place_outlined,
-                  size: 44,
-                  color: Colors.white,
-                ),
+                child: const Icon(Icons.place_outlined, size: 44, color: Colors.white),
               ),
               const SizedBox(height: 20),
               Text(
                 'دليل أي خدمة',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 20),
               const SizedBox.square(

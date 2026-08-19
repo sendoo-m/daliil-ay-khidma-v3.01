@@ -78,8 +78,8 @@ jobs:
         working-directory: mobile/apps/${{ matrix.app }}
         run: test -s build/app/outputs/bundle/release/app-release.aab
 
-  ios-release:
-    name: iOS release no-codesign (${{ matrix.app }})
+  ios-smoke:
+    name: iOS simulator debug smoke (${{ matrix.app }})
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -96,16 +96,20 @@ jobs:
         working-directory: mobile/apps/${{ matrix.app }}
         run: flutter pub get
 
-      - name: Build iOS release without signing
+      # Flutter does not support release mode for iOS Simulator. A debug
+      # simulator build still validates Dart compilation, iOS plugins,
+      # Xcode project integration and the generated bundle identity without
+      # requiring an Apple Development Team/provisioning profile.
+      - name: Build iOS simulator smoke without signing
         working-directory: mobile/apps/${{ matrix.app }}
-        run: flutter build ios --release --no-codesign --dart-define=API_BASE_URL=https://daliil-ay-khidma.onrender.com
+        run: flutter build ios --debug --simulator --dart-define=API_BASE_URL=https://daliil-ay-khidma.onrender.com
 
-      - name: Verify iOS app identity
+      - name: Verify iOS simulator app identity
         working-directory: mobile/apps/${{ matrix.app }}
         shell: bash
         run: |
-          test -d build/ios/iphoneos/Runner.app
-          actual=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' build/ios/iphoneos/Runner.app/Info.plist)
+          test -d build/ios/iphonesimulator/Runner.app
+          actual=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' build/ios/iphonesimulator/Runner.app/Info.plist)
           if [ "${{ matrix.app }}" = "user" ]; then
             expected='com.daliilaykhidma.dalilApp'
           else
