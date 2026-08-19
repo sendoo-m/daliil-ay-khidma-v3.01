@@ -15,6 +15,11 @@ import '../data/location_service.dart';
 const _mapStyle = 'https://tiles.openfreemap.org/styles/liberty';
 const _resultCardExtent = 320.0;
 
+// يُستخدم كمركز افتراضي للخريطة لما نتعذّر نجيب موقع المستخدم الحقيقي
+// (صلاحية مرفوضة، متصفح ما بيدعمش الموقع، إلخ) — عشان الخريطة تفضل
+// تعرض أنشطة حقيقية بدل ما تفضل شاشة بيضاء لحد الأبد.
+const _defaultCoordinates = UserCoordinates(latitude: 30.0444, longitude: 31.2357);
+
 class MapDiscoveryPage extends ConsumerStatefulWidget {
   const MapDiscoveryPage({super.key});
 
@@ -266,19 +271,25 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
       setState(() {
         _message = switch (error.failure) {
           LocationFailure.serviceDisabled => _tr(
-              'فعّل خدمة الموقع ثم حاول مجددًا',
-              'Enable location services and try again',
+              'فعّل خدمة الموقع ثم حاول مجددًا. نعرض الآن القاهرة كمنطقة افتراضية.',
+              'Enable location services and try again. Showing Cairo as a default area for now.',
             ),
           LocationFailure.denied => _tr(
-              'لم يتم السماح باستخدام الموقع',
-              'Location permission was denied',
+              'لم يتم السماح باستخدام الموقع. نعرض الآن القاهرة كمنطقة افتراضية.',
+              'Location permission was denied. Showing Cairo as a default area for now.',
             ),
           LocationFailure.deniedForever => _tr(
-              'صلاحية الموقع مرفوضة دائمًا؛ فعّلها من إعدادات التطبيق',
-              'Location permission is permanently denied; enable it in settings',
+              'صلاحية الموقع مرفوضة دائمًا؛ فعّلها من إعدادات التطبيق. نعرض الآن القاهرة كمنطقة افتراضية.',
+              'Location permission is permanently denied; enable it in settings. Showing Cairo as a default area for now.',
             ),
         };
       });
+      // منطقة افتراضية بدل ما تفضل الشاشة فاضية لحد الأبد لو الموقع مرفوض.
+      if (_coordinates == null) {
+        setState(() => _coordinates = _defaultCoordinates);
+        await _moveCameraTo(_defaultCoordinates, zoom: _zoomForRadius(_radius));
+        await _fetchNearby(_defaultCoordinates);
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
