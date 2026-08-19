@@ -76,9 +76,9 @@ class _DealsManagerPageState extends ConsumerState<DealsManagerPage> {
         return aEnd.compareTo(bEnd);
       });
 
-    final live = items.where((d) => d.isLive).length;
-    final endingSoon = items.where((d) => d.isEndingSoon).length;
-    final uses = items.fold<int>(0, (sum, d) => sum + d.currentUses);
+    final active = items.where((d) => d.isActive && !d.isExpired).length;
+    final expired = items.where((d) => d.isExpired).length;
+    final views = items.fold<int>(0, (sum, d) => sum + d.viewCount);
 
     return RefreshIndicator(
       color: Shop.sign,
@@ -88,10 +88,9 @@ class _DealsManagerPageState extends ConsumerState<DealsManagerPage> {
         padding: const EdgeInsets.fromLTRB(Gap.md, Gap.md, Gap.md, Gap.xl),
         children: [
           _ManagerHeader(
-            total: items.length,
-            live: live,
-            endingSoon: endingSoon,
-            uses: uses,
+            views: views,
+            active: active,
+            expired: expired,
             onAdd: () => openDealEditor(context),
           ),
           const SizedBox(height: Gap.md),
@@ -164,17 +163,15 @@ extension on _DealFilter {
 
 class _ManagerHeader extends StatelessWidget {
   const _ManagerHeader({
-    required this.total,
-    required this.live,
-    required this.endingSoon,
-    required this.uses,
+    required this.views,
+    required this.active,
+    required this.expired,
     required this.onAdd,
   });
 
-  final int total;
-  final int live;
-  final int endingSoon;
-  final int uses;
+  final int views;
+  final int active;
+  final int expired;
   final VoidCallback onAdd;
 
   @override
@@ -219,14 +216,9 @@ class _ManagerHeader extends StatelessWidget {
             spacing: Gap.sm,
             runSpacing: Gap.sm,
             children: [
-              _Stat(label: 'الإجمالي', value: '$total'),
-              _Stat(label: 'شغّالة', value: '$live', tone: Shop.jade),
-              _Stat(
-                label: 'تنتهي قريبًا',
-                value: '$endingSoon',
-                tone: Shop.brass,
-              ),
-              _Stat(label: 'الاستخدامات', value: '$uses'),
+              _Stat(label: 'مشاهدة', value: '$views'),
+              _Stat(label: 'منتهية', value: '$expired', tone: Shop.inkSoft),
+              _Stat(label: 'عروض نشطة', value: '$active', tone: Shop.jade),
             ],
           ),
         ],
@@ -318,6 +310,41 @@ class _ManagerDealCardState extends ConsumerState<_ManagerDealCard> {
         widget.deal.id,
         {'is_active': value},
       );
+    } on ApiFailure catch (failure) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(failure.message), backgroundColor: Shop.clay),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _delete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('حذف العرض؟'),
+        content: Text('هيتحذف "${widget.deal.titleAr}" نهائيًا.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Shop.clay),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('حذف'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      await ref.read(merchantActionsProvider).deleteDeal(widget.deal.id);
     } on ApiFailure catch (failure) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -426,17 +453,48 @@ class _ManagerDealCardState extends ConsumerState<_ManagerDealCard> {
               ),
             ),
             const SizedBox(width: Gap.sm),
-            _busy
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Switch(
+            if (_busy)
+              const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Switch(
                     value: deal.isActive,
                     activeThumbColor: Shop.jade,
                     onChanged: deal.isExpired ? null : _toggle,
                   ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'حذف',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: _delete,
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          size: 19,
+                          color: Shop.clay,
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'تعديل',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => openDealEditor(context, deal: deal),
+                        icon: const Icon(
+                          Icons.edit_outlined,
+                          size: 19,
+                          color: Shop.inkSoft,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
           ],
         ),
       ),

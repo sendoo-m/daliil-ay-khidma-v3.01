@@ -333,6 +333,7 @@ class DealItem {
     this.endDate,
     this.termsAr = '',
     this.currentUses = 0,
+    this.viewCount = 0,
     this.imageUrl,
   });
 
@@ -347,6 +348,7 @@ class DealItem {
   final String termsAr;
   final bool isActive;
   final int currentUses;
+  final int viewCount;
   final int businessId;
   final String? imageUrl;
 
@@ -377,6 +379,7 @@ class DealItem {
         termsAr: json['terms_ar'] as String? ?? '',
         isActive: json['is_active'] as bool? ?? false,
         currentUses: (json['current_uses'] as num?)?.toInt() ?? 0,
+        viewCount: (json['view_count'] as num?)?.toInt() ?? 0,
         businessId: (json['business'] as num?)?.toInt() ?? 0,
         imageUrl: json['image'] as String?,
       );
