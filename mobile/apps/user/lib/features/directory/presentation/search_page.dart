@@ -427,8 +427,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                         radiusKm == null
                             ? _tr('بلا حد', 'No limit')
                             : _tr(
-                                '${radiusKm.toInt()} كم',
-                                '${radiusKm.toInt()} km',
+                                '${radiusKm!.toInt()} كم',
+                                '${radiusKm!.toInt()} km',
                               ),
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
@@ -441,7 +441,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     divisions: 19,
                     label: radiusKm == null
                         ? _tr('بلا حد', 'No limit')
-                        : '${radiusKm.toInt()} ${_tr('كم', 'km')}',
+                        : '${radiusKm!.toInt()} ${_tr('كم', 'km')}',
                     onChanged: (value) =>
                         setModalState(() => radiusKm = value),
                   ),
