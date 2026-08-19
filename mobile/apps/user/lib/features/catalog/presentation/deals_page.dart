@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../app/app_theme.dart';
 import '../../../app/providers.dart';
@@ -113,16 +112,21 @@ class _DealsPageState extends ConsumerState<DealsPage> {
                           : 'جرّب كلمة بحث مختلفة أو امسح البحث.',
                     );
                   }
+                  final hero = items.firstWhere(
+                    (deal) => deal.isFeatured,
+                    orElse: () => items.first,
+                  );
+                  final rest = items.where((deal) => deal != hero).toList();
                   return RefreshIndicator(
                     onRefresh: () => ref.refresh(_dealsProvider(_query).future),
                     child: ListView.separated(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
-                      itemCount: items.length,
+                      itemCount: rest.length + 1,
                       separatorBuilder: (_, __) => const SizedBox(height: 14),
-                      itemBuilder: (_, index) => _DealCard(
-                        deal: items[index],
-                        featured: index == 0,
-                      ),
+                      itemBuilder: (_, index) {
+                        if (index == 0) return _DealHero(deal: hero);
+                        return _DealCard(deal: rest[index - 1]);
+                      },
                     ),
                   );
                 },
@@ -236,11 +240,18 @@ class _OrderChip extends StatelessWidget {
       );
 }
 
-class _DealCard extends StatelessWidget {
-  const _DealCard({required this.deal, required this.featured});
+/// لون شريط التمييز حسب حجم الخصم — نفس فكرة التصميم الجديد اللي بيميّز
+/// العروض بصريًا بلون الشريط بدل الاعتماد على الصورة فقط.
+Color _accentFor(DealSummary deal) => switch (deal.discountPercentage) {
+      >= 40 => Colors.deepOrange,
+      >= 25 => AppColors.accentDark,
+      _ => AppColors.secondary,
+    };
+
+class _DealHero extends StatelessWidget {
+  const _DealHero({required this.deal});
 
   final DealSummary deal;
-  final bool featured;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -251,183 +262,214 @@ class _DealCard extends StatelessWidget {
               builder: (_) => DealDetailPage(slug: deal.slug),
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Stack(
-                children: [
-                  _DealImage(url: deal.image, featured: featured),
-                  PositionedDirectional(
-                    top: 12,
-                    start: 12,
-                    child: _Badge(text: deal.typeLabel),
-                  ),
-                  if (deal.daysRemaining <= 3)
-                    const PositionedDirectional(
-                      top: 12,
-                      end: 12,
-                      child: _Badge(text: 'ينتهي قريبًا', urgent: true),
-                    ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.all(17),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(gradient: AppColors.brandGradient),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      deal.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                          ),
-                    ),
-                    if (deal.businessName.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.storefront_outlined,
-                            size: 18,
-                            color: AppColors.muted,
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              deal.businessName,
-                              style: const TextStyle(color: AppColors.muted),
-                            ),
-                          ),
-                        ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
                       ),
-                    ],
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        if (deal.hasPrice) ...[
-                          Text(
-                            _money(deal.finalPrice!),
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          if (deal.hasDiscount) ...[
-                            const SizedBox(width: 9),
-                            Text(
-                              _money(deal.originalPrice!),
-                              style: const TextStyle(
-                                color: AppColors.muted,
-                                decoration: TextDecoration.lineThrough,
-                              ),
-                            ),
-                          ],
-                        ] else
-                          Text(
-                            deal.typeLabel,
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.secondarySoft,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.schedule_rounded,
-                                size: 16,
-                                color: AppColors.secondary,
-                              ),
-                              const SizedBox(width: 4),
-                              Text('متبقي ${deal.daysRemaining} يوم'),
-                            ],
-                          ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .2),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Text(
+                        '🔥 عرض مميز',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
                         ),
-                      ],
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .18),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'متبقي ${deal.daysRemaining} يوم',
+                        style: const TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-        ),
-      );
-}
-
-class _DealImage extends StatelessWidget {
-  const _DealImage({required this.url, required this.featured});
-
-  final String? url;
-  final bool featured;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-        height: featured ? 210 : 180,
-        width: double.infinity,
-        child: url == null || url!.isEmpty
-            ? const DecoratedBox(
-                decoration: BoxDecoration(gradient: AppColors.brandGradient),
-                child: Center(
-                  child: Icon(
-                    Icons.local_offer_rounded,
-                    color: Colors.white,
-                    size: 54,
-                  ),
-                ),
-              )
-            : Image.network(
-                url!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const DecoratedBox(
-                  decoration: BoxDecoration(gradient: AppColors.brandGradient),
-                  child: Center(
-                    child: Icon(
-                      Icons.local_offer_rounded,
+                const SizedBox(height: 20),
+                if (deal.dealType == 'percentage')
+                  Text(
+                    'خصم ${deal.discountPercentage.toStringAsFixed(0)}٪',
+                    style: const TextStyle(
                       color: Colors.white,
-                      size: 54,
+                      fontSize: 40,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  )
+                else
+                  Text(
+                    deal.typeLabel,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
+                const SizedBox(height: 6),
+                Text(
+                  deal.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 17),
                 ),
-              ),
-      );
-}
-
-class _Badge extends StatelessWidget {
-  const _Badge({required this.text, this.urgent = false});
-
-  final String text;
-  final bool urgent;
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-        decoration: BoxDecoration(
-          color: urgent ? Colors.deepOrange : AppColors.primary,
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
+                if (deal.businessName.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    deal.businessName,
+                    style: const TextStyle(color: Color(0xFFEDEBFF)),
+                  ),
+                ],
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.primary,
+                    ),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => DealDetailPage(slug: deal.slug),
+                      ),
+                    ),
+                    child: const Text('احصل على العرض'),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       );
+}
+
+class _DealCard extends StatelessWidget {
+  const _DealCard({required this.deal});
+
+  final DealSummary deal;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = _accentFor(deal);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(width: 6, color: accent),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          radius: 22,
+                          backgroundColor: accent.withValues(alpha: .12),
+                          child: Text(
+                            deal.dealType == 'percentage'
+                                ? '${deal.discountPercentage.toStringAsFixed(0)}٪'
+                                : '%',
+                            style: TextStyle(
+                              color: accent,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                deal.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.w800),
+                              ),
+                              if (deal.businessName.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  deal.businessName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: AppColors.muted),
+                                ),
+                              ],
+                              const SizedBox(height: 4),
+                              Text(
+                                'ينتهي خلال ${deal.daysRemaining} يوم',
+                                style: const TextStyle(
+                                  color: AppColors.muted,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (deal.image != null && deal.image!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsetsDirectional.only(start: 10),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                deal.image!,
+                                width: 48,
+                                height: 48,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    const SizedBox(width: 48, height: 48),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.tonal(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => DealDetailPage(slug: deal.slug),
+                          ),
+                        ),
+                        child: const Text('احصل على العرض'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _MessageState extends StatelessWidget {
@@ -482,6 +524,3 @@ class _MessageState extends StatelessWidget {
         ),
       );
 }
-
-String _money(double value) =>
-    '${NumberFormat('#,##0.##', 'ar').format(value)} ج.م';

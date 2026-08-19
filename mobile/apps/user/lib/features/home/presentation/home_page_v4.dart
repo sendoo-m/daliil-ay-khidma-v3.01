@@ -7,6 +7,7 @@ import '../../../app/providers.dart';
 import '../../auth/presentation/login_page.dart';
 import '../../catalog/data/catalog_models.dart';
 import '../../catalog/presentation/catalog_detail_pages.dart';
+import '../../catalog/presentation/deals_page.dart';
 import '../../directory/data/business.dart';
 import '../../directory/presentation/business_detail_page.dart';
 import '../../browse/presentation/browse_hub_page.dart';
@@ -58,7 +59,16 @@ class HomePageV4 extends ConsumerWidget {
                 SliverToBoxAdapter(
                   child: _CategoryRail(items: data.categories),
                 ),
-                SliverToBoxAdapter(child: _DealsSpotlight(items: data.deals)),
+                SliverToBoxAdapter(
+                  child: _DealsSpotlight(
+                    items: data.deals,
+                    onSeeAll: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const DealsPage(),
+                      ),
+                    ),
+                  ),
+                ),
                 SliverToBoxAdapter(
                   child: _NearbySection(items: data.businesses),
                 ),
@@ -305,9 +315,10 @@ class _DirectoryEntry extends StatelessWidget {
 }
 
 class _DealsSpotlight extends StatelessWidget {
-  const _DealsSpotlight({required this.items});
+  const _DealsSpotlight({required this.items, required this.onSeeAll});
 
   final List<DealSummary> items;
+  final VoidCallback onSeeAll;
 
   @override
   Widget build(BuildContext context) {
@@ -315,6 +326,7 @@ class _DealsSpotlight extends StatelessWidget {
     return _Section(
       title: '🔥 العروض الحصرية',
       subtitle: 'خصومات مختارة تستحق المشاهدة',
+      onSeeAll: onSeeAll,
       child: SizedBox(
         height: 205,
         child: ListView.separated(
@@ -759,11 +771,13 @@ class _Section extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.child,
+    this.onSeeAll,
   });
 
   final String title;
   final String subtitle;
   final Widget child;
+  final VoidCallback? onSeeAll;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -773,12 +787,30 @@ class _Section extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 3),
-                  Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          subtitle,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (onSeeAll != null)
+                    TextButton(
+                      onPressed: onSeeAll,
+                      child: const Text('عرض الكل'),
+                    ),
                 ],
               ),
             ),
