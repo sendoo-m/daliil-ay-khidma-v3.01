@@ -2,6 +2,25 @@ import 'package:dio/dio.dart';
 
 import '../../../core/auth/token_store.dart';
 
+final class UserProfileStats {
+  const UserProfileStats({
+    required this.favoritesCount,
+    required this.reviewsCount,
+    required this.claimedDealsCount,
+  });
+
+  factory UserProfileStats.fromJson(Map<String, dynamic>? json) =>
+      UserProfileStats(
+        favoritesCount: json?['favorites_count'] as int? ?? 0,
+        reviewsCount: json?['reviews_count'] as int? ?? 0,
+        claimedDealsCount: json?['claimed_deals_count'] as int? ?? 0,
+      );
+
+  final int favoritesCount;
+  final int reviewsCount;
+  final int claimedDealsCount;
+}
+
 final class UserProfile {
   const UserProfile({
     required this.username,
@@ -14,6 +33,7 @@ final class UserProfile {
     required this.profilePicture,
     required this.emailVerified,
     required this.dateJoined,
+    required this.stats,
   });
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
         username: json['username'] as String? ?? '',
@@ -26,6 +46,9 @@ final class UserProfile {
         profilePicture: json['profile_picture'] as String?,
         emailVerified: json['email_verified'] as bool? ?? false,
         dateJoined: DateTime.tryParse(json['date_joined'] as String? ?? ''),
+        stats: UserProfileStats.fromJson(
+          json['stats'] as Map<String, dynamic>?,
+        ),
       );
   final String username;
   final String firstName;
@@ -37,6 +60,7 @@ final class UserProfile {
   final String? profilePicture;
   final bool emailVerified;
   final DateTime? dateJoined;
+  final UserProfileStats stats;
 }
 
 final class ProfileRepository {

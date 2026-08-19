@@ -42,6 +42,15 @@ def get_user_role(user):
     return 'user'
 
 
+def build_user_stats(user):
+    """إحصائيات الحساب الحقيقية: مفضلة، تقييماتي، عروض مستخدَمة."""
+    return {
+        'favorites_count':      user.favorites.count(),
+        'reviews_count':        user.reviews.count(),
+        'claimed_deals_count':  user.deal_claims.count(),
+    }
+
+
 def build_user_data(user):
     """بيانات المستخدم الكاملة"""
     return {
@@ -62,6 +71,7 @@ def build_user_data(user):
         'email_verified':   getattr(user, 'email_verified', False),
         'date_joined':      user.date_joined,
         'last_login':       user.last_login,
+        'stats':            build_user_stats(user),
     }
 
 

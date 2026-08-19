@@ -20,6 +20,7 @@ import '../features/location/data/geocode_service.dart';
 import '../features/location/data/location_service.dart';
 import '../features/notifications/data/device_repository.dart';
 import '../features/notifications/data/notification_repository.dart';
+import '../features/profile/data/activity_repository.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/reviews/data/review_repository.dart';
 import '../features/subscriptions/data/subscription_repository.dart';
@@ -39,6 +40,15 @@ final notificationRepositoryProvider = Provider(
 );
 final reviewRepositoryProvider = Provider(
   (ref) => ReviewRepository(ref.watch(apiClientProvider).dio),
+);
+final activityRepositoryProvider = Provider(
+  (ref) => ActivityRepository(ref.watch(apiClientProvider).dio),
+);
+final recentActivityProvider = FutureProvider(
+  (ref) => ref.watch(activityRepositoryProvider).recent(),
+);
+final myReviewsProvider = FutureProvider(
+  (ref) => ref.watch(reviewRepositoryProvider).mine(),
 );
 final profileRepositoryProvider = Provider(
   (ref) => ProfileRepository(

@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../app/app_theme.dart';
 import '../../../app/providers.dart';
 import '../../../core/network/api_failure.dart';
+import '../../directory/presentation/business_detail_page.dart';
 import '../../notifications/presentation/notifications_page.dart';
+import '../data/activity_repository.dart';
 import '../data/profile_repository.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
@@ -88,6 +91,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         children: [
           _ProfileHero(profile: profile, isArabic: _isArabic),
           const SizedBox(height: 16),
+          _StatsRow(stats: profile.stats, isArabic: _isArabic),
+          const SizedBox(height: 20),
+          _SectionTitle(_t('أنشطتي الأخيرة', 'My recent activity')),
+          const SizedBox(height: 10),
+          _RecentActivityCard(isArabic: _isArabic),
+          const SizedBox(height: 20),
+          _SectionTitle(_t('تقييماتي', 'My reviews')),
+          const SizedBox(height: 10),
+          _MyReviewsCard(isArabic: _isArabic),
+          const SizedBox(height: 20),
           _QuickActions(
             isArabic: _isArabic,
             onEdit: () => _openEdit(profile),
@@ -657,6 +670,277 @@ class _ProfileHero extends StatelessWidget {
       ),
     );
   }
+}
+
+class _StatsRow extends StatelessWidget {
+  const _StatsRow({required this.stats, required this.isArabic});
+  final UserProfileStats stats;
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          Expanded(
+            child: _StatTile(
+              value: stats.claimedDealsCount,
+              label: isArabic ? 'عروض محفوظة' : 'Claimed deals',
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _StatTile(
+              value: stats.reviewsCount,
+              label: isArabic ? 'تقييمات' : 'Reviews',
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _StatTile(
+              value: stats.favoritesCount,
+              label: isArabic ? 'محل مفضل' : 'Favorites',
+            ),
+          ),
+        ],
+      );
+}
+
+class _StatTile extends StatelessWidget {
+  const _StatTile({required this.value, required this.label});
+  final int value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          child: Column(
+            children: [
+              Text(
+                '$value',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+class _RecentActivityCard extends ConsumerWidget {
+  const _RecentActivityCard({required this.isArabic});
+  final bool isArabic;
+
+  String _label(ActivityEntry entry) => switch (entry.type) {
+        ActivityType.review => isArabic
+            ? 'قيّمت ${entry.businessName}'
+            : 'You reviewed ${entry.businessName}',
+        ActivityType.favorite => isArabic
+            ? 'أضفت ${entry.businessName} للمفضلة'
+            : 'You favorited ${entry.businessName}',
+        ActivityType.dealClaim => isArabic
+            ? 'استخدمت عرض ${entry.dealTitle ?? ''} من ${entry.businessName}'
+            : 'You claimed ${entry.dealTitle ?? ''} from ${entry.businessName}',
+      };
+
+  IconData _icon(ActivityType type) => switch (type) {
+        ActivityType.review => Icons.star_rounded,
+        ActivityType.favorite => Icons.favorite_rounded,
+        ActivityType.dealClaim => Icons.local_offer_rounded,
+      };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activity = ref.watch(recentActivityProvider);
+    return activity.when(
+      loading: () => const _CardLoading(),
+      error: (_, __) => _CardEmpty(
+        message: isArabic ? 'تعذر تحميل الأنشطة' : 'Could not load activity',
+      ),
+      data: (items) {
+        if (items.isEmpty) {
+          return _CardEmpty(
+            message: isArabic ? 'لا توجد أنشطة بعد' : 'No activity yet',
+          );
+        }
+        final shown = items.take(5).toList(growable: false);
+        return Card(
+          child: Column(
+            children: [
+              for (var i = 0; i < shown.length; i++)
+                ListTile(
+                  onTap: shown[i].businessSlug.isEmpty
+                      ? null
+                      : () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => BusinessDetailPage(
+                                slug: shown[i].businessSlug,
+                              ),
+                            ),
+                          ),
+                  leading: CircleAvatar(
+                    backgroundColor: AppColors.primarySoft,
+                    foregroundImage: shown[i].businessLogo == null
+                        ? null
+                        : NetworkImage(shown[i].businessLogo!),
+                    child: Icon(
+                      _icon(shown[i].type),
+                      color: AppColors.primary,
+                      size: 18,
+                    ),
+                  ),
+                  title: Text(_label(shown[i]), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(
+                    DateFormat('d MMMM yyyy', isArabic ? 'ar' : 'en')
+                        .format(shown[i].createdAt.toLocal()),
+                  ),
+                  trailing: shown[i].businessSlug.isEmpty
+                      ? null
+                      : const Icon(Icons.chevron_left_rounded),
+                  dense: true,
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MyReviewsCard extends ConsumerWidget {
+  const _MyReviewsCard({required this.isArabic});
+  final bool isArabic;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reviews = ref.watch(myReviewsProvider);
+    return reviews.when(
+      loading: () => const _CardLoading(),
+      error: (_, __) => _CardEmpty(
+        message: isArabic ? 'تعذر تحميل التقييمات' : 'Could not load reviews',
+      ),
+      data: (items) {
+        if (items.isEmpty) {
+          return _CardEmpty(
+            message:
+                isArabic ? 'لم تكتب أي تقييم بعد' : 'You have not written any reviews yet',
+          );
+        }
+        return Column(
+          children: [
+            for (final review in items.take(5))
+              Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                child: ListTile(
+                  onTap: review.businessSlug.isEmpty
+                      ? null
+                      : () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  BusinessDetailPage(slug: review.businessSlug),
+                            ),
+                          ),
+                  leading: CircleAvatar(
+                    backgroundColor: AppColors.primarySoft,
+                    foregroundImage: review.businessLogo == null
+                        ? null
+                        : NetworkImage(review.businessLogo!),
+                    child: const Icon(
+                      Icons.storefront_rounded,
+                      color: AppColors.primary,
+                      size: 18,
+                    ),
+                  ),
+                  title: Text(
+                    review.businessName,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: List.generate(
+                          5,
+                          (i) => Icon(
+                            i < review.rating
+                                ? Icons.star_rounded
+                                : Icons.star_outline_rounded,
+                            size: 15,
+                            color: AppColors.accentDark,
+                          ),
+                        ),
+                      ),
+                      if (review.comment.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          review.comment,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                      if (!review.isApproved) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          isArabic
+                              ? 'بانتظار المراجعة'
+                              : 'Pending moderation',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.outline,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  isThreeLine: true,
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _CardLoading extends StatelessWidget {
+  const _CardLoading();
+
+  @override
+  Widget build(BuildContext context) => const Card(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(
+            child: SizedBox.square(
+              dimension: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        ),
+      );
+}
+
+class _CardEmpty extends StatelessWidget {
+  const _CardEmpty({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Theme.of(context).colorScheme.outline),
+          ),
+        ),
+      );
 }
 
 class _QuickActions extends StatelessWidget {

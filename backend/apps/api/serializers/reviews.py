@@ -14,6 +14,8 @@ try:
         user_name = serializers.CharField(source='user.get_full_name', read_only=True)
         user_username = serializers.CharField(source='user.username', read_only=True)
         business_name = serializers.CharField(source='business.name_ar', read_only=True)
+        business_slug = serializers.CharField(source='business.slug', read_only=True)
+        business_logo = serializers.SerializerMethodField()
         likes_count = serializers.IntegerField(read_only=True)
         is_liked = serializers.SerializerMethodField()
         is_own = serializers.SerializerMethodField()
@@ -32,6 +34,17 @@ try:
         def get_is_own(self, obj) -> bool:
             request = self.context.get('request')
             return bool(request) and request.user.is_authenticated and obj.user_id == request.user.id
+
+        def get_business_logo(self, obj):
+            logo = getattr(obj.business, 'logo', None)
+            if not logo:
+                return None
+            try:
+                url = logo.url
+            except ValueError:
+                return None
+            request = self.context.get('request')
+            return request.build_absolute_uri(url) if request else url
 
     class ReviewCreateSerializer(serializers.ModelSerializer):
         """Review Create/Update Serializer"""

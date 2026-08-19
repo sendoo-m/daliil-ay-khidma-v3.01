@@ -49,6 +49,16 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user, is_approved=False)
     
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def mine(self, request):
+        """تقييماتي أنا في كل المحلات، بصرف النظر عن حالة الموافقة."""
+        queryset = Review.objects.filter(user=request.user).select_related(
+            'user', 'business'
+        ).annotate(likes_count=Count('likes')).order_by('-created_at')
+        page = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def like(self, request, pk=None):
         """Toggle a like without allowing users to like their own review."""

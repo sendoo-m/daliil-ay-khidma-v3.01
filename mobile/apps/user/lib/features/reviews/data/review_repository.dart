@@ -9,6 +9,9 @@ final class BusinessReview {
     required this.isApproved,
     required this.isOwn,
     required this.createdAt,
+    this.businessName = '',
+    this.businessSlug = '',
+    this.businessLogo,
   });
 
   factory BusinessReview.fromJson(Map<String, dynamic> json) => BusinessReview(
@@ -21,6 +24,9 @@ final class BusinessReview {
         isApproved: json['is_approved'] as bool? ?? false,
         isOwn: json['is_own'] as bool? ?? false,
         createdAt: DateTime.tryParse(json['created_at'] as String? ?? ''),
+        businessName: json['business_name'] as String? ?? '',
+        businessSlug: json['business_slug'] as String? ?? '',
+        businessLogo: json['business_logo'] as String?,
       );
 
   final int id;
@@ -30,6 +36,9 @@ final class BusinessReview {
   final bool isApproved;
   final bool isOwn;
   final DateTime? createdAt;
+  final String businessName;
+  final String businessSlug;
+  final String? businessLogo;
 }
 
 final class ReviewRepository {
@@ -78,4 +87,13 @@ final class ReviewRepository {
 
   Future<void> delete(int reviewId) =>
       _dio.delete<void>('reviews/$reviewId/');
+
+  Future<List<BusinessReview>> mine() async {
+    final response = await _dio.get<Map<String, dynamic>>('reviews/mine/');
+    final results = response.data?['results'] as List<dynamic>? ?? const [];
+    return results
+        .cast<Map<String, dynamic>>()
+        .map(BusinessReview.fromJson)
+        .toList(growable: false);
+  }
 }

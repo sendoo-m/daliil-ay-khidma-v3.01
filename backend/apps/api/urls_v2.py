@@ -22,6 +22,7 @@ from apps.api.views.auth import (
     logout, request_password_reset, confirm_password_reset,
 )
 from apps.api.views.account_deletion import AccountDeletionRequestView
+from apps.api.views.profile_activity import recent_activity
 from apps.api.views.home import MobileHomeView
 from apps.api.views import browse
 from apps.api.views import search as unified
@@ -113,6 +114,7 @@ urlpatterns = [
     path('auth/password-reset/',  request_password_reset,              name='password_reset'),
     path('auth/password-reset/confirm/', confirm_password_reset,       name='password_reset_confirm'),
     path('auth/account-deletion/', AccountDeletionRequestView.as_view(), name='account_deletion'),
+    path('profile/activity/',     recent_activity,                     name='profile_activity'),
     path('home/',                 MobileHomeView.as_view(),            name='home'),
     path('app-config/',           MobileAppConfigView.as_view(),       name='app_config'),
     path('admin/session/',        AdminSessionView.as_view(),          name='admin_session'),
