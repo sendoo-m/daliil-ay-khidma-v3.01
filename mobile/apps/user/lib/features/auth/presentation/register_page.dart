@@ -1,3 +1,4 @@
+import 'package:dalil_core/dalil_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -96,30 +97,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                         constraints: const BoxConstraints(maxWidth: 560),
                         child: Column(
                           children: [
-                            Container(
-                              width: 78,
-                              height: 78,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topRight,
-                                  end: Alignment.bottomLeft,
-                                  colors: [scheme.primary, scheme.secondary],
-                                ),
-                                borderRadius: BorderRadius.circular(26),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: scheme.primary.withValues(alpha: .2),
-                                    blurRadius: 26,
-                                    offset: const Offset(0, 10),
-                                  ),
-                                ],
-                              ),
-                              child: Icon(
-                                Icons.person_add_alt_1_rounded,
-                                color: scheme.onPrimary,
-                                size: 38,
-                              ),
-                            ),
+                            const DalilLogo(size: 84),
                             const SizedBox(height: 18),
                             Text(
                               'أنشئ حسابك',

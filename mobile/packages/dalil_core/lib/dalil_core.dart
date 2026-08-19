@@ -12,3 +12,4 @@ export 'src/auth/auth_repository.dart';
 export 'src/models/admin_session.dart';
 export 'src/theme/tokens.dart';
 export 'src/theme/app_theme_preferences.dart';
+export 'src/branding/dalil_logo.dart';

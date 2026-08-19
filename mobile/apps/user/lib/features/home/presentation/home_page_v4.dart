@@ -1,3 +1,4 @@
+import 'package:dalil_core/dalil_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -94,15 +95,12 @@ class _BrandHero extends StatelessWidget {
                 Container(
                   width: 50,
                   height: 50,
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: .16),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(
-                    Icons.travel_explore_rounded,
-                    color: Colors.white,
-                    size: 29,
-                  ),
+                  child: const DalilLogo(size: 38),
                 ),
                 const SizedBox(width: 12),
                 const Expanded(

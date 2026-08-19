@@ -1,3 +1,4 @@
+import 'package:dalil_core/dalil_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -48,10 +49,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         child: Column(
                           children: [
                             const _BrandHero(
-                              title: 'مرحبًا بعودتك',
+                              title: 'أهلاً بك',
                               subtitle:
                                   'اكتشف الأماكن والخدمات والعروض القريبة منك.',
-                              icon: Icons.location_on_rounded,
                             ),
                             const SizedBox(height: 24),
                             _AuthCard(
@@ -332,38 +332,17 @@ class _BrandHero extends StatelessWidget {
   const _BrandHero({
     required this.title,
     required this.subtitle,
-    required this.icon,
   });
 
   final String title;
   final String subtitle;
-  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Column(
       children: [
-        Container(
-          width: 86,
-          height: 86,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-              colors: [scheme.primary, scheme.secondary],
-            ),
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: scheme.primary.withValues(alpha: .22),
-                blurRadius: 28,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
-          child: Icon(icon, color: scheme.onPrimary, size: 44),
-        ),
+        const DalilLogo(size: 92),
         const SizedBox(height: 20),
         Text(
           title,
