@@ -45,8 +45,12 @@ jobs:
       - name: Scaffold web platform (user)
         working-directory: mobile/apps/user
         run: |
+          # نحفظ صفحتنا المخصصة (فيها وسوم MapLibre GL JS اللي شاشة
+          # الخريطة محتاجاها)، لأن flutter create بتكتب فوقها.
+          cp -f web/index.html /tmp/user-index.html
           flutter create --platforms=web \
             --org=com.daliilaykhidma --project-name=dalil_app .
+          cp -f /tmp/user-index.html web/index.html
 
       - name: Build user app
         working-directory: mobile/apps/user
