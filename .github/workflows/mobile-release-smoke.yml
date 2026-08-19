@@ -78,8 +78,8 @@ jobs:
         working-directory: mobile/apps/${{ matrix.app }}
         run: test -s build/app/outputs/bundle/release/app-release.aab
 
-  ios-release:
-    name: iOS simulator release smoke (${{ matrix.app }})
+  ios-smoke:
+    name: iOS simulator debug smoke (${{ matrix.app }})
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -96,9 +96,13 @@ jobs:
         working-directory: mobile/apps/${{ matrix.app }}
         run: flutter pub get
 
-      - name: Build iOS simulator release without signing
+      # Flutter does not support release mode for iOS Simulator. A debug
+      # simulator build still validates Dart compilation, iOS plugins,
+      # Xcode project integration and the generated bundle identity without
+      # requiring an Apple Development Team/provisioning profile.
+      - name: Build iOS simulator smoke without signing
         working-directory: mobile/apps/${{ matrix.app }}
-        run: flutter build ios --release --simulator --dart-define=API_BASE_URL=https://daliil-ay-khidma.onrender.com
+        run: flutter build ios --debug --simulator --dart-define=API_BASE_URL=https://daliil-ay-khidma.onrender.com
 
       - name: Verify iOS simulator app identity
         working-directory: mobile/apps/${{ matrix.app }}
