@@ -21,6 +21,7 @@ class NotificationsPage extends ConsumerStatefulWidget {
 class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   List<AppNotification> _items = const [];
   var _filter = _NotificationFilter.all;
+  String? _typeFilter;
   var _loading = true;
   var _working = false;
   String? _error;
@@ -33,13 +34,18 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   int get _unreadCount => _items.where((item) => !item.isRead).length;
   int get _readCount => _items.length - _unreadCount;
 
-  List<AppNotification> get _visibleItems => switch (_filter) {
-        _NotificationFilter.unread =>
-          _items.where((item) => !item.isRead).toList(growable: false),
-        _NotificationFilter.read =>
-          _items.where((item) => item.isRead).toList(growable: false),
-        _NotificationFilter.all => _items,
-      };
+  List<AppNotification> get _visibleItems {
+    final byReadState = switch (_filter) {
+      _NotificationFilter.unread => _items.where((item) => !item.isRead),
+      _NotificationFilter.read => _items.where((item) => item.isRead),
+      _NotificationFilter.all => _items,
+    };
+    final typeFilter = _typeFilter;
+    if (typeFilter == null) return byReadState.toList(growable: false);
+    return byReadState
+        .where((item) => item.type == typeFilter)
+        .toList(growable: false);
+  }
 
   @override
   void initState() {
@@ -132,8 +138,12 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 2, 16, 12),
+            padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
             sliver: SliverToBoxAdapter(child: _filters()),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            sliver: SliverToBoxAdapter(child: _typeFilters()),
           ),
           if (_visibleItems.isEmpty)
             SliverFillRemaining(
@@ -224,6 +234,43 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
           },
         ),
       );
+
+  Widget _typeFilters() {
+    const types = ['deal', 'business', 'product', 'review', 'system'];
+    final labels = {
+      'deal': _tr('عروض', 'Offers'),
+      'business': _tr('محلات', 'Businesses'),
+      'product': _tr('منتجات', 'Products'),
+      'review': _tr('تقييمات', 'Reviews'),
+      'system': _tr('النظام', 'System'),
+    };
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          Padding(
+            padding: const EdgeInsetsDirectional.only(end: 8),
+            child: ChoiceChip(
+              selected: _typeFilter == null,
+              label: Text(_tr('الكل', 'All')),
+              onSelected: (_) => setState(() => _typeFilter = null),
+            ),
+          ),
+          for (final type in types)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 8),
+              child: ChoiceChip(
+                selected: _typeFilter == type,
+                label: Text(labels[type]!),
+                onSelected: (_) => setState(
+                  () => _typeFilter = _typeFilter == type ? null : type,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 
   Future<bool> _confirmDelete() async =>
       await showDialog<bool>(
