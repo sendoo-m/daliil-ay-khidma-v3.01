@@ -12,8 +12,6 @@ final subscriptionPlansProvider =
   (ref) => ref.watch(subscriptionRepositoryProvider).plans(),
 );
 
-enum _PlanFilter { all, free, popular, analytics, verified, searchPriority }
-
 class SubscriptionPlansPage extends ConsumerStatefulWidget {
   const SubscriptionPlansPage({super.key});
 
@@ -25,7 +23,6 @@ class SubscriptionPlansPage extends ConsumerStatefulWidget {
 class _SubscriptionPlansPageState
     extends ConsumerState<SubscriptionPlansPage> {
   String _period = 'monthly';
-  _PlanFilter _filter = _PlanFilter.all;
 
   bool get _isArabic => Localizations.localeOf(context).languageCode == 'ar';
 
@@ -55,7 +52,6 @@ class _SubscriptionPlansPageState
             onRetry: () => ref.invalidate(subscriptionPlansProvider),
           ),
           data: (items) {
-            final filtered = items.where(_matchesFilter).toList(growable: false);
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
               children: [
@@ -64,41 +60,14 @@ class _SubscriptionPlansPageState
                 _BillingSelector(
                   isArabic: _isArabic,
                   selected: _period,
+                  plans: items,
                   onChanged: (value) => setState(() => _period = value),
                 ),
-                const SizedBox(height: 14),
-                _PlanFilters(
-                  isArabic: _isArabic,
-                  selected: _filter,
-                  onChanged: (value) => setState(() => _filter = value),
-                ),
                 const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _tr(
-                          '${filtered.length} باقة متاحة',
-                          '${filtered.length} available plans',
-                        ),
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w900,
-                            ),
-                      ),
-                    ),
-                    if (_filter != _PlanFilter.all)
-                      TextButton.icon(
-                        onPressed: () => setState(() => _filter = _PlanFilter.all),
-                        icon: const Icon(Icons.filter_alt_off_rounded),
-                        label: Text(_tr('مسح الفلتر', 'Clear filter')),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                if (filtered.isEmpty)
+                if (items.isEmpty)
                   _EmptyPlans(isArabic: _isArabic)
                 else
-                  ...filtered.map(
+                  ...items.map(
                     (plan) => Padding(
                       padding: const EdgeInsets.only(bottom: 16),
                       child: _PlanCard(
@@ -116,15 +85,6 @@ class _SubscriptionPlansPageState
       ),
     );
   }
-
-  bool _matchesFilter(SubscriptionPlan plan) => switch (_filter) {
-        _PlanFilter.free => plan.priceMonthly == 0,
-        _PlanFilter.popular => plan.isPopular,
-        _PlanFilter.analytics => plan.hasAnalytics,
-        _PlanFilter.verified => plan.hasVerifiedBadge,
-        _PlanFilter.searchPriority => plan.featuredInSearch,
-        _ => true,
-      };
 }
 
 class _PricingHero extends StatelessWidget {
@@ -192,89 +152,122 @@ class _BillingSelector extends StatelessWidget {
   const _BillingSelector({
     required this.isArabic,
     required this.selected,
+    required this.plans,
     required this.onChanged,
   });
 
   final bool isArabic;
   final String selected;
+  final List<SubscriptionPlan> plans;
   final ValueChanged<String> onChanged;
+
+  /// متوسط نسبة التوفير الحقيقية عند الدفع سنويًا، محسوبة من أسعار
+  /// الباقات نفسها بدل رقم تسويقي ثابت قد لا يطابق التسعير الفعلي.
+  int? get _averageAnnualSavingsPercent {
+    final ratios = plans
+        .where((plan) => plan.priceMonthly > 0)
+        .map((plan) => 1 - (plan.priceAnnual / (plan.priceMonthly * 12)))
+        .where((ratio) => ratio > 0)
+        .toList(growable: false);
+    if (ratios.isEmpty) return null;
+    final average = ratios.reduce((a, b) => a + b) / ratios.length;
+    return (average * 100).round();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final periods = <(String, String, String)>[
-      ('monthly', 'شهري', 'Monthly'),
-      ('quarterly', 'ربع سنوي', 'Quarterly'),
-      ('semi_annual', 'نصف سنوي', 'Semi-annual'),
-      ('annual', 'سنوي', 'Annual'),
-    ];
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: periods
-              .map(
-                (item) => Padding(
-                  padding: const EdgeInsetsDirectional.only(end: 6),
-                  child: ChoiceChip(
-                    selected: selected == item.$1,
-                    label: Text(isArabic ? item.$2 : item.$3),
-                    onSelected: (_) => onChanged(item.$1),
-                  ),
-                ),
-              )
-              .toList(growable: false),
+    final savings = _averageAnnualSavingsPercent;
+    return Row(
+      children: [
+        Expanded(
+          child: _BillingOption(
+            label: isArabic ? 'شهري' : 'Monthly',
+            selected: selected == 'monthly',
+            onTap: () => onChanged('monthly'),
+          ),
         ),
-      ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _BillingOption(
+            label: isArabic ? 'سنوي' : 'Annual',
+            badge: savings == null || savings <= 0
+                ? null
+                : isArabic ? 'وفّر $savings٪' : 'Save $savings%',
+            selected: selected == 'annual',
+            onTap: () => onChanged('annual'),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _PlanFilters extends StatelessWidget {
-  const _PlanFilters({
-    required this.isArabic,
+class _BillingOption extends StatelessWidget {
+  const _BillingOption({
+    required this.label,
     required this.selected,
-    required this.onChanged,
+    required this.onTap,
+    this.badge,
   });
 
-  final bool isArabic;
-  final _PlanFilter selected;
-  final ValueChanged<_PlanFilter> onChanged;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final String? badge;
 
   @override
-  Widget build(BuildContext context) {
-    final filters = <(_PlanFilter, IconData, String, String)>[
-      (_PlanFilter.all, Icons.apps_rounded, 'الكل', 'All'),
-      (_PlanFilter.free, Icons.savings_outlined, 'مجاني', 'Free'),
-      (_PlanFilter.popular, Icons.local_fire_department_rounded, 'الأشهر', 'Popular'),
-      (_PlanFilter.analytics, Icons.query_stats_rounded, 'تحليلات', 'Analytics'),
-      (_PlanFilter.verified, Icons.verified_rounded, 'موثّق', 'Verified'),
-      (_PlanFilter.searchPriority, Icons.trending_up_rounded, 'أولوية بحث', 'Search priority'),
-    ];
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: filters
-            .map(
-              (item) => Padding(
-                padding: const EdgeInsetsDirectional.only(end: 8),
-                child: FilterChip(
-                  selected: selected == item.$1,
-                  avatar: Icon(item.$2, size: 18),
-                  label: Text(isArabic ? item.$3 : item.$4),
-                  onSelected: (_) => onChanged(item.$1),
-                ),
+  Widget build(BuildContext context) => Material(
+        color: selected ? AppColors.primary : AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: selected ? AppColors.primary : AppColors.border,
               ),
-            )
-            .toList(growable: false),
-      ),
-    );
-  }
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: selected ? Colors.white : AppColors.text,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                if (badge != null) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? Colors.white.withValues(alpha: .2)
+                          : AppColors.secondarySoft,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      badge!,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: selected ? Colors.white : AppColors.secondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
 }
 
 class _PlanCard extends StatelessWidget {
@@ -423,12 +416,8 @@ class _PlanCard extends StatelessWidget {
     );
   }
 
-  String _periodLabel() => switch (period) {
-        'quarterly' => _tr('ربع سنة', 'quarter'),
-        'semi_annual' => _tr('نصف سنة', 'half-year'),
-        'annual' => _tr('سنة', 'year'),
-        _ => _tr('شهر', 'month'),
-      };
+  String _periodLabel() =>
+      period == 'annual' ? _tr('سنة', 'year') : _tr('شهر', 'month');
 
   /// يسجّل اختيار الخطة، ثم ينقل المستخدم للويب بنفس حسابه ليكمل
   /// إنشاء نشاطه.
@@ -530,15 +519,15 @@ class _EmptyPlans extends StatelessWidget {
           child: Column(
             children: [
               const Icon(
-                Icons.filter_alt_off_rounded,
+                Icons.workspace_premium_outlined,
                 size: 52,
                 color: AppColors.primary,
               ),
               const SizedBox(height: 14),
               Text(
                 isArabic
-                    ? 'لا توجد خطط تطابق الفلتر المحدد'
-                    : 'No plans match the selected filter',
+                    ? 'لا توجد خطط اشتراك متاحة حاليًا'
+                    : 'No subscription plans are available right now',
                 textAlign: TextAlign.center,
               ),
             ],
