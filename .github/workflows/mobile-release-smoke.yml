@@ -10,6 +10,20 @@ on:
   workflow_dispatch:
 
 jobs:
+  release-identity:
+    name: Release identity guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify v1 metadata
+        run: |
+          grep -q '^version: 1.0.0+1$' mobile/apps/user/pubspec.yaml
+          grep -q '^version: 1.0.0+1$' mobile/apps/merchant/pubspec.yaml
+          grep -q 'applicationId = "com.daliilaykhidma.dalil_app"' mobile/apps/user/android/app/build.gradle.kts
+          grep -q 'applicationId = "com.daliilaykhidma.merchant"' mobile/apps/merchant/android/app/build.gradle.kts
+          grep -q 'android:label="دليل أي خدمة"' mobile/apps/user/android/app/src/main/AndroidManifest.xml
+          grep -q 'android:label="دليل أي خدمة - الأعمال"' mobile/apps/merchant/android/app/src/main/AndroidManifest.xml
+
   android-release:
     name: Android release AAB (${{ matrix.app }})
     runs-on: ubuntu-latest
@@ -86,6 +100,16 @@ jobs:
         working-directory: mobile/apps/${{ matrix.app }}
         run: flutter build ios --release --no-codesign --dart-define=API_BASE_URL=https://daliil-ay-khidma.onrender.com
 
-      - name: Verify iOS app exists
+      - name: Verify iOS app identity
         working-directory: mobile/apps/${{ matrix.app }}
-        run: test -d build/ios/iphoneos/Runner.app
+        shell: bash
+        run: |
+          test -d build/ios/iphoneos/Runner.app
+          actual=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' build/ios/iphoneos/Runner.app/Info.plist)
+          if [ "${{ matrix.app }}" = "user" ]; then
+            expected='com.daliilaykhidma.dalilApp'
+          else
+            expected='com.daliilaykhidma.merchant'
+          fi
+          echo "Bundle ID: $actual"
+          test "$actual" = "$expected"
