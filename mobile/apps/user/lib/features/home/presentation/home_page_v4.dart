@@ -8,7 +8,7 @@ import '../../auth/presentation/login_page.dart';
 import '../../catalog/data/catalog_models.dart';
 import '../../catalog/presentation/catalog_detail_pages.dart';
 import '../../directory/data/business.dart';
-import '../../directory/presentation/business_card.dart';
+import '../../directory/presentation/business_detail_page.dart';
 import '../../browse/presentation/browse_hub_page.dart';
 import '../../browse/presentation/browse_results_page.dart';
 import '../../notifications/presentation/notifications_page.dart';
@@ -22,6 +22,7 @@ class HomePageV4 extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final home = ref.watch(homeProvider);
     final authenticated = ref.watch(authControllerProvider).valueOrNull ?? false;
+    final locationLabel = ref.watch(currentLocationLabelProvider).valueOrNull;
     return Scaffold(
       body: SafeArea(
         child: home.when(
@@ -37,6 +38,9 @@ class HomePageV4 extends ConsumerWidget {
                   child: _BrandHero(
                     authenticated: authenticated,
                     onSearchTap: onSearchTap,
+                    locationLabel: locationLabel,
+                    onLocationTap: () =>
+                        ref.invalidate(currentLocationLabelProvider),
                   ),
                 ),
                 SliverToBoxAdapter(
@@ -48,12 +52,15 @@ class HomePageV4 extends ConsumerWidget {
                     ),
                   ),
                 ),
-                SliverToBoxAdapter(child: _DealsSpotlight(items: data.deals)),
+                SliverToBoxAdapter(
+                  child: _MostVisitedSection(items: data.businesses),
+                ),
                 SliverToBoxAdapter(
                   child: _CategoryRail(items: data.categories),
                 ),
+                SliverToBoxAdapter(child: _DealsSpotlight(items: data.deals)),
                 SliverToBoxAdapter(
-                  child: _BusinessSection(items: data.businesses),
+                  child: _NearbySection(items: data.businesses),
                 ),
                 SliverToBoxAdapter(child: _ProductRail(items: data.products)),
                 const SliverToBoxAdapter(child: SizedBox(height: 34)),
@@ -67,10 +74,17 @@ class HomePageV4 extends ConsumerWidget {
 }
 
 class _BrandHero extends StatelessWidget {
-  const _BrandHero({required this.authenticated, required this.onSearchTap});
+  const _BrandHero({
+    required this.authenticated,
+    required this.onSearchTap,
+    required this.locationLabel,
+    required this.onLocationTap,
+  });
 
   final bool authenticated;
   final VoidCallback onSearchTap;
+  final String? locationLabel;
+  final VoidCallback onLocationTap;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -122,6 +136,8 @@ class _BrandHero extends StatelessWidget {
                     ],
                   ),
                 ),
+                _LocationChip(label: locationLabel, onTap: onLocationTap),
+                const SizedBox(width: 4),
                 IconButton(
                   tooltip: 'الإشعارات',
                   style: IconButton.styleFrom(
@@ -180,6 +196,48 @@ class _BrandHero extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      );
+}
+
+class _LocationChip extends StatelessWidget {
+  const _LocationChip({required this.label, required this.onTap});
+
+  final String? label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 96),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.location_on_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    label ?? 'تحديد الموقع',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       );
 }
@@ -255,7 +313,7 @@ class _DealsSpotlight extends StatelessWidget {
   Widget build(BuildContext context) {
     if (items.isEmpty) return const SizedBox.shrink();
     return _Section(
-      title: 'أقوى العروض الآن',
+      title: '🔥 العروض الحصرية',
       subtitle: 'خصومات مختارة تستحق المشاهدة',
       child: SizedBox(
         height: 205,
@@ -441,24 +499,167 @@ class _CategoryRail extends StatelessWidget {
   }
 }
 
-class _BusinessSection extends StatelessWidget {
-  const _BusinessSection({required this.items});
+class _MostVisitedSection extends StatelessWidget {
+  const _MostVisitedSection({required this.items});
 
   final List<Business> items;
 
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) return const SizedBox.shrink();
+    final featured = items.take(_mostVisitedCount).toList(growable: false);
     return _Section(
-      title: 'أنشطة مميزة',
-      subtitle: 'اختيارات موثوقة وأعلى تقييمًا',
-      child: ListView.separated(
+      title: 'الأكثر زيارة',
+      subtitle: 'الأنشطة الأعلى تقييمًا حواليك',
+      child: SizedBox(
+        height: 214,
+        child: ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          scrollDirection: Axis.horizontal,
+          itemCount: featured.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          itemBuilder: (_, index) => SizedBox(
+            width: 172,
+            child: _BusinessTile(business: featured[index]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NearbySection extends StatelessWidget {
+  const _NearbySection({required this.items});
+
+  final List<Business> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final nearby = items.skip(_mostVisitedCount).toList(growable: false);
+    if (nearby.isEmpty) return const SizedBox.shrink();
+    return _Section(
+      title: 'قريب منك',
+      subtitle: 'أنشطة قريبة تستحق الزيارة',
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: items.length > 4 ? 4 : items.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (_, index) => BusinessCard(business: items[index]),
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: nearby.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            mainAxisExtent: 214,
+          ),
+          itemBuilder: (_, index) => _BusinessTile(business: nearby[index]),
+        ),
+      ),
+    );
+  }
+}
+
+const _mostVisitedCount = 2;
+
+class _BusinessTile extends StatelessWidget {
+  const _BusinessTile({required this.business});
+
+  final Business business;
+
+  @override
+  Widget build(BuildContext context) {
+    final image = business.coverImage ?? business.logo;
+    final area = business.area;
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => BusinessDetailPage(slug: business.slug),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AspectRatio(
+              aspectRatio: 16 / 11,
+              child: image == null || image.isEmpty
+                  ? const ColoredBox(
+                      color: AppColors.primarySoft,
+                      child: Icon(
+                        Icons.storefront_rounded,
+                        color: AppColors.primary,
+                        size: 32,
+                      ),
+                    )
+                  : Image.network(
+                      image,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const ColoredBox(
+                        color: AppColors.primarySoft,
+                        child: Icon(
+                          Icons.storefront_rounded,
+                          color: AppColors.primary,
+                          size: 32,
+                        ),
+                      ),
+                    ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    business.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  if (area.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      area,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.muted,
+                          ),
+                    ),
+                  ],
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 15,
+                        color: AppColors.accentDark,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        business.rating.toStringAsFixed(1),
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      if (business.distanceKm != null) ...[
+                        const Spacer(),
+                        Text(
+                          '${business.distanceKm!.toStringAsFixed(1)} كم',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: AppColors.muted,
+                              ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

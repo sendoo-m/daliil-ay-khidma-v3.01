@@ -16,6 +16,7 @@ import '../features/directory/presentation/search_history_controller.dart';
 import '../features/favorites/data/favorites_repository.dart';
 import '../features/favorites/presentation/favorites_controller.dart';
 import '../features/home/data/home_repository.dart';
+import '../features/location/data/geocode_service.dart';
 import '../features/location/data/location_service.dart';
 import '../features/notifications/data/device_repository.dart';
 import '../features/notifications/data/notification_repository.dart';
@@ -49,6 +50,18 @@ final subscriptionRepositoryProvider = Provider(
   (ref) => SubscriptionRepository(ref.watch(apiClientProvider).dio),
 );
 final locationServiceProvider = Provider((_) => LocationService());
+final geocodeServiceProvider = Provider((_) => GeocodeService());
+final currentLocationLabelProvider = FutureProvider((ref) async {
+  try {
+    final coordinates = await ref.watch(locationServiceProvider).current();
+    return await ref
+        .watch(geocodeServiceProvider)
+        .labelFor(coordinates.latitude, coordinates.longitude);
+  } catch (_) {
+    // موقع مرفوض أو غير متاح: نخفي الشريحة بهدوء بدل ما نوقف الصفحة.
+    return null;
+  }
+});
 final pushServiceProvider = Provider(
   (ref) => PushService(ref.watch(deviceRepositoryProvider)),
 );
