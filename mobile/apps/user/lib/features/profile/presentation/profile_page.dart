@@ -9,6 +9,7 @@ import '../../directory/presentation/business_detail_page.dart';
 import '../../notifications/presentation/notifications_page.dart';
 import '../data/activity_repository.dart';
 import '../data/profile_repository.dart';
+import 'settings_page.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({this.embedded = false, super.key});
@@ -63,6 +64,24 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ),
               icon: const Icon(Icons.notifications_none_rounded),
             ),
+            if (_profile != null)
+              IconButton(
+                tooltip: _t('الإعدادات', 'Settings'),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => SettingsPage(
+                      profile: _profile!,
+                      isArabic: _isArabic,
+                      onEditProfile: () => _openEdit(_profile!),
+                      onChangePassword: _changePassword,
+                      onDeleteAccount: _startAccountDeletion,
+                      onLogout: _confirmLogout,
+                      onShowInfo: _showInfo,
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.settings_outlined),
+              ),
           ],
         ),
         body: _body(),
@@ -100,77 +119,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           _SectionTitle(_t('تقييماتي', 'My reviews')),
           const SizedBox(height: 10),
           _MyReviewsCard(isArabic: _isArabic),
-          const SizedBox(height: 20),
-          _QuickActions(
-            isArabic: _isArabic,
-            onEdit: () => _openEdit(profile),
-            onPassword: _changePassword,
-            onNotifications: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const NotificationsPage(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          _SectionTitle(_t('بيانات الحساب', 'Account details')),
-          const SizedBox(height: 10),
-          _DetailsCard(profile: profile, isArabic: _isArabic),
-          const SizedBox(height: 20),
-          _SectionTitle(_t('الدعم والمعلومات', 'Support & information')),
-          const SizedBox(height: 10),
-          _SettingsCard(
-            children: [
-              _SettingsTile(
-                icon: Icons.help_outline_rounded,
-                title: _t('مركز المساعدة', 'Help center'),
-                onTap: () => _showInfo(
-                  _t('مركز المساعدة', 'Help center'),
-                  _t(
-                    'يمكنك التواصل مع فريق الدعم من خلال قنوات التواصل الرسمية المتاحة في التطبيق.',
-                    'Contact support through the official support channels available in the app.',
-                  ),
-                ),
-              ),
-              _SettingsTile(
-                icon: Icons.privacy_tip_outlined,
-                title: _t('الخصوصية', 'Privacy'),
-                onTap: () => _showInfo(
-                  _t('الخصوصية', 'Privacy'),
-                  _t(
-                    'تُستخدم بياناتك لتشغيل الحساب وتحسين تجربتك داخل دليل أي خدمة.',
-                    'Your data is used to operate your account and improve your experience in Daliil Ay Khidma.',
-                  ),
-                ),
-              ),
-              _SettingsTile(
-                icon: Icons.description_outlined,
-                title: _t('الشروط والأحكام', 'Terms & conditions'),
-                onTap: () => _showInfo(
-                  _t('الشروط والأحكام', 'Terms & conditions'),
-                  _t(
-                    'باستخدام التطبيق فإنك توافق على الشروط والسياسات المعتمدة للخدمة.',
-                    'By using the app, you agree to the approved terms and service policies.',
-                  ),
-                ),
-              ),
-              _SettingsTile(
-                icon: Icons.delete_forever_outlined,
-                title: _t('حذف الحساب', 'Delete account'),
-                onTap: _startAccountDeletion,
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          OutlinedButton.icon(
-            onPressed: _confirmLogout,
-            icon: const Icon(Icons.logout_rounded),
-            label: Text(_t('تسجيل الخروج', 'Sign out')),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-              side: BorderSide(color: Theme.of(context).colorScheme.error),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-          ),
         ],
       ),
     );
@@ -940,119 +888,6 @@ class _CardEmpty extends StatelessWidget {
             style: TextStyle(color: Theme.of(context).colorScheme.outline),
           ),
         ),
-      );
-}
-
-class _QuickActions extends StatelessWidget {
-  const _QuickActions({
-    required this.isArabic,
-    required this.onEdit,
-    required this.onPassword,
-    required this.onNotifications,
-  });
-  final bool isArabic;
-  final VoidCallback onEdit;
-  final VoidCallback onPassword;
-  final VoidCallback onNotifications;
-
-  @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          Expanded(child: _QuickAction(icon: Icons.edit_outlined, label: isArabic ? 'تعديل' : 'Edit', onTap: onEdit)),
-          const SizedBox(width: 10),
-          Expanded(child: _QuickAction(icon: Icons.lock_reset_rounded, label: isArabic ? 'كلمة المرور' : 'Password', onTap: onPassword)),
-          const SizedBox(width: 10),
-          Expanded(child: _QuickAction(icon: Icons.notifications_none_rounded, label: isArabic ? 'الإشعارات' : 'Alerts', onTap: onNotifications)),
-        ],
-      );
-}
-
-class _QuickAction extends StatelessWidget {
-  const _QuickAction({required this.icon, required this.label, required this.onTap});
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Material(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(18),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-            child: Column(
-              children: [
-                Icon(icon, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(height: 6),
-                Text(label, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700)),
-              ],
-            ),
-          ),
-        ),
-      );
-}
-
-class _DetailsCard extends StatelessWidget {
-  const _DetailsCard({required this.profile, required this.isArabic});
-  final UserProfile profile;
-  final bool isArabic;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        child: Column(
-          children: [
-            _DetailRow(icon: Icons.email_outlined, label: isArabic ? 'البريد الإلكتروني' : 'Email', value: profile.email),
-            _DetailRow(icon: Icons.phone_outlined, label: isArabic ? 'رقم الهاتف' : 'Phone', value: profile.phone),
-            _DetailRow(icon: Icons.location_city_outlined, label: isArabic ? 'المدينة' : 'City', value: profile.city),
-            if (profile.bio.isNotEmpty)
-              _DetailRow(icon: Icons.notes_rounded, label: isArabic ? 'نبذة' : 'Bio', value: profile.bio, last: true),
-          ],
-        ),
-      );
-}
-
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({required this.icon, required this.label, required this.value, this.last = false});
-  final IconData icon;
-  final String label;
-  final String value;
-  final bool last;
-
-  @override
-  Widget build(BuildContext context) => Column(
-        children: [
-          ListTile(
-            leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
-            title: Text(label),
-            subtitle: Text(value.isEmpty ? '—' : value),
-          ),
-          if (!last) const Divider(height: 1),
-        ],
-      );
-}
-
-class _SettingsCard extends StatelessWidget {
-  const _SettingsCard({required this.children});
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) => Card(child: Column(children: children));
-}
-
-class _SettingsTile extends StatelessWidget {
-  const _SettingsTile({required this.icon, required this.title, required this.onTap});
-  final IconData icon;
-  final String title;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => ListTile(
-        leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
-        title: Text(title),
-        trailing: const Icon(Icons.chevron_right_rounded),
-        onTap: onTap,
       );
 }
 

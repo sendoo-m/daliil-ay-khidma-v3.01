@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
+import 'package:dalil_core/dalil_core.dart' hide ApiFailure;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/app_localizations.dart';
 import '../features/auth/presentation/reset_password_page.dart';
 import 'app_theme.dart';
+import 'locale_controller.dart';
 import 'main_shell.dart';
 import 'providers.dart';
 import 'theme_controller.dart';
@@ -51,6 +53,7 @@ class _DalilAppState extends ConsumerState<DalilApp> {
   Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
     final themePreference = ref.watch(themeControllerProvider);
+    final locale = ref.watch(localeControllerProvider);
     ref.listen(authControllerProvider, (_, next) {
       if (next.valueOrNull == true) {
         ref.read(pushServiceProvider).initialize().catchError((_) {});
@@ -60,7 +63,7 @@ class _DalilAppState extends ConsumerState<DalilApp> {
       navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appName,
-      locale: const Locale('ar'),
+      locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -89,22 +92,7 @@ class _SplashScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 82,
-                height: 82,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.secondary,
-                    ],
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: const Icon(Icons.place_outlined, size: 44, color: Colors.white),
-              ),
+              const DalilLogo(size: 82),
               const SizedBox(height: 20),
               Text(
                 'دليل أي خدمة',

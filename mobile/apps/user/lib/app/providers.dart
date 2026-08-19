@@ -19,6 +19,7 @@ import '../features/home/data/home_repository.dart';
 import '../features/location/data/geocode_service.dart';
 import '../features/location/data/location_service.dart';
 import '../features/notifications/data/device_repository.dart';
+import '../features/notifications/data/notification_preference_controller.dart';
 import '../features/notifications/data/notification_repository.dart';
 import '../features/profile/data/activity_repository.dart';
 import '../features/profile/data/profile_repository.dart';
@@ -74,6 +75,13 @@ final currentLocationLabelProvider = FutureProvider((ref) async {
 });
 final pushServiceProvider = Provider(
   (ref) => PushService(ref.watch(deviceRepositoryProvider)),
+);
+final notificationPreferenceProvider =
+    StateNotifierProvider<NotificationPreferenceController, bool>(
+  (ref) => NotificationPreferenceController(
+    ref.watch(deviceRepositoryProvider),
+    const FlutterSecureStorage(),
+  ),
 );
 final authRepositoryProvider = Provider(
   (ref) => AuthRepository(
