@@ -65,8 +65,10 @@ jobs:
             exit 1
           fi
 
+          grep -q 'applicationId = "com.daliilaykhidma.dalil_app"' mobile/apps/user/android/app/build.gradle.kts
           grep -q 'applicationId = "com.daliilaykhidma.merchant"' mobile/apps/merchant/android/app/build.gradle.kts
-          grep -q 'android:label="Daliil Merchant"' mobile/apps/merchant/android/app/src/main/AndroidManifest.xml
+          grep -q 'android:label="دليل أي خدمة"' mobile/apps/user/android/app/src/main/AndroidManifest.xml
+          grep -q 'android:label="دليل أي خدمة - الأعمال"' mobile/apps/merchant/android/app/src/main/AndroidManifest.xml
 
   backend:
     runs-on: ubuntu-latest
