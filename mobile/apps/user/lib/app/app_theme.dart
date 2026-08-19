@@ -19,6 +19,35 @@ abstract final class AppTokens {
   static const darkBorder = Color(0xFF263244);
 }
 
+/// Compatibility facade for screens that still reference the legacy constants.
+/// New/updated screens should prefer Theme.of(context).colorScheme and the
+/// dynamic theme preference instead. Keeping these constants during migration
+/// prevents unrelated screens from breaking while we refresh them PR-by-PR.
+abstract final class AppColors {
+  static const primary = Color(0xFF0F8B8D);
+  static const primaryDark = Color(0xFF0A6F71);
+  static const secondary = Color(0xFF19A974);
+  static const primarySoft = Color(0xFFE9F8F7);
+  static const secondarySoft = Color(0xFFEAF8F1);
+  static const accent = Color(0xFFF59E0B);
+  static const accentDark = Color(0xFFD97706);
+  static const accentSoft = Color(0xFFFFF7E6);
+  static const background = AppTokens.background;
+  static const surface = AppTokens.surface;
+  static const surfaceMuted = AppTokens.surfaceMuted;
+  static const text = AppTokens.text;
+  static const muted = AppTokens.muted;
+  static const border = AppTokens.border;
+  static const success = AppTokens.success;
+  static const error = AppTokens.error;
+
+  static const brandGradient = LinearGradient(
+    colors: [primary, secondary],
+    begin: Alignment.topRight,
+    end: Alignment.bottomLeft,
+  );
+}
+
 abstract final class AppTheme {
   static ThemeData light(DalilThemePalette palette) => _build(palette, false);
   static ThemeData dark(DalilThemePalette palette) => _build(palette, true);
