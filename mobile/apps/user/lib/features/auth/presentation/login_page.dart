@@ -1,4 +1,4 @@
-import 'package:dalil_core/dalil_core.dart';
+import 'package:dalil_core/dalil_core.dart' hide ApiFailure;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
