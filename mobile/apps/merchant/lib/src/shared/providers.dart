@@ -68,17 +68,12 @@ class SessionNotifier extends Notifier<SessionState> {
   Future<MerchantSession> _load() async =>
       MerchantSession.fromJson(await _api.getJson('merchant/session/'));
 
+  // التاجر لازم يسجّل دخوله من جديد في كل مرة يفتح فيها التطبيق —
+  // بعكس تطبيق المستخدم اللي جلسته دايمة. أي رمز محفوظ من جلسة سابقة
+  // بيتمسح هنا بدل ما يُستخدم لاستعادة الجلسة تلقائيًا.
   Future<void> restore() async {
-    if (!await _tokens.hasSession) {
-      state = const SessionSignedOut();
-      return;
-    }
-    try {
-      state = SessionActive(await _load());
-    } on ApiFailure catch (failure) {
-      await _tokens.clear();
-      state = SessionSignedOut(reason: failure.isForbidden ? _noShop : null);
-    }
+    await _tokens.clear();
+    state = const SessionSignedOut();
   }
 
   static const _noShop =
