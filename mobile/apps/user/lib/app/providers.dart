@@ -42,6 +42,13 @@ final notificationRepositoryProvider = Provider(
 final reviewRepositoryProvider = Provider(
   (ref) => ReviewRepository(ref.watch(apiClientProvider).dio),
 );
+final unreadNotificationsCountProvider = FutureProvider((ref) async {
+  try {
+    return await ref.watch(notificationRepositoryProvider).unreadCount();
+  } catch (_) {
+    return 0;
+  }
+});
 final activityRepositoryProvider = Provider(
   (ref) => ActivityRepository(ref.watch(apiClientProvider).dio),
 );

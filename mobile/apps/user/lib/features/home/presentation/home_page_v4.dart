@@ -1,4 +1,3 @@
-import 'package:dalil_core/dalil_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -24,7 +23,11 @@ class HomePageV4 extends ConsumerWidget {
     final home = ref.watch(homeProvider);
     final authenticated = ref.watch(authControllerProvider).valueOrNull ?? false;
     final locationLabel = ref.watch(currentLocationLabelProvider).valueOrNull;
+    final unreadCount = authenticated
+        ? ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0
+        : 0;
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: home.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -36,14 +39,15 @@ class HomePageV4 extends ConsumerWidget {
             child: CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(
-                  child: _BrandHero(
+                  child: _HomeHeader(
                     authenticated: authenticated,
-                    onSearchTap: onSearchTap,
+                    unreadCount: unreadCount,
                     locationLabel: locationLabel,
                     onLocationTap: () =>
                         ref.invalidate(currentLocationLabelProvider),
                   ),
                 ),
+                SliverToBoxAdapter(child: _SearchBar(onTap: onSearchTap)),
                 SliverToBoxAdapter(
                   child: _CategoryChips(items: data.categories),
                 ),
@@ -83,125 +87,56 @@ class HomePageV4 extends ConsumerWidget {
   }
 }
 
-class _BrandHero extends StatelessWidget {
-  const _BrandHero({
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader({
     required this.authenticated,
-    required this.onSearchTap,
+    required this.unreadCount,
     required this.locationLabel,
     required this.onLocationTap,
   });
 
   final bool authenticated;
-  final VoidCallback onSearchTap;
+  final int unreadCount;
   final String? locationLabel;
   final VoidCallback onLocationTap;
 
   @override
-  Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-        padding: const EdgeInsets.fromLTRB(22, 20, 22, 24),
-        decoration: BoxDecoration(
-          gradient: AppColors.brandGradient,
-          borderRadius: BorderRadius.circular(26),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: .28),
-              blurRadius: 28,
-              offset: const Offset(0, 14),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        child: Row(
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: .16),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const DalilLogo(size: 38),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'دليل أي خدمة',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 21,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      Text(
-                        'كل ما تحتاجه حولك في مكان واحد',
-                        style: TextStyle(color: Color(0xFFE9E8FF)),
-                      ),
-                    ],
-                  ),
-                ),
-                _LocationChip(label: locationLabel, onTap: onLocationTap),
-                const SizedBox(width: 4),
-                IconButton(
-                  tooltip: 'الإشعارات',
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.white.withValues(alpha: .15),
-                    foregroundColor: Colors.white,
-                  ),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => authenticated
-                          ? const NotificationsPage()
-                          : const LoginPage(),
-                    ),
-                  ),
-                  icon: const Icon(Icons.notifications_none_rounded),
-                ),
-              ],
+            _NotificationBell(
+              authenticated: authenticated,
+              unreadCount: unreadCount,
             ),
-            const SizedBox(height: 28),
-            const Text(
-              'ابحث. قارن. اختَر الأفضل.',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 27,
-                height: 1.35,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'محلات وخدمات ومنتجات وعروض موثوقة بالقرب منك',
-              style: TextStyle(color: Color(0xFFF0EFFF), fontSize: 14),
-            ),
-            const SizedBox(height: 20),
-            Material(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+            const SizedBox(width: 12),
+            Expanded(
               child: InkWell(
-                onTap: onSearchTap,
-                borderRadius: BorderRadius.circular(16),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  child: Row(
-                    children: [
-                      Icon(Icons.search_rounded, color: AppColors.primary),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'ابحث عن محل، منتج أو خدمة',
-                          style: TextStyle(color: AppColors.muted),
+                onTap: onLocationTap,
+                borderRadius: BorderRadius.circular(12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        locationLabel ?? 'تحديد الموقع',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                      Icon(Icons.tune_rounded, color: AppColors.secondary),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Icon(
+                      Icons.location_on_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -210,42 +145,104 @@ class _BrandHero extends StatelessWidget {
       );
 }
 
-class _LocationChip extends StatelessWidget {
-  const _LocationChip({required this.label, required this.onTap});
+class _NotificationBell extends StatelessWidget {
+  const _NotificationBell({
+    required this.authenticated,
+    required this.unreadCount,
+  });
 
-  final String? label;
+  final bool authenticated;
+  final int unreadCount;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: .06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: IconButton(
+              tooltip: 'الإشعارات',
+              color: AppColors.primary,
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => authenticated
+                      ? const NotificationsPage()
+                      : const LoginPage(),
+                ),
+              ),
+              icon: const Icon(Icons.notifications_none_rounded),
+            ),
+          ),
+          if (unreadCount > 0)
+            Positioned(
+              top: 2,
+              left: 2,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                constraints: const BoxConstraints(minWidth: 18),
+                decoration: BoxDecoration(
+                  color: AppTokens.error,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: AppColors.surface, width: 1.5),
+                ),
+                child: Text(
+                  unreadCount > 9 ? '9+' : '$unreadCount',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      );
+}
+
+class _SearchBar extends StatelessWidget {
+  const _SearchBar({required this.onTap});
+
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 96),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.location_on_rounded,
-                  color: Colors.white,
-                  size: 18,
-                ),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    label ?? 'تحديد الموقع',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        child: Material(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.primary.withValues(alpha: .35)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.search_rounded, color: AppColors.primary),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'ابحث عن محل، منتج أو خدمة',
+                      style: TextStyle(color: AppColors.muted),
                     ),
                   ),
-                ),
-              ],
+                  Icon(Icons.tune_rounded, color: AppColors.secondary),
+                ],
+              ),
             ),
           ),
         ),
@@ -500,18 +497,24 @@ class _CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Material(
         color: selected ? AppColors.primary : AppColors.surface,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 18),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(
-                color: selected ? AppColors.primary : AppColors.border,
-              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: selected
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: .05),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
             ),
             child: Text(
               label,
@@ -597,7 +600,7 @@ class _BusinessTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final image = business.coverImage ?? business.logo;
-    final area = business.area;
+    final distanceKm = business.distanceKm;
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -606,37 +609,73 @@ class _BusinessTile extends StatelessWidget {
             builder: (_) => BusinessDetailPage(slug: business.slug),
           ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            SizedBox(
-              height: 108,
-              width: double.infinity,
-              child: image == null || image.isEmpty
-                  ? const ColoredBox(
+            image == null || image.isEmpty
+                ? const ColoredBox(
+                    color: AppColors.primarySoft,
+                    child: Icon(
+                      Icons.storefront_rounded,
+                      color: AppColors.primary,
+                      size: 32,
+                    ),
+                  )
+                : Image.network(
+                    image,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const ColoredBox(
                       color: AppColors.primarySoft,
                       child: Icon(
                         Icons.storefront_rounded,
                         color: AppColors.primary,
                         size: 32,
                       ),
-                    )
-                  : Image.network(
-                      image,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (_, __, ___) => const ColoredBox(
-                        color: AppColors.primarySoft,
-                        child: Icon(
-                          Icons.storefront_rounded,
-                          color: AppColors.primary,
-                          size: 32,
-                        ),
+                    ),
+                  ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: .75),
+                  ],
+                  stops: const [0.4, 1],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: .45),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.star_rounded, size: 13, color: Colors.amber),
+                    const SizedBox(width: 3),
+                    Text(
+                      business.rating.toStringAsFixed(1),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
+                  ],
+                ),
+              ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+            Positioned(
+              left: 10,
+              right: 10,
+              bottom: 10,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -644,47 +683,47 @@ class _BusinessTile extends StatelessWidget {
                     business.displayName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                  if (area.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      area,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.muted,
-                          ),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
                     ),
-                  ],
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.star_rounded,
-                        size: 15,
-                        color: AppColors.accentDark,
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        business.rating.toStringAsFixed(1),
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                      ),
-                      if (business.distanceKm != null) ...[
-                        const Spacer(),
+                  ),
+                  const SizedBox(height: 4),
+                  if (distanceKm != null)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.location_on_rounded,
+                          size: 12,
+                          color: Colors.white70,
+                        ),
+                        const SizedBox(width: 3),
                         Text(
-                          '${business.distanceKm!.toStringAsFixed(1)} كم',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: AppColors.muted,
-                              ),
+                          '${distanceKm.toStringAsFixed(1)} كم',
+                          style: const TextStyle(color: Colors.white70, fontSize: 11),
                         ),
                       ],
-                    ],
-                  ),
+                    )
+                  else if (business.categoryName.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        business.categoryName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
