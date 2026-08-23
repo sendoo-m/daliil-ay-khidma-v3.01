@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -50,6 +52,16 @@ class HomePageV4 extends ConsumerWidget {
                 SliverToBoxAdapter(child: _SearchBar(onTap: onSearchTap)),
                 SliverToBoxAdapter(
                   child: _CategoryChips(items: data.categories),
+                ),
+                SliverToBoxAdapter(
+                  child: _OffersBanner(
+                    items: data.deals,
+                    onTapDeal: (slug) => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => DealDetailPage(slug: slug),
+                      ),
+                    ),
+                  ),
                 ),
                 SliverToBoxAdapter(
                   child: _DirectoryEntry(
@@ -244,6 +256,198 @@ class _SearchBar extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+        ),
+      );
+}
+
+class _OffersBanner extends StatefulWidget {
+  const _OffersBanner({required this.items, required this.onTapDeal});
+
+  final List<DealSummary> items;
+  final ValueChanged<String> onTapDeal;
+
+  @override
+  State<_OffersBanner> createState() => _OffersBannerState();
+}
+
+class _OffersBannerState extends State<_OffersBanner> {
+  final _controller = PageController();
+  Timer? _timer;
+  int _page = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoplay();
+  }
+
+  void _startAutoplay() {
+    _timer?.cancel();
+    if (widget.items.length < 2) return;
+    _timer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted || !_controller.hasClients) return;
+      final next = (_page + 1) % widget.items.length;
+      _controller.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _OffersBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.items.length != widget.items.length) {
+      _page = 0;
+      _startAutoplay();
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.items.isEmpty) return const SizedBox.shrink();
+    final items = widget.items.take(6).toList(growable: false);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 150,
+            child: PageView.builder(
+              controller: _controller,
+              itemCount: items.length,
+              onPageChanged: (index) => setState(() => _page = index),
+              itemBuilder: (context, index) {
+                final deal = items[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: _OfferBannerCard(
+                    deal: deal,
+                    onTap: () => widget.onTapDeal(deal.slug),
+                  ),
+                );
+              },
+            ),
+          ),
+          if (items.length > 1) ...[
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (var i = 0; i < items.length; i++)
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: i == _page ? 18 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: i == _page ? AppColors.primary : AppColors.border,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _OfferBannerCard extends StatelessWidget {
+  const _OfferBannerCard({required this.deal, required this.onTap});
+
+  final DealSummary deal;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              deal.image == null || deal.image!.isEmpty
+                  ? const DecoratedBox(
+                      decoration: BoxDecoration(gradient: AppColors.brandGradient),
+                    )
+                  : Image.network(
+                      deal.image!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const DecoratedBox(
+                        decoration: BoxDecoration(gradient: AppColors.brandGradient),
+                      ),
+                    ),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Color(0xCC000000)],
+                    stops: [0.35, 1],
+                  ),
+                ),
+              ),
+              if (deal.discountPercentage > 0)
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      deal.typeLabel,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 14,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      deal.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    if (deal.businessName.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        deal.businessName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       );
