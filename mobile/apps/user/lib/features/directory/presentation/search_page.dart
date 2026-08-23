@@ -229,6 +229,15 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               ),
               orElse: () => const SizedBox(height: 16),
             ),
+            if (!discoveryMode && _kind == _SearchKind.businesses)
+              _DistanceFilterBar(
+                value: _radiusKm,
+                isArabic: _isArabic,
+                onCommitted: (value) => setState(() {
+                  _radiusKm = value;
+                  _revision++;
+                }),
+              ),
             if (!discoveryMode)
               _ActiveFilters(
                 isArabic: _isArabic,
@@ -686,6 +695,91 @@ class _CategoryStrip extends StatelessWidget {
               );
             }),
           ],
+        ),
+      );
+}
+
+class _DistanceFilterBar extends StatefulWidget {
+  const _DistanceFilterBar({
+    required this.value,
+    required this.isArabic,
+    required this.onCommitted,
+  });
+
+  final double? value;
+  final bool isArabic;
+  final ValueChanged<double?> onCommitted;
+
+  @override
+  State<_DistanceFilterBar> createState() => _DistanceFilterBarState();
+}
+
+class _DistanceFilterBarState extends State<_DistanceFilterBar> {
+  late double _draft = widget.value ?? 20;
+
+  @override
+  void didUpdateWidget(covariant _DistanceFilterBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value) _draft = widget.value ?? 20;
+  }
+
+  String get _label => widget.value == null
+      ? (widget.isArabic ? 'بلا حد' : 'No limit')
+      : (widget.isArabic ? '${_draft.round()} كم' : '${_draft.round()} km');
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.near_me_outlined,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    widget.isArabic ? 'المسافة' : 'Distance',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const Spacer(),
+                  Text(
+                    _label,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  if (widget.value != null)
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      tooltip: widget.isArabic ? 'إزالة حد المسافة' : 'Clear distance limit',
+                      onPressed: () => widget.onCommitted(null),
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                    ),
+                ],
+              ),
+              Slider(
+                value: _draft,
+                min: 1,
+                max: 20,
+                divisions: 19,
+                label: widget.isArabic ? '${_draft.round()} كم' : '${_draft.round()} km',
+                onChanged: (value) => setState(() => _draft = value),
+                onChangeEnd: widget.onCommitted,
+              ),
+            ],
+          ),
         ),
       );
 }
