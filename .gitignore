@@ -35,3 +35,9 @@ media/
 .vscode/
 *.iml
 .DS_Store
+
+# Local database backups/exports — may contain real user data, never commit
+*.dir.tar.gz
+*.dir/
+*.dump
+*.dat

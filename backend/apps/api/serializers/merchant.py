@@ -176,6 +176,7 @@ class MerchantDealSerializer(serializers.ModelSerializer):
     )
     current_uses = serializers.IntegerField(read_only=True)
     is_featured = serializers.BooleanField(read_only=True)
+    view_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Deal
@@ -188,12 +189,12 @@ class MerchantDealSerializer(serializers.ModelSerializer):
             'original_price', 'final_price',
             'terms_ar', 'terms_en',
             'start_date', 'end_date',
-            'max_uses', 'max_uses_per_user', 'current_uses',
+            'max_uses', 'max_uses_per_user', 'current_uses', 'view_count',
             'image', 'is_active', 'is_featured', 'order',
             'created_at', 'updated_at',
         ]
         read_only_fields = [
-            'id', 'slug', 'current_uses', 'created_at', 'updated_at',
+            'id', 'slug', 'current_uses', 'view_count', 'created_at', 'updated_at',
         ]
 
     def validate_image(self, value):

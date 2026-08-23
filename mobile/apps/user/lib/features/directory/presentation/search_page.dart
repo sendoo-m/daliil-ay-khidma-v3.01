@@ -44,6 +44,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   double? _minPrice;
   double? _maxPrice;
   double? _radiusKm;
+  UserCoordinates? _cachedCoordinates;
   var _kind = _SearchKind.businesses;
   var _sort = _SearchSort.featured;
   var _revision = 0;
@@ -275,20 +276,24 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         ),
       );
 
+  Future<List<Business>> _plainSearch() => ref.read(businessRepositoryProvider).search(
+        _query,
+        categoryId: _categoryId,
+        governorateId: _governorateId,
+        businessType: _businessType,
+        minRating: _minRating,
+        ordering: _ordering,
+      );
+
   Future<List<Business>> _fetchBusinesses() async {
     final radius = _radiusKm;
-    if (radius == null) {
-      return ref.read(businessRepositoryProvider).search(
-            _query,
-            categoryId: _categoryId,
-            governorateId: _governorateId,
-            businessType: _businessType,
-            minRating: _minRating,
-            ordering: _ordering,
-          );
-    }
+    if (radius == null) return _plainSearch();
     try {
-      final coordinates = await ref.read(locationServiceProvider).current();
+      // نخزّن الموقع بدل ما نطلبه من الـ GPS من جديد مع كل ضغطة مفتاح —
+      // كان كل تغيير في نص البحث بيعيد تحديد الموقع كامل قبل حتى ما يوصل
+      // لطلب الشبكة.
+      final coordinates =
+          _cachedCoordinates ??= await ref.read(locationServiceProvider).current();
       return await ref.read(businessRepositoryProvider).nearby(
             latitude: coordinates.latitude,
             longitude: coordinates.longitude,
@@ -299,16 +304,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             businessType: _businessType,
             minRating: _minRating,
           );
-    } on LocationException {
-      // موقع مرفوض أو غير متاح: نكمّل بدون تصفية المسافة بدل ما نفشل البحث.
-      return ref.read(businessRepositoryProvider).search(
-            _query,
-            categoryId: _categoryId,
-            governorateId: _governorateId,
-            businessType: _businessType,
-            minRating: _minRating,
-            ordering: _ordering,
-          );
+    } catch (_) {
+      // موقع مرفوض، غير متاح، أو انتهت مهلة تحديده: نكمّل بدون تصفية
+      // المسافة بدل ما نفشل البحث كله.
+      return _plainSearch();
     }
   }
 

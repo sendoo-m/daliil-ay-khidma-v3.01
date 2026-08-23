@@ -54,9 +54,19 @@ class _DalilAppState extends ConsumerState<DalilApp> {
     final auth = ref.watch(authControllerProvider);
     final themePreference = ref.watch(themeControllerProvider);
     final locale = ref.watch(localeControllerProvider);
-    ref.listen(authControllerProvider, (_, next) {
-      if (next.valueOrNull == true) {
-        ref.read(pushServiceProvider).initialize().catchError((_) {});
+    ref.listen(authControllerProvider, (_, next) async {
+      if (next.valueOrNull != true) return;
+      // من غير القراءة دي، كل تسجيل دخول كان بيعيد تسجيل الجهاز للإشعارات
+      // حتى لو المستخدم عطّلها من الإعدادات — لأن initialize() ما كانش
+      // بيسأل عن التفضيل المحفوظ خالص.
+      final enabled = await ref
+          .read(notificationPreferenceProvider.notifier)
+          .readPersistedEnabled();
+      if (!enabled) return;
+      try {
+        await ref.read(pushServiceProvider).initialize();
+      } catch (_) {
+        // فشل التسجيل هنا مش قاطع للتطبيق — التنبيهات هتفضل مقفولة وبس.
       }
     });
     return MaterialApp(

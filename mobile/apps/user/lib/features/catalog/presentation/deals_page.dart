@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../app/app_theme.dart';
 import '../../../app/providers.dart';
@@ -337,6 +338,31 @@ class _DealHero extends StatelessWidget {
                     style: const TextStyle(color: Color(0xFFEDEBFF)),
                   ),
                 ],
+                if (deal.hasPrice) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Text(
+                        _money(deal.finalPrice!),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      if (deal.hasDiscount) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          _money(deal.originalPrice!),
+                          style: const TextStyle(
+                            color: Color(0xFFEDEBFF),
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 18),
                 SizedBox(
                   width: double.infinity,
@@ -387,16 +413,20 @@ class _DealCard extends StatelessWidget {
                         CircleAvatar(
                           radius: 22,
                           backgroundColor: accent.withValues(alpha: .12),
-                          child: Text(
-                            deal.dealType == 'percentage'
-                                ? '${deal.discountPercentage.toStringAsFixed(0)}٪'
-                                : '%',
-                            style: TextStyle(
-                              color: accent,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13,
-                            ),
-                          ),
+                          child: deal.dealType == 'percentage'
+                              ? Text(
+                                  '${deal.discountPercentage.toStringAsFixed(0)}٪',
+                                  style: TextStyle(
+                                    color: accent,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 13,
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.local_offer_rounded,
+                                  color: accent,
+                                  size: 18,
+                                ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -419,6 +449,30 @@ class _DealCard extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(color: AppColors.muted),
+                                ),
+                              ],
+                              if (deal.hasPrice) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Text(
+                                      _money(deal.finalPrice!),
+                                      style: TextStyle(
+                                        color: accent,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                    if (deal.hasDiscount) ...[
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        _money(deal.originalPrice!),
+                                        style: const TextStyle(
+                                          color: AppColors.muted,
+                                          decoration: TextDecoration.lineThrough,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ],
                               const SizedBox(height: 4),
@@ -524,3 +578,6 @@ class _MessageState extends StatelessWidget {
         ),
       );
 }
+
+String _money(double value) =>
+    '${NumberFormat('#,##0.##', 'ar').format(value)} ج.م';

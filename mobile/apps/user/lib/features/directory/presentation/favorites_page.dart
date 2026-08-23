@@ -203,13 +203,28 @@ class _FavoriteTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    business.displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          business.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
                         ),
+                      ),
+                      if (business.isVerified)
+                        const Padding(
+                          padding: EdgeInsetsDirectional.only(start: 4),
+                          child: Icon(
+                            Icons.verified_rounded,
+                            size: 15,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                    ],
                   ),
                   if (business.categoryName.isNotEmpty) ...[
                     const SizedBox(height: 4),

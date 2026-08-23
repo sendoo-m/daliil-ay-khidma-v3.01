@@ -25,14 +25,22 @@ final class NotificationPreferenceController extends StateNotifier<bool> {
     if (saved != null) state = saved == 'true';
   }
 
+  /// يقرأ التفضيل المحفوظ مباشرة من التخزين بدل الاعتماد على [state]، اللي
+  /// بيبدأ دايمًا true لحد ما [_restore] يخلص بشكل غير متزامن — قارئ في
+  /// نفس اللحظة اللي الـ controller اتبنى فيها ممكن ياخد القيمة الافتراضية
+  /// الخاطئة بدل التفضيل الحقيقي المحفوظ.
+  Future<bool> readPersistedEnabled() async {
+    final saved = await _storage.read(key: _enabledKey);
+    return saved == null || saved == 'true';
+  }
+
   Future<void> setEnabled(bool value) async {
     if (value == state) return;
     if (value) {
       final token = await FirebaseMessaging.instance.getToken();
-      if (token != null) {
-        final id = await _devices.register(token: token);
-        await _storage.write(key: pushRegistrationIdStorageKey, value: '$id');
-      }
+      if (token == null) return;
+      final id = await _devices.register(token: token);
+      await _storage.write(key: pushRegistrationIdStorageKey, value: '$id');
     } else {
       final storedId = await _storage.read(key: pushRegistrationIdStorageKey);
       final id = int.tryParse(storedId ?? '');

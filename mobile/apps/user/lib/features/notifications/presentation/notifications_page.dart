@@ -236,13 +236,15 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       );
 
   Widget _typeFilters() {
-    const types = ['deal', 'business', 'product', 'review', 'system'];
+    // القيم دي لازم تطابق Notification.TYPE_CHOICES في الباك إند بالظبط
+    // (backend/apps/notifications/models.py) — مفيش نوع "product" أصلًا.
+    const types = ['deal', 'business', 'review', 'system', 'general'];
     final labels = {
       'deal': _tr('عروض', 'Offers'),
       'business': _tr('محلات', 'Businesses'),
-      'product': _tr('منتجات', 'Products'),
       'review': _tr('تقييمات', 'Reviews'),
       'system': _tr('النظام', 'System'),
+      'general': _tr('عام', 'General'),
     };
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
