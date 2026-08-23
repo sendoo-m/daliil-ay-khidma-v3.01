@@ -21,7 +21,7 @@ dependencies:
   intl: ^0.20.2
   app_links: ^6.4.1
   geolocator: ^13.0.2
-  geocoding: ^3.0.0
+  geocoding: ^4.0.0
   google_fonts: ^6.2.1
   maplibre_gl: ^0.26.2
   url_launcher: ^6.3.1
