@@ -22,8 +22,8 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.dalilaykhidma.dalil_app"
-    compileSdk = 35
+    namespace = "com.daliilaykhidma.dalil_app"
+    compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -32,7 +32,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.dalilaykhidma.dalil_app"
+        applicationId = "com.daliilaykhidma.dalil_app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
