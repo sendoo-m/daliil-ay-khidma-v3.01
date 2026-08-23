@@ -43,6 +43,13 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
   bool _styleLoaded = false;
   bool _suppressNextCameraIdle = false;
   bool _listMode = false;
+  // مفصولة عن _coordinates عمدًا: لو مافيش موقع حقيقي، منعرضش نتائج "قريب
+  // مني" بمركز افتراضي عشوائي (القاهرة) نصف قطر صغير — لأن بيانات تجريبية
+  // متفرقة على محافظات مختلفة كانت بتختفي كلها. بدلها نعرض كل الأنشطة اللي
+  // ليها إحداثيات زي الصفحة القديمة (directory/map.html) بالظبط، ولما
+  // الموقع الحقيقي يتوفر أو المستخدم يختار نقطة على الخريطة يدويًا، نرجع
+  // لبحث "قريب مني" الحقيقي بنصف قطر.
+  bool _usingRealLocation = false;
   double _radius = 10;
   double? _minimumRating;
   bool _featuredOnly = false;
@@ -92,6 +99,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                   loading: _loading,
                   listMode: _listMode,
                   radius: _radius,
+                  usingRealLocation: _usingRealLocation,
                   resultCount: _visibleItems.length,
                   filterCount: _filterCount,
                   onSearchChanged: _onSearchChanged,
@@ -263,7 +271,10 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
     try {
       final coordinates = await ref.read(locationServiceProvider).current();
       if (!mounted) return;
-      setState(() => _coordinates = coordinates);
+      setState(() {
+        _coordinates = coordinates;
+        _usingRealLocation = true;
+      });
       await _moveCameraTo(coordinates, zoom: _zoomForRadius(_radius));
       await _fetchNearby(coordinates);
     } on LocationException catch (error) {
@@ -271,23 +282,28 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
       setState(() {
         _message = switch (error.failure) {
           LocationFailure.serviceDisabled => _tr(
-              'فعّل خدمة الموقع ثم حاول مجددًا. نعرض الآن القاهرة كمنطقة افتراضية.',
-              'Enable location services and try again. Showing Cairo as a default area for now.',
+              'فعّل خدمة الموقع ثم حاول مجددًا. نعرض الآن كل الأنشطة على الخريطة.',
+              'Enable location services and try again. Showing all businesses on the map for now.',
             ),
           LocationFailure.denied => _tr(
-              'لم يتم السماح باستخدام الموقع. نعرض الآن القاهرة كمنطقة افتراضية.',
-              'Location permission was denied. Showing Cairo as a default area for now.',
+              'لم يتم السماح باستخدام الموقع. نعرض الآن كل الأنشطة على الخريطة.',
+              'Location permission was denied. Showing all businesses on the map for now.',
             ),
           LocationFailure.deniedForever => _tr(
-              'صلاحية الموقع مرفوضة دائمًا؛ فعّلها من إعدادات التطبيق. نعرض الآن القاهرة كمنطقة افتراضية.',
-              'Location permission is permanently denied; enable it in settings. Showing Cairo as a default area for now.',
+              'صلاحية الموقع مرفوضة دائمًا؛ فعّلها من إعدادات التطبيق. نعرض الآن كل الأنشطة على الخريطة.',
+              'Location permission is permanently denied; enable it in settings. Showing all businesses on the map for now.',
             ),
         };
       });
       // منطقة افتراضية بدل ما تفضل الشاشة فاضية لحد الأبد لو الموقع مرفوض.
+      // بدون تصفية بنصف قطر — زي الصفحة القديمة تمامًا — لأن مركز افتراضي
+      // ثابت (القاهرة) ممكن يكون بعيد عن كل الأنشطة الموجودة فعليًا.
       if (_coordinates == null) {
-        setState(() => _coordinates = _defaultCoordinates);
-        await _moveCameraTo(_defaultCoordinates, zoom: _zoomForRadius(_radius));
+        setState(() {
+          _coordinates = _defaultCoordinates;
+          _usingRealLocation = false;
+        });
+        await _moveCameraTo(_defaultCoordinates, zoom: 6);
         await _fetchNearby(_defaultCoordinates);
       }
     } finally {
@@ -334,6 +350,9 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
     setState(() {
       _coordinates = center;
       _pendingAreaCenter = null;
+      // المستخدم اختار نقطة بنفسه بالسحب على الخريطة — بحث "قريب من هنا"
+      // بنصف قطر بقى له معنى حقيقي دلوقتي، بعكس مركز افتراضي عشوائي.
+      _usingRealLocation = true;
     });
     await _fetchNearby(center);
   }
@@ -369,17 +388,26 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
       });
     }
     try {
-      final items = await ref.read(businessRepositoryProvider).nearby(
-            latitude: coordinates.latitude,
-            longitude: coordinates.longitude,
-            radiusKm: _radius,
-            query: _searchController.text,
-            categoryId: _categoryId,
-            businessType: _businessType,
-            minRating: _minimumRating,
-            featuredOnly: _featuredOnly,
-            cancelToken: cancelToken,
-          );
+      final items = _usingRealLocation
+          ? await ref.read(businessRepositoryProvider).nearby(
+                latitude: coordinates.latitude,
+                longitude: coordinates.longitude,
+                radiusKm: _radius,
+                query: _searchController.text,
+                categoryId: _categoryId,
+                businessType: _businessType,
+                minRating: _minimumRating,
+                featuredOnly: _featuredOnly,
+                cancelToken: cancelToken,
+              )
+          : await ref.read(businessRepositoryProvider).search(
+                _searchController.text,
+                categoryId: _categoryId,
+                businessType: _businessType,
+                minRating: _minimumRating,
+                featuredOnly: _featuredOnly,
+                cancelToken: cancelToken,
+              );
       if (!mounted || revision != _requestRevision) return;
       setState(() {
         _visibleItems = items;
@@ -737,6 +765,7 @@ class _MapToolbar extends StatelessWidget {
     required this.loading,
     required this.listMode,
     required this.radius,
+    required this.usingRealLocation,
     required this.resultCount,
     required this.filterCount,
     required this.onSearchChanged,
@@ -751,6 +780,7 @@ class _MapToolbar extends StatelessWidget {
   final bool loading;
   final bool listMode;
   final double radius;
+  final bool usingRealLocation;
   final int resultCount;
   final int filterCount;
   final ValueChanged<String> onSearchChanged;
@@ -798,9 +828,13 @@ class _MapToolbar extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    isArabic
-                        ? '$resultCount نتيجة ضمن ${radius.toInt()} كم'
-                        : '$resultCount results within ${radius.toInt()} km',
+                    usingRealLocation
+                        ? (isArabic
+                            ? '$resultCount نتيجة ضمن ${radius.toInt()} كم'
+                            : '$resultCount results within ${radius.toInt()} km')
+                        : (isArabic
+                            ? '$resultCount نتيجة'
+                            : '$resultCount results'),
                     style: const TextStyle(
                       color: AppColors.muted,
                       fontWeight: FontWeight.w700,

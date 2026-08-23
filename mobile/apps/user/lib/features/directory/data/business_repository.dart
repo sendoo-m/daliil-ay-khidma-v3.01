@@ -15,7 +15,9 @@ final class BusinessRepository {
     int? districtId,
     String? businessType,
     double? minRating,
+    bool featuredOnly = false,
     String ordering = '-is_featured',
+    CancelToken? cancelToken,
   }) async {
     final page = await searchPage(
       query,
@@ -25,8 +27,10 @@ final class BusinessRepository {
       districtId: districtId,
       businessType: businessType,
       minRating: minRating,
+      featuredOnly: featuredOnly,
       ordering: ordering,
       pageSize: 50,
+      cancelToken: cancelToken,
     );
     return page.items;
   }
@@ -39,6 +43,7 @@ final class BusinessRepository {
     int? districtId,
     String? businessType,
     double? minRating,
+    bool featuredOnly = false,
     String ordering = '-is_featured',
     int page = 1,
     int pageSize = 20,
@@ -54,6 +59,7 @@ final class BusinessRepository {
         if (districtId != null) 'district': districtId,
         if (businessType != null) 'business_type': businessType,
         if (minRating != null) 'min_rating': minRating,
+        if (featuredOnly) 'is_featured': true,
         'ordering': ordering,
         'page': page,
         'page_size': pageSize,
