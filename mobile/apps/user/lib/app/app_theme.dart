@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 abstract final class AppTokens {
-  static const background = Color(0xFFF8FAFC);
+  static const background = Color(0xFFFAFAF8);
   static const surface = Color(0xFFFFFFFF);
   static const surfaceMuted = Color(0xFFF1F5F9);
-  static const text = Color(0xFF1E293B);
-  static const muted = Color(0xFF64748B);
+  static const text = Color(0xFF17212B);
+  static const muted = Color(0xFF6B7280);
   static const border = Color(0xFFE2E8F0);
   static const success = Color(0xFF10B981);
   static const error = Color(0xFFEF4444);
@@ -24,8 +24,8 @@ abstract final class AppTokens {
 /// dynamic theme preference instead. Keeping these constants during migration
 /// prevents unrelated screens from breaking while we refresh them PR-by-PR.
 abstract final class AppColors {
-  static const primary = Color(0xFF0F8B8D);
-  static const primaryDark = Color(0xFF0A6F71);
+  static const primary = Color(0xFF006B70);
+  static const primaryDark = Color(0xFF01696F);
   static const secondary = Color(0xFF19A974);
   static const primarySoft = Color(0xFFE9F8F7);
   static const secondarySoft = Color(0xFFEAF8F1);

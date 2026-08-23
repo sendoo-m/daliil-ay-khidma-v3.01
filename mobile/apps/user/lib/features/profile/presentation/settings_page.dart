@@ -154,6 +154,20 @@ class SettingsPage extends ConsumerWidget {
                       .read(notificationPreferenceProvider.notifier)
                       .setEnabled(value),
                 ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.location_on_outlined),
+                  title: Text(_t('الموقع', 'Location')),
+                  subtitle: Text(
+                    _t(
+                      'يُستخدم لعرض الأنشطة القريبة منك',
+                      'Used to show nearby businesses',
+                    ),
+                  ),
+                  trailing: const Icon(Icons.chevron_left_rounded),
+                  onTap: () =>
+                      ref.read(locationServiceProvider).requestOrOpenSettings(),
+                ),
               ],
             ),
           ),

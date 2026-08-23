@@ -9,7 +9,9 @@ import '../../catalog/presentation/catalog_detail_pages.dart';
 import '../../directory/presentation/business_detail_page.dart';
 import '../data/notification_repository.dart';
 
-enum _NotificationFilter { all, unread, read }
+// ثلاث تبويبات بالظبط زي التصميم: الكل / غير مقروء / عروض — بدل صف قراءة
+// وصف فئة منفصلين.
+enum _NotificationFilter { all, unread, deals }
 
 class NotificationsPage extends ConsumerStatefulWidget {
   const NotificationsPage({super.key});
@@ -21,7 +23,6 @@ class NotificationsPage extends ConsumerStatefulWidget {
 class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   List<AppNotification> _items = const [];
   var _filter = _NotificationFilter.all;
-  String? _typeFilter;
   var _loading = true;
   var _working = false;
   String? _error;
@@ -33,19 +34,15 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
 
   int get _unreadCount => _items.where((item) => !item.isRead).length;
   int get _readCount => _items.length - _unreadCount;
+  int get _dealsCount => _items.where((item) => item.type == 'deal').length;
 
-  List<AppNotification> get _visibleItems {
-    final byReadState = switch (_filter) {
-      _NotificationFilter.unread => _items.where((item) => !item.isRead),
-      _NotificationFilter.read => _items.where((item) => item.isRead),
-      _NotificationFilter.all => _items,
-    };
-    final typeFilter = _typeFilter;
-    if (typeFilter == null) return byReadState.toList(growable: false);
-    return byReadState
-        .where((item) => item.type == typeFilter)
-        .toList(growable: false);
-  }
+  List<AppNotification> get _visibleItems => switch (_filter) {
+        _NotificationFilter.unread =>
+          _items.where((item) => !item.isRead).toList(growable: false),
+        _NotificationFilter.deals =>
+          _items.where((item) => item.type == 'deal').toList(growable: false),
+        _NotificationFilter.all => _items,
+      };
 
   @override
   void initState() {
@@ -138,12 +135,8 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+            padding: const EdgeInsets.fromLTRB(16, 2, 16, 12),
             sliver: SliverToBoxAdapter(child: _filters()),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            sliver: SliverToBoxAdapter(child: _typeFilters()),
           ),
           if (_visibleItems.isEmpty)
             SliverFillRemaining(
@@ -219,12 +212,12 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
             ButtonSegment(
               value: _NotificationFilter.unread,
               icon: const Icon(Icons.mark_email_unread_outlined),
-              label: Text('${_tr('غير مقروءة', 'Unread')} ($_unreadCount)'),
+              label: Text('${_tr('غير مقروء', 'Unread')} ($_unreadCount)'),
             ),
             ButtonSegment(
-              value: _NotificationFilter.read,
-              icon: const Icon(Icons.drafts_outlined),
-              label: Text('${_tr('مقروءة', 'Read')} ($_readCount)'),
+              value: _NotificationFilter.deals,
+              icon: const Icon(Icons.local_offer_outlined),
+              label: Text('${_tr('عروض', 'Offers')} ($_dealsCount)'),
             ),
           ],
           selected: {_filter},
@@ -234,45 +227,6 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
           },
         ),
       );
-
-  Widget _typeFilters() {
-    // القيم دي لازم تطابق Notification.TYPE_CHOICES في الباك إند بالظبط
-    // (backend/apps/notifications/models.py) — مفيش نوع "product" أصلًا.
-    const types = ['deal', 'business', 'review', 'system', 'general'];
-    final labels = {
-      'deal': _tr('عروض', 'Offers'),
-      'business': _tr('محلات', 'Businesses'),
-      'review': _tr('تقييمات', 'Reviews'),
-      'system': _tr('النظام', 'System'),
-      'general': _tr('عام', 'General'),
-    };
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          Padding(
-            padding: const EdgeInsetsDirectional.only(end: 8),
-            child: ChoiceChip(
-              selected: _typeFilter == null,
-              label: Text(_tr('الكل', 'All')),
-              onSelected: (_) => setState(() => _typeFilter = null),
-            ),
-          ),
-          for (final type in types)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: 8),
-              child: ChoiceChip(
-                selected: _typeFilter == type,
-                label: Text(labels[type]!),
-                onSelected: (_) => setState(
-                  () => _typeFilter = _typeFilter == type ? null : type,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
 
   Future<bool> _confirmDelete() async =>
       await showDialog<bool>(

@@ -45,6 +45,9 @@ class HomePageV4 extends ConsumerWidget {
                   ),
                 ),
                 SliverToBoxAdapter(
+                  child: _CategoryChips(items: data.categories),
+                ),
+                SliverToBoxAdapter(
                   child: _DirectoryEntry(
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
@@ -55,9 +58,6 @@ class HomePageV4 extends ConsumerWidget {
                 ),
                 SliverToBoxAdapter(
                   child: _MostVisitedSection(items: data.businesses),
-                ),
-                SliverToBoxAdapter(
-                  child: _CategoryRail(items: data.categories),
                 ),
                 SliverToBoxAdapter(
                   child: _DealsSpotlight(
@@ -437,78 +437,94 @@ class _DealsSpotlight extends StatelessWidget {
   }
 }
 
-class _CategoryRail extends StatelessWidget {
-  const _CategoryRail({required this.items});
+class _CategoryChips extends StatelessWidget {
+  const _CategoryChips({required this.items});
 
   final List<Map<String, dynamic>> items;
 
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) return const SizedBox.shrink();
-    return _Section(
-      title: 'تصفح حسب القسم',
-      subtitle: 'الوصول السريع لأكثر الأقسام استخدامًا',
+    final shown = items.take(8).toList(growable: false);
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
       child: SizedBox(
-        height: 126,
+        height: 40,
         child: ListView.separated(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           scrollDirection: Axis.horizontal,
-          itemCount: items.length > 10 ? 10 : items.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          // "الكل" أولًا وهي دايمًا المحدَّدة بصريًا — الرئيسية بتعرض
+          // محتوى غير مُصفّى، واختيار قسم حقيقي بينقل المستخدم لنتائج ذلك
+          // القسم بدل ما يفلتر محتوى نفس الصفحة.
+          itemCount: shown.length + 1,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
           itemBuilder: (_, index) {
-            final item = items[index];
+            if (index == 0) {
+              return const _CategoryChip(label: 'الكل', selected: true);
+            }
+            final item = shown[index - 1];
             final name = '${item['name_ar'] ?? ''}';
             final id = item['id'] as int?;
-            return SizedBox(
-              width: 96,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(22),
-                // كانت بلا onTap تمامًا: اسم وأيقونة ولا شيء يحدث
-                // عند الضغط، وهو أسوأ من غياب القسم أصلًا.
-                onTap: id == null
-                    ? null
-                    : () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => BrowseResultsPage(
-                              title: name,
-                              categoryId: id,
-                            ),
+            return _CategoryChip(
+              label: name,
+              selected: false,
+              onTap: id == null
+                  ? null
+                  : () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => BrowseResultsPage(
+                            title: name,
+                            categoryId: id,
                           ),
                         ),
-                child: Column(
-                children: [
-                  Container(
-                    width: 74,
-                    height: 74,
-                    decoration: BoxDecoration(
-                      color: index.isEven
-                          ? AppColors.primarySoft
-                          : AppColors.secondarySoft,
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    child: const Icon(
-                      Icons.grid_view_rounded,
-                      color: AppColors.primary,
-                      size: 30,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ],
-                ),
-              ),
+                      ),
             );
           },
         ),
       ),
     );
   }
+}
+
+class _CategoryChip extends StatelessWidget {
+  const _CategoryChip({
+    required this.label,
+    required this.selected,
+    this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: selected ? AppColors.primary : AppColors.surface,
+        borderRadius: BorderRadius.circular(999),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: selected ? AppColors.primary : AppColors.border,
+              ),
+            ),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: selected ? Colors.white : AppColors.text,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 class _MostVisitedSection extends StatelessWidget {

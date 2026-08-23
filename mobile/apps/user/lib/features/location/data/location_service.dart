@@ -42,4 +42,15 @@ final class LocationService {
 
   Future<bool> openSettings() => Geolocator.openAppSettings();
   Future<bool> openLocationSettings() => Geolocator.openLocationSettings();
+
+  /// يطلب الصلاحية لو لسه ما طُلبتش، وإلا يفتح إعدادات النظام — التطبيق
+  /// مايقدرش يلغي صلاحية ممنوحة بالفعل برمجيًا، النظام بس هو اللي يقدر.
+  Future<void> requestOrOpenSettings() async {
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      await Geolocator.requestPermission();
+      return;
+    }
+    await openSettings();
+  }
 }
