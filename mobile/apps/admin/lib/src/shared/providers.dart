@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 ///   flutter build web --dart-define=API_BASE_URL=https://api.example.com
 const _rawBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'https://daliil-ay-khidma.onrender.com',
+  defaultValue: 'https://dalilaykhidma.com',
 );
 
 final apiBaseUrlProvider = Provider<String>((ref) => '$_rawBaseUrl/api/v2/');

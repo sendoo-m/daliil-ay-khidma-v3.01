@@ -25,7 +25,7 @@ concurrency:
 
 env:
   REPO_PATH: /daliil-ay-khidma-v3.01
-  API_BASE_URL: https://daliil-ay-khidma.onrender.com
+  API_BASE_URL: https://dalilaykhidma.com
 
 jobs:
   build:

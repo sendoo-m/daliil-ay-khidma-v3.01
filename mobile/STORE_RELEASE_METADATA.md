@@ -63,10 +63,10 @@ Daliil Ay Khidma Business is built for merchants and service owners. Manage busi
 
 Use the production HTTPS URLs below in both stores after verifying deployment:
 
-- Privacy policy: `https://daliil-ay-khidma.onrender.com/privacy/`
-- Terms: `https://daliil-ay-khidma.onrender.com/terms/`
-- Support: `https://daliil-ay-khidma.onrender.com/support/`
-- Account deletion: `https://daliil-ay-khidma.onrender.com/account-deletion/`
+- Privacy policy: `https://dalilaykhidma.com/privacy/`
+- Terms: `https://dalilaykhidma.com/terms/`
+- Support: `https://dalilaykhidma.com/support/`
+- Account deletion: `https://dalilaykhidma.com/account-deletion/`
 
 ## Store media still required
 
@@ -125,13 +125,13 @@ Do not submit to production until final branded assets have been reviewed on rea
 Android production candidate (after adding real local signing config):
 
 ```bash
-flutter build appbundle --release --dart-define=API_BASE_URL=https://daliil-ay-khidma.onrender.com
+flutter build appbundle --release --dart-define=API_BASE_URL=https://dalilaykhidma.com
 ```
 
 iOS candidate before archive signing setup can continue to be smoke-tested with:
 
 ```bash
-flutter build ios --release --no-codesign --dart-define=API_BASE_URL=https://daliil-ay-khidma.onrender.com
+flutter build ios --release --no-codesign --dart-define=API_BASE_URL=https://dalilaykhidma.com
 ```
 
 The signed `.ipa` must be created only after the Apple Team/App ID/provisioning setup is complete.

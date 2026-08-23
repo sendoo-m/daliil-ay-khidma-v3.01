@@ -20,7 +20,7 @@ Completed:
 
 - Android and iOS platform projects exist.
 - Android release no longer silently uses the debug signing key; release signing is loaded from an untracked `key.properties` file.
-- Production HTTPS (`https://daliil-ay-khidma.onrender.com`) is the default API base URL; local development can override it with `--dart-define=API_BASE_URL=...`.
+- Production HTTPS (`https://dalilaykhidma.com`) is the default API base URL; local development can override it with `--dart-define=API_BASE_URL=...`.
 - CI guards prevent restoring debug release signing or an emulator/local API default.
 - Location permission declarations and the `daliil://` custom scheme already exist.
 

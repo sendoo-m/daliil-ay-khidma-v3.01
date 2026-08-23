@@ -72,7 +72,7 @@ jobs:
 
       - name: Build release app bundle
         working-directory: mobile/apps/${{ matrix.app }}
-        run: flutter build appbundle --release --dart-define=API_BASE_URL=https://daliil-ay-khidma.onrender.com
+        run: flutter build appbundle --release --dart-define=API_BASE_URL=https://dalilaykhidma.com
 
       - name: Verify AAB exists
         working-directory: mobile/apps/${{ matrix.app }}
@@ -102,7 +102,7 @@ jobs:
       # requiring an Apple Development Team/provisioning profile.
       - name: Build iOS simulator smoke without signing
         working-directory: mobile/apps/${{ matrix.app }}
-        run: flutter build ios --debug --simulator --dart-define=API_BASE_URL=https://daliil-ay-khidma.onrender.com
+        run: flutter build ios --debug --simulator --dart-define=API_BASE_URL=https://dalilaykhidma.com
 
       - name: Verify iOS simulator app identity
         working-directory: mobile/apps/${{ matrix.app }}
