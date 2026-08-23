@@ -15,9 +15,14 @@
             </ol>
         </nav>
     </div>
-    <a href="{% url 'dashboard:admin_deal_create' %}" class="btn btn-warning text-dark fw-bold">
-        <i class="fas fa-plus me-2"></i> إضافة عرض
-    </a>
+    <div class="d-flex gap-2">
+        <a href="{% url 'dashboard:admin_home' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right me-1"></i> رجوع
+        </a>
+        <a href="{% url 'dashboard:admin_deal_create' %}" class="btn btn-warning text-dark fw-bold">
+            <i class="fas fa-plus me-2"></i> إضافة عرض
+        </a>
+    </div>
 </div>
 
 <div class="card border-0 shadow-sm">
