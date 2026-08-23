@@ -36,9 +36,26 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     {% endif %}
-    
+
     <div class="row g-4">
         <div class="col-lg-8">
+            {% if form.business %}
+            <!-- المحل التابع له العرض -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0"><i class="fas fa-store text-primary me-2"></i> المحل</h5>
+                </div>
+                <div class="card-body p-4">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-store text-primary me-1"></i>
+                        المحل التابع له العرض <span class="text-danger">*</span>
+                    </label>
+                    {{ form.business }}
+                    {% if form.business.errors %}<div class="text-danger small mt-1">{{ form.business.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- معلومات العرض -->
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
@@ -52,14 +69,16 @@
                                 العنوان بالعربي <span class="text-danger">*</span>
                             </label>
                             {{ form.title_ar }}
+                            {% if form.title_ar.errors %}<div class="text-danger small mt-1">{{ form.title_ar.errors.0 }}</div>{% endif %}
                         </div>
-                        
+
                         <div class="col-md-6">
                             <label class="form-label fw-bold">
                                 <i class="fas fa-heading text-primary me-1"></i>
                                 العنوان بالإنجليزي <span class="text-danger">*</span>
                             </label>
                             {{ form.title_en }}
+                            {% if form.title_en.errors %}<div class="text-danger small mt-1">{{ form.title_en.errors.0 }}</div>{% endif %}
                         </div>
                         
                         <div class="col-12">
@@ -111,14 +130,16 @@
                                 تاريخ البداية <span class="text-danger">*</span>
                             </label>
                             {{ form.start_date }}
+                            {% if form.start_date.errors %}<div class="text-danger small mt-1">{{ form.start_date.errors.0 }}</div>{% endif %}
                         </div>
-                        
+
                         <div class="col-md-6">
                             <label class="form-label fw-bold">
                                 <i class="fas fa-calendar-times text-danger me-1"></i>
                                 تاريخ النهاية <span class="text-danger">*</span>
                             </label>
                             {{ form.end_date }}
+                            {% if form.end_date.errors %}<div class="text-danger small mt-1">{{ form.end_date.errors.0 }}</div>{% endif %}
                         </div>
                     </div>
                 </div>
@@ -138,6 +159,7 @@
                             نوع العرض <span class="text-danger">*</span>
                         </label>
                         {{ form.deal_type }}
+                        {% if form.deal_type.errors %}<div class="text-danger small mt-1">{{ form.deal_type.errors.0 }}</div>{% endif %}
                     </div>
                     
                     <div class="mb-3">

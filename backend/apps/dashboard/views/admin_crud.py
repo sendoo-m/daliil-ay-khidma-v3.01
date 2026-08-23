@@ -32,7 +32,7 @@ from apps.dashboard.forms import (
     AdminUserEditForm,
     BusinessForm,
     ProductForm,
-    DealForm,
+    AdminDealForm,
     CategoryForm,
 )
 
@@ -286,7 +286,9 @@ def admin_deal_create(request, business_id=None):
     business = get_object_or_404(Business, id=business_id) if business_id else None
 
     if request.method == 'POST':
-        form = DealForm(request.POST, request.FILES)
+        form = AdminDealForm(request.POST, request.FILES)
+        if business:
+            form.fields['business'].required = False
         if form.is_valid():
             try:
                 deal = form.save(commit=False)
@@ -305,7 +307,9 @@ def admin_deal_create(request, business_id=None):
                 for error in errors:
                     messages.error(request, f'خطأ في {field}: {error}')
     else:
-        form = DealForm()
+        form = AdminDealForm(initial={'business': business.id} if business else None)
+        if business:
+            form.fields['business'].required = False
 
     return render(request, 'dashboard/admin/deal_form.html', {
         'form': form,
@@ -320,7 +324,7 @@ def admin_deal_edit_view(request, deal_id):
     deal = get_object_or_404(Deal, id=deal_id)
 
     if request.method == 'POST':
-        form = DealForm(request.POST, request.FILES, instance=deal)
+        form = AdminDealForm(request.POST, request.FILES, instance=deal)
         if form.is_valid():
             try:
                 form.save()
@@ -333,7 +337,7 @@ def admin_deal_edit_view(request, deal_id):
                 for error in errors:
                     messages.error(request, f'خطأ في {field}: {error}')
     else:
-        form = DealForm(instance=deal)
+        form = AdminDealForm(instance=deal)
 
     return render(request, 'dashboard/admin/deal_form.html', {
         'form': form,

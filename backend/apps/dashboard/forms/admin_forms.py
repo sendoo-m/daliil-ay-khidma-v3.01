@@ -185,6 +185,7 @@ class AdminProductForm(forms.ModelForm):
 
 def _deal_fields():
     allowed = [
+        'business',
         'title_en', 'title_ar',
         'description_en', 'description_ar',
         'deal_type',
@@ -204,6 +205,7 @@ class AdminDealForm(forms.ModelForm):
         model   = Deal
         fields  = _deal_fields()
         widgets = {
+            'business':            forms.Select(attrs={'class': 'form-select'}),
             'title_en':            forms.TextInput(attrs={'class': 'form-control'}),
             'title_ar':            forms.TextInput(attrs={'class': 'form-control'}),
             'description_en':      forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
