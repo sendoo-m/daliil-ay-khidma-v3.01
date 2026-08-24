@@ -571,7 +571,6 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
           textAnchor: 'bottom',
           textOffset: const Offset(0, -0.9),
           textJustify: 'center',
-          textAllowOverlap: selected,
         ),
       );
       _businessBySymbol[symbol] = business;
