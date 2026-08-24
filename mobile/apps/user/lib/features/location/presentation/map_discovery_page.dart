@@ -30,6 +30,9 @@ class MapDiscoveryPage extends ConsumerStatefulWidget {
 class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
   final _searchController = TextEditingController();
   final _resultsController = ScrollController();
+  final _sheetController = DraggableScrollableController();
+  static const _sheetMinSize = 0.22;
+  static const _sheetMaxSize = 0.75;
   final Map<Circle, Business> _businessByCircle = {};
   final Map<Symbol, Business> _businessBySymbol = {};
 
@@ -79,6 +82,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
     _searchCancelToken?.cancel('Map search disposed');
     _searchController.dispose();
     _resultsController.dispose();
+    _sheetController.dispose();
     super.dispose();
   }
 
@@ -154,30 +158,42 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                   right: 16,
                   child: _MessageCard(message: _message!),
                 ),
-              if (!_listMode && _visibleItems.isNotEmpty)
+              if (!_listMode && _selected != null)
                 Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 14,
-                  child: SizedBox(
-                    height: 128,
-                    child: ListView.separated(
-                      controller: _resultsController,
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _visibleItems.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 10),
-                      itemBuilder: (_, index) {
-                        final business = _visibleItems[index];
-                        return _BusinessMapCard(
-                          business: business,
-                          isArabic: _isArabic,
-                          selected: _selected?.id == business.id,
-                          onTap: () => _selectBusiness(business),
-                          onDetails: () => _openDetails(business),
-                          onDirections: () => _openDirections(business),
-                        );
+                  left: 18,
+                  right: 18,
+                  bottom: MediaQuery.sizeOf(context).height * _sheetMinSize + 14,
+                  child: _SelectedBusinessPopup(
+                    business: _selected!,
+                    isArabic: _isArabic,
+                    onClose: () => setState(() => _selected = null),
+                    onDetails: () => _openDetails(_selected!),
+                  ),
+                ),
+              if (!_listMode && _visibleItems.isNotEmpty)
+                Positioned.fill(
+                  child: DraggableScrollableSheet(
+                    controller: _sheetController,
+                    initialChildSize: _sheetMinSize,
+                    minChildSize: _sheetMinSize,
+                    maxChildSize: _sheetMaxSize,
+                    snap: true,
+                    builder: (context, scrollController) => _NearbyPlacesSheet(
+                      items: _visibleItems,
+                      isArabic: _isArabic,
+                      selectedId: _selected?.id,
+                      horizontalController: _resultsController,
+                      sheetScrollController: scrollController,
+                      onDragUpdate: (deltaY) {
+                        final screenHeight = MediaQuery.sizeOf(context).height;
+                        final next = (_sheetController.size - deltaY / screenHeight)
+                            .clamp(_sheetMinSize, _sheetMaxSize);
+                        _sheetController.jumpTo(next);
                       },
+                      onSelect: (business) => _selectBusiness(business),
+                      onDetails: _openDetails,
+                      onDirections: _openDirections,
+                      onShowOnMap: (business) => _selectBusiness(business),
                     ),
                   ),
                 ),
@@ -923,6 +939,299 @@ class _MessageCard extends StatelessWidget {
           ),
         ),
       );
+}
+
+class _NearbyPlacesSheet extends StatelessWidget {
+  const _NearbyPlacesSheet({
+    required this.items,
+    required this.isArabic,
+    required this.selectedId,
+    required this.horizontalController,
+    required this.sheetScrollController,
+    required this.onDragUpdate,
+    required this.onSelect,
+    required this.onDetails,
+    required this.onDirections,
+    required this.onShowOnMap,
+  });
+
+  final List<Business> items;
+  final bool isArabic;
+  final int? selectedId;
+  final ScrollController horizontalController;
+  final ScrollController sheetScrollController;
+  final ValueChanged<double> onDragUpdate;
+  final ValueChanged<Business> onSelect;
+  final ValueChanged<Business> onDetails;
+  final ValueChanged<Business> onDirections;
+  final ValueChanged<Business> onShowOnMap;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: .14),
+              blurRadius: 24,
+              offset: const Offset(0, -6),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onVerticalDragUpdate: (details) => onDragUpdate(details.primaryDelta ?? 0),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 10, 18, 8),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on_rounded,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          isArabic
+                              ? '${items.length} محل قريب منك'
+                              : '${items.length} places near you',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w900,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 128,
+              child: ListView.separated(
+                controller: horizontalController,
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                scrollDirection: Axis.horizontal,
+                itemCount: items.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (_, index) {
+                  final business = items[index];
+                  return _BusinessMapCard(
+                    business: business,
+                    isArabic: isArabic,
+                    selected: selectedId == business.id,
+                    onTap: () => onSelect(business),
+                    onDetails: () => onDetails(business),
+                    onDirections: () => onDirections(business),
+                  );
+                },
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView.separated(
+                controller: sheetScrollController,
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 28),
+                itemCount: items.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (_, index) {
+                  final business = items[index];
+                  return _BusinessListCard(
+                    business: business,
+                    isArabic: isArabic,
+                    onDetails: () => onDetails(business),
+                    onDirections: () => onDirections(business),
+                    onShowOnMap: () => onShowOnMap(business),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _SelectedBusinessPopup extends StatelessWidget {
+  const _SelectedBusinessPopup({
+    required this.business,
+    required this.isArabic,
+    required this.onClose,
+    required this.onDetails,
+  });
+
+  final Business business;
+  final bool isArabic;
+  final VoidCallback onClose;
+  final VoidCallback onDetails;
+
+  @override
+  Widget build(BuildContext context) {
+    final image = business.coverImage ?? business.logo;
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .2),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: image == null || image.isEmpty
+                    ? const ColoredBox(
+                        color: AppColors.primarySoft,
+                        child: Icon(
+                          Icons.storefront_rounded,
+                          color: AppColors.primary,
+                          size: 40,
+                        ),
+                      )
+                    : Image.network(
+                        image,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const ColoredBox(
+                          color: AppColors.primarySoft,
+                          child: Icon(
+                            Icons.storefront_rounded,
+                            color: AppColors.primary,
+                            size: 40,
+                          ),
+                        ),
+                      ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Material(
+                  color: Colors.black.withValues(alpha: .45),
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: onClose,
+                    child: const Padding(
+                      padding: EdgeInsets.all(6),
+                      child: Icon(Icons.close_rounded, color: Colors.white, size: 18),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  business.displayNameFor(isArabic ? 'ar' : 'en'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                ),
+                if (business.address.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.location_on_rounded,
+                        size: 15,
+                        color: AppColors.muted,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          business.address,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: AppColors.muted, fontSize: 12.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if (business.isFeatured) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3D6),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.star_rounded, size: 13, color: Color(0xFFCB9200)),
+                        const SizedBox(width: 3),
+                        Text(
+                          isArabic ? 'مميز' : 'Featured',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF8A6400),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                if (business.phone.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.call_rounded, size: 15, color: AppColors.secondary),
+                      const SizedBox(width: 4),
+                      Text(
+                        isArabic ? 'الهاتف: ${business.phone}' : 'Phone: ${business.phone}',
+                        style: const TextStyle(
+                          color: AppColors.secondary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: onDetails,
+                    icon: const Icon(Icons.visibility_outlined, size: 18),
+                    label: Text(isArabic ? 'عرض التفاصيل' : 'View details'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _BusinessMapCard extends StatelessWidget {
