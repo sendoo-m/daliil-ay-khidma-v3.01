@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' show Point;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -138,7 +139,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                 ),
               if (!_listMode && _pendingAreaCenter != null)
                 Positioned(
-                  top: 204,
+                  top: 212,
                   left: 0,
                   right: 0,
                   child: Center(
@@ -153,21 +154,26 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                 ),
               if (_message != null)
                 Positioned(
-                  top: !_listMode && _pendingAreaCenter != null ? 258 : 204,
+                  top: !_listMode && _pendingAreaCenter != null ? 266 : 212,
                   left: 16,
                   right: 16,
                   child: _MessageCard(message: _message!),
                 ),
               if (!_listMode && _selected != null)
                 Positioned(
-                  left: 18,
-                  right: 18,
+                  left: 0,
+                  right: 0,
                   bottom: MediaQuery.sizeOf(context).height * _sheetMinSize + 14,
-                  child: _SelectedBusinessPopup(
-                    business: _selected!,
-                    isArabic: _isArabic,
-                    onClose: () => setState(() => _selected = null),
-                    onDetails: () => _openDetails(_selected!),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 260),
+                      child: _SelectedBusinessPopup(
+                        business: _selected!,
+                        isArabic: _isArabic,
+                        onClose: () => setState(() => _selected = null),
+                        onDetails: () => _openDetails(_selected!),
+                      ),
+                    ),
                   ),
                 ),
               if (!_listMode && _visibleItems.isNotEmpty)
@@ -244,6 +250,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
       ),
       myLocationEnabled: true,
       compassEnabled: true,
+      attributionButtonMargins: const Point(6, 6),
       onMapCreated: (controller) {
         _mapController = controller;
         controller.onCircleTapped.add(_onCircleTapped);
@@ -726,9 +733,9 @@ class _MapQuickFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        height: 48,
+        height: 56,
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           scrollDirection: Axis.horizontal,
           children: [
             _QuickFilterChip(
@@ -1142,7 +1149,7 @@ class _SelectedBusinessPopup extends StatelessWidget {
             ],
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+            padding: const EdgeInsets.fromLTRB(12, 9, 12, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1150,78 +1157,95 @@ class _SelectedBusinessPopup extends StatelessWidget {
                   business.displayNameFor(isArabic ? 'ar' : 'en'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13.5),
                 ),
                 if (business.address.isNotEmpty) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Icon(
                         Icons.location_on_rounded,
-                        size: 15,
+                        size: 13,
                         color: AppColors.muted,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 3),
                       Expanded(
                         child: Text(
                           business.address,
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: AppColors.muted, fontSize: 12.5),
+                          style: const TextStyle(color: AppColors.muted, fontSize: 11),
                         ),
                       ),
                     ],
                   ),
                 ],
-                if (business.isFeatured) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF3D6),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.star_rounded, size: 13, color: Color(0xFFCB9200)),
-                        const SizedBox(width: 3),
-                        Text(
-                          isArabic ? 'مميز' : 'Featured',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF8A6400),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                if (business.phone.isNotEmpty) ...[
-                  const SizedBox(height: 8),
+                if (business.isFeatured || business.phone.isNotEmpty) ...[
+                  const SizedBox(height: 5),
                   Row(
                     children: [
-                      const Icon(Icons.call_rounded, size: 15, color: AppColors.secondary),
-                      const SizedBox(width: 4),
-                      Text(
-                        isArabic ? 'الهاتف: ${business.phone}' : 'Phone: ${business.phone}',
-                        style: const TextStyle(
-                          color: AppColors.secondary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12.5,
+                      if (business.isFeatured)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF3D6),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.star_rounded, size: 11, color: Color(0xFFCB9200)),
+                              const SizedBox(width: 2),
+                              Text(
+                                isArabic ? 'مميز' : 'Featured',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF8A6400),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                      if (business.isFeatured && business.phone.isNotEmpty)
+                        const SizedBox(width: 8),
+                      if (business.phone.isNotEmpty)
+                        Expanded(
+                          child: Row(
+                            children: [
+                              const Icon(Icons.call_rounded, size: 13, color: AppColors.secondary),
+                              const SizedBox(width: 3),
+                              Expanded(
+                                child: Text(
+                                  business.phone,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: AppColors.secondary,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ],
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
+                  height: 32,
                   child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                      textStyle: const TextStyle(fontSize: 12),
+                    ),
                     onPressed: onDetails,
-                    icon: const Icon(Icons.visibility_outlined, size: 18),
+                    icon: const Icon(Icons.visibility_outlined, size: 15),
                     label: Text(isArabic ? 'عرض التفاصيل' : 'View details'),
                   ),
                 ),
