@@ -13,7 +13,7 @@ import '../../directory/presentation/business_detail_page.dart';
 import '../data/location_service.dart';
 
 const _mapStyle = 'https://tiles.openfreemap.org/styles/liberty';
-const _resultCardExtent = 320.0;
+const _resultCardExtent = 202.0;
 
 // يُستخدم كمركز افتراضي للخريطة لما نتعذّر نجيب موقع المستخدم الحقيقي
 // (صلاحية مرفوضة، متصفح ما بيدعمش الموقع، إلخ) — عشان الخريطة تفضل
@@ -31,6 +31,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
   final _searchController = TextEditingController();
   final _resultsController = ScrollController();
   final Map<Circle, Business> _businessByCircle = {};
+  final Map<Symbol, Business> _businessBySymbol = {};
 
   MapLibreMapController? _mapController;
   UserCoordinates? _coordinates;
@@ -159,7 +160,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
                   right: 0,
                   bottom: 14,
                   child: SizedBox(
-                    height: 174,
+                    height: 128,
                     child: ListView.separated(
                       controller: _resultsController,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -230,6 +231,7 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
       onMapCreated: (controller) {
         _mapController = controller;
         controller.onCircleTapped.add(_onCircleTapped);
+        controller.onSymbolTapped.add(_onSymbolTapped);
       },
       onCameraIdle: _onCameraIdle,
       onStyleLoadedCallback: () {
@@ -540,20 +542,50 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
     final controller = _mapController;
     if (!_styleLoaded || controller == null) return;
     await controller.clearCircles();
+    await controller.clearSymbols();
     _businessByCircle.clear();
+    _businessBySymbol.clear();
     for (final business in _visibleItems.where((item) => item.hasCoordinates)) {
       final selected = _selected?.id == business.id;
+      final geometry = LatLng(business.latitude!, business.longitude!);
       final circle = await controller.addCircle(
         CircleOptions(
-          geometry: LatLng(business.latitude!, business.longitude!),
-          circleRadius: selected ? 14 : 10,
+          geometry: geometry,
+          circleRadius: selected ? 9 : 6,
           circleColor: selected ? '#6C5CE7' : _markerColor(business),
           circleStrokeColor: '#FFFFFF',
-          circleStrokeWidth: selected ? 4 : 3,
+          circleStrokeWidth: selected ? 3 : 2,
         ),
       );
       _businessByCircle[circle] = business;
+
+      final label = _markerLabel(business);
+      final symbol = await controller.addSymbol(
+        SymbolOptions(
+          geometry: geometry,
+          textField: label,
+          textSize: selected ? 13 : 11.5,
+          textColor: selected ? '#6C5CE7' : '#17212B',
+          textHaloColor: '#FFFFFF',
+          textHaloWidth: 1.4,
+          textAnchor: 'bottom',
+          textOffset: const Offset(0, -0.9),
+          textJustify: 'center',
+          textAllowOverlap: selected,
+        ),
+      );
+      _businessBySymbol[symbol] = business;
     }
+  }
+
+  String _markerLabel(Business business) {
+    var name = business.displayNameFor(_isArabic ? 'ar' : 'en');
+    if (name.length > 16) name = '${name.substring(0, 15)}…';
+    final distance = business.distanceKm;
+    final subtitle = distance != null
+        ? _tr('${distance.toStringAsFixed(1)} كم', '${distance.toStringAsFixed(1)} km')
+        : (business.categoryName.isNotEmpty ? business.categoryName : business.area);
+    return subtitle.isEmpty ? name : '$name\n$subtitle';
   }
 
   String _markerColor(Business business) => switch (business.businessType) {
@@ -564,6 +596,11 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
 
   void _onCircleTapped(Circle circle) {
     final business = _businessByCircle[circle];
+    if (business != null) _selectBusiness(business, scrollToCard: true);
+  }
+
+  void _onSymbolTapped(Symbol symbol) {
+    final business = _businessBySymbol[symbol];
     if (business != null) _selectBusiness(business, scrollToCard: true);
   }
 
@@ -908,48 +945,105 @@ class _BusinessMapCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: 310,
+        width: 192,
         child: Card(
           color: selected ? AppColors.primarySoft : AppColors.surface,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(16),
             side: BorderSide(
               color: selected ? AppColors.primary : AppColors.border,
               width: selected ? 2 : 1,
             ),
           ),
           child: InkWell(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(16),
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(8),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        _BusinessLogo(business: business),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _BusinessInfo(
-                            business: business,
-                            isArabic: isArabic,
-                          ),
+                  Row(
+                    children: [
+                      _BusinessLogo(business: business, size: 42),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              business.displayNameFor(isArabic ? 'ar' : 'en'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12.5,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.star_rounded,
+                                  size: 13,
+                                  color: AppColors.accentDark,
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  business.rating.toStringAsFixed(1),
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                                if (business.distanceKm != null) ...[
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      isArabic
+                                          ? '${business.distanceKm!.toStringAsFixed(1)} كم'
+                                          : '${business.distanceKm!.toStringAsFixed(1)} km',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: AppColors.muted,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Expanded(
-                        child: TextButton.icon(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            visualDensity: VisualDensity.compact,
+                            textStyle: const TextStyle(fontSize: 11),
+                          ),
                           onPressed: onDirections,
-                          icon: const Icon(Icons.directions_outlined, size: 18),
-                          label: Text(isArabic ? 'الاتجاهات' : 'Directions'),
+                          child: Icon(
+                            Icons.directions_outlined,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 6),
                       Expanded(
+                        flex: 2,
                         child: FilledButton.tonal(
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            visualDensity: VisualDensity.compact,
+                            textStyle: const TextStyle(fontSize: 11),
+                          ),
                           onPressed: onDetails,
                           child: Text(isArabic ? 'التفاصيل' : 'Details'),
                         ),
