@@ -436,7 +436,10 @@ class _MapDiscoveryPageState extends ConsumerState<MapDiscoveryPage> {
       if (!mounted || revision != _requestRevision) return;
       setState(() {
         _visibleItems = items;
-        _selected = items.isEmpty ? null : items.first;
+        // ما بنحددش أول نتيجة تلقائيًا بعد كل بحث — كان بيفتح بطاقة المحل
+        // الكبيرة فوق الخريطة مع كل حرف بيتكتب، فيبان وكأن الشريط السفلي
+        // مش بيتغير مع إن القائمة كانت بتتحدث فعليًا تحته.
+        _selected = null;
         _message = items.isEmpty
             ? _tr(
                 'لا توجد نتائج مطابقة ضمن المنطقة الحالية',
