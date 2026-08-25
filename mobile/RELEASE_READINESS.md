@@ -26,11 +26,12 @@ Completed:
 
 Still pending:
 
-1. `pubspec.yaml` is still `0.1.0+1`; final store version will be assigned after release QA.
+1. `pubspec.yaml` is now `1.0.0+1`; final store version/build number will still be bumped after release QA.
 2. Android application label/app icon/store-facing name must be finalized.
 3. iOS Bundle ID and Apple Developer registration/signing must be confirmed.
 4. Firebase push configuration and all final permission declarations must be verified against the shipped feature set.
 5. A physical-device release test is still required.
+6. `android/key.properties` (the real Google Play upload keystore) does not exist locally yet — must be generated before a real release build (release builds intentionally fail without it rather than falling back to debug signing).
 
 ### Merchant app (`mobile/apps/merchant`)
 
@@ -44,12 +45,17 @@ Completed:
 - Customer Android Firebase configuration was removed from Merchant Android because Merchant currently does not depend on Firebase.
 - iOS permission purpose strings for location, camera, and photo library use are present.
 
+Completed (2026-08-25 review):
+
+- Merchant iOS Xcode project's `PRODUCT_BUNDLE_IDENTIFIER` (all 6 build-config entries) and `Info.plist` now consistently use `com.daliilaykhidma.merchant`, distinct from the customer app's `com.daliilaykhidma.dalilApp`. Previously all 6 pbxproj entries had been left pointing at the customer app's bundle ID.
+
 Still pending:
 
-1. Merchant iOS was bootstrapped from the existing Flutter iOS baseline and its Xcode Bundle ID references still need final cleanup to a distinct Merchant App ID before App Store signing.
-2. Final app icons / launch assets need product-approved artwork.
-3. Push/Firebase must only be added if the Merchant app actually ships push notifications on mobile.
-4. Store versioning and physical-device QA remain pending.
+1. Final app icons / launch assets need product-approved artwork.
+2. Push/Firebase must only be added if the Merchant app actually ships push notifications on mobile.
+3. Store versioning and physical-device QA remain pending.
+4. `android/key.properties` (the real Google Play upload keystore) does not exist locally yet — must be generated before a real release build.
+5. Register the Merchant App ID (`com.daliilaykhidma.merchant`) in Apple Developer if not already done, and configure Xcode signing/capabilities against it.
 
 ## Automated release build smoke
 
@@ -115,7 +121,7 @@ The following must be completed before production submission:
 
 - [x] Generate iOS runner.
 - [x] Add CI no-codesign iOS release smoke build.
-- [ ] Replace inherited customer Bundle ID references with the final Merchant Bundle ID.
+- [x] Replace inherited customer Bundle ID references with the final Merchant Bundle ID.
 - [ ] Register the Merchant App ID in Apple Developer and configure signing/capabilities.
 - [ ] Archive and test through TestFlight.
 

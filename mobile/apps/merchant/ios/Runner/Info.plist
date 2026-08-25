@@ -11,7 +11,7 @@
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.daliilaykhidma.merchant</string>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -70,5 +70,7 @@
 	<string>نستخدم مكتبة الصور لرفع شعار نشاطك وصوره ومنتجاتك.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>نستخدم الكاميرا فقط عندما تختار تصوير صورة لنشاطك أو منتجاتك.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>

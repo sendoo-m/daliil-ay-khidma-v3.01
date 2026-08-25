@@ -7,6 +7,15 @@ build/
 pubspec.lock
 **/doc/api/
 
+# Flutter local machine-generated build config (paths differ per developer machine)
+**/android/local.properties
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/flutter_export_environment.sh
+**/macos/Flutter/ephemeral/
+**/macos/Flutter/Flutter-Generated.xcconfig
+**/l10n/app_localizations*.dart
+
 # Mobile release signing / Apple credentials
 **/android/key.properties
 *.jks
