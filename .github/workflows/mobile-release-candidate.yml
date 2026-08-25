@@ -29,19 +29,32 @@ jobs:
       - name: Dependencies
         working-directory: mobile/apps/${{ matrix.app }}
         run: flutter pub get
-      - name: Create ephemeral RC signing key
+      - name: Restore real upload keystore
         working-directory: mobile/apps/${{ matrix.app }}/android
+        env:
+          KEYSTORE_BASE64: ${{ secrets[format('ANDROID_{0}_KEYSTORE_BASE64', matrix.app == 'user' && 'USER' || 'MERCHANT')] }}
+          KEYSTORE_PASSWORD: ${{ secrets[format('ANDROID_{0}_KEYSTORE_PASSWORD', matrix.app == 'user' && 'USER' || 'MERCHANT')] }}
         run: |
-          keytool -genkeypair -keystore ci-upload-key.jks -storepass ci-release-pass -keypass ci-release-pass -alias upload -keyalg RSA -keysize 2048 -validity 2 -dname "CN=RC CI, OU=Release, O=Daliil Ay Khidma, L=Riyadh, ST=Riyadh, C=SA"
-          cat > key.properties <<'EOF'
-          storePassword=ci-release-pass
-          keyPassword=ci-release-pass
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Missing ANDROID_${{ matrix.app == 'user' && 'USER' || 'MERCHANT' }}_KEYSTORE_BASE64 secret" >&2
+            exit 1
+          fi
+          mkdir -p keystore
+          echo "$KEYSTORE_BASE64" | base64 -d > keystore/${{ matrix.app }}-upload-keystore.jks
+          cat > key.properties <<EOF
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEYSTORE_PASSWORD
           keyAlias=upload
-          storeFile=../ci-upload-key.jks
+          storeFile=../keystore/${{ matrix.app }}-upload-keystore.jks
           EOF
       - name: Build release AAB
         working-directory: mobile/apps/${{ matrix.app }}
         run: flutter build appbundle --release --dart-define=API_BASE_URL=https://dalilaykhidma.com
+      - name: Print signing certificate fingerprint
+        working-directory: mobile/apps/${{ matrix.app }}/android
+        run: keytool -list -v -keystore keystore/${{ matrix.app }}-upload-keystore.jks -storepass "$KEYSTORE_PASSWORD" -alias upload | grep -E "SHA256:|SHA1:|Owner:"
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets[format('ANDROID_{0}_KEYSTORE_PASSWORD', matrix.app == 'user' && 'USER' || 'MERCHANT')] }}
       - name: Stage artifact
         run: |
           mkdir -p release-artifacts
@@ -54,6 +67,10 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  # NOTE: this job builds an UNSIGNED .app for compile/identity verification only.
+  # It does not produce a TestFlight/App Store-ready .ipa. Real signing needs an
+  # Apple Distribution certificate + provisioning profiles from an Apple Developer
+  # account, which are not yet configured as repo secrets.
   ios-rc-smoke:
     name: iOS RC no-codesign (${{ matrix.app }})
     runs-on: macos-latest
